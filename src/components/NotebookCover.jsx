@@ -44,6 +44,7 @@ export default function NotebookCover({
   title,
   description,
   date,
+  authorName,
   coverColor,
   coverMaterial = 'kraft',
   coverImageUrl,
@@ -108,65 +109,65 @@ export default function NotebookCover({
           flex
           h-full
           flex-col
-          justify-between
+          items-center
+          justify-center
+          gap-3
           p-6
           pl-10
+          text-center
           text-white
         "
       >
-
-        <div />
-
-
-        <div
+        <h3
           className="
-            flex
-            flex-1
-            flex-col
-            items-center
-            justify-center
-            text-center
+            font-display
+            text-xl
+            drop-shadow-sm
           "
         >
+          {title}
+        </h3>
 
-          <h3
+        {description && (
+          <p
             className="
-              font-display
-              text-xl
-              drop-shadow-sm
+              line-clamp-3
+              font-body
+              text-sm
+              text-white/85
             "
           >
-            {title}
-          </h3>
+            {description}
+          </p>
+        )}
 
+        {authorName && (
+          <p
+            className="
+              font-mono
+              text-[10px]
+              uppercase
+              tracking-wide
+              text-white/70
+            "
+          >
+            By: {authorName}
+          </p>
+        )}
 
-          {description && (
-
-            <p
-              className="
-                mt-2
-                line-clamp-3
-                font-body
-                text-sm
-                text-white/85
-              "
-            >
-              {description}
-            </p>
-
-          )}
-
-        </div>
-
-
-        <div
+        <p
           className="
-            flex
-            items-center
-            justify-between
+            font-mono
+            text-[10px]
+            uppercase
+            tracking-wide
+            text-white/70
           "
         >
+          {date}
+        </p>
 
+        {readOnly && (
           <span
             className="
               font-mono
@@ -176,28 +177,9 @@ export default function NotebookCover({
               text-white/70
             "
           >
-            {date}
+            View only
           </span>
-
-
-          {readOnly && (
-
-            <span
-              className="
-                font-mono
-                text-[10px]
-                uppercase
-                tracking-wide
-                text-white/70
-              "
-            >
-              View only
-            </span>
-
-          )}
-
-        </div>
-
+        )}
       </div>
 
 

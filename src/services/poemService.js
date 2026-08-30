@@ -58,3 +58,11 @@ export async function reorderPoems(orderedUpdates) {
   const { error } = await supabase.from('poems').upsert(orderedUpdates);
   if (error) throw error;
 }
+
+export async function updatePoemWidgetBox(poemId, box) {
+  const { error } = await supabase
+    .from('poems')
+    .update({ spotify_widget_box: box })
+    .eq('id', poemId);
+  if (error) throw error;
+}
