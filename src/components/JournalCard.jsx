@@ -1,26 +1,31 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import NotebookCover from './NotebookCover';
 
 export default function JournalCard({ journal, readOnly = false }) {
+  const navigate = useNavigate();
+  const date = new Date(journal.created_at).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+
   return (
-    <Link
-      to={`/journal/${journal.id}`}
-      className="page-card group flex flex-col overflow-hidden transition-transform hover:-translate-y-0.5"
+    <motion.div
+      layoutId={`journal-cover-${journal.id}`}
+      onClick={() => navigate(`/journal/${journal.id}`)}
+      className="aspect-[3/4] w-full cursor-pointer transition-transform duration-150 hover:-translate-y-1"
+      whileTap={{ scale: 0.97 }}
     >
-      <div
-        className="h-32 w-full bg-paper-dark bg-cover bg-center"
-        style={journal.cover_image_url ? { backgroundImage: `url(${journal.cover_image_url})` } : undefined}
+      <NotebookCover
+        title={journal.title}
+        description={journal.description}
+        date={date}
+        coverColor={journal.cover_color}
+        coverMaterial={journal.cover_material}
+        coverImageUrl={journal.cover_image_url}
+        readOnly={readOnly}
       />
-      <div className="flex flex-1 flex-col gap-1 p-4">
-        <h3 className="font-display text-lg text-ink group-hover:text-margin">{journal.title}</h3>
-        {journal.description && (
-          <p className="line-clamp-2 font-body text-sm text-ink-soft">{journal.description}</p>
-        )}
-        {readOnly && (
-          <span className="mt-auto self-start font-mono text-[10px] uppercase tracking-wide text-moss">
-            Shared with you · view only
-          </span>
-        )}
-      </div>
-    </Link>
+    </motion.div>
   );
 }
