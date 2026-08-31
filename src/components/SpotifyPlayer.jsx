@@ -1,8 +1,13 @@
 import { toSpotifyEmbedUrl } from '../utils/spotify';
 
-export default function SpotifyPlayer({ spotifyUrl }) {
+export default function SpotifyPlayer({ spotifyUrl, active = true }) {
   const embedUrl = toSpotifyEmbedUrl(spotifyUrl);
   if (!embedUrl) return null;
+
+  // If not active, render a placeholder to preserve layout but don't set the iframe src
+  if (!active) {
+    return <div style={{ width: '100%', height: 152 }} className="rounded-sm" />;
+  }
 
   return (
     <iframe

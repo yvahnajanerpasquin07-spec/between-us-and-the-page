@@ -1,6 +1,5 @@
 import { supabase } from './supabase';
 
-// Journals the current user owns.
 export async function getMyJournals() {
   const { data, error } = await supabase
     .from('journals')
@@ -10,8 +9,6 @@ export async function getMyJournals() {
   return data;
 }
 
-// Journals shared with the current user as a view-only reader.
-// Relies on the `shared_journals` view defined in schema.sql.
 export async function getSharedJournals() {
   const { data, error } = await supabase
     .from('shared_journals')
@@ -31,7 +28,13 @@ export async function getJournal(journalId) {
   return data;
 }
 
-export async function createJournal({ title, description, coverImageUrl }) {
+export async function createJournal({
+  title,
+  description,
+  coverImageUrl,
+  coverColor,
+  coverMaterial,
+}) {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError) throw userError;
 
@@ -41,6 +44,8 @@ export async function createJournal({ title, description, coverImageUrl }) {
       title,
       description: description ?? null,
       cover_image_url: coverImageUrl ?? null,
+      cover_color: coverColor ?? '#2d2a26',
+      cover_material: coverMaterial ?? 'kraft',
       owner_id: userData.user.id,
     })
     .select()

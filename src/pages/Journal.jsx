@@ -15,6 +15,7 @@ import { useAuth } from '../context/AuthContext';
 import NotebookCover, {
   InsideCoverPanel,
 } from '../components/NotebookCover';
+import Book3D from '../components/Book3D';
 import Button from '../components/Button';
 import Loading from '../components/Loading';
 import ShareModal from '../components/ShareModal';
@@ -38,7 +39,21 @@ export default function Journal() {
   const [bookState, setBookState] = useState('closed-front');
   const [pageView, setPageView] = useState({ type: 'toc' });
   const [pageDirection, setPageDirection] = useState(1);
+
+  /*
+    turningPage:
+    null
+      = no page animation in progress
+    {
+      view: page still visible on the front face of the turning sheet
+      nextView: page to reveal once the flip finishes
+      direction: 1 | -1
+    }
+    pageView does NOT change until the flip's onAnimationComplete fires,
+    so the new page's text/spotify can never appear early or late.
+  */
   const [turningPage, setTurningPage] = useState(null);
+
   const [showShare, setShowShare] = useState(false);
   const [showCoverMenu, setShowCoverMenu] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -61,6 +76,7 @@ export default function Journal() {
     () => getPoemsForJournal(journalId),
     [journalId]
   );
+
   const isOwner = journal && user && journal.owner_id === user.id;
   const activeJournal = journalOverride ?? journal;
 
@@ -109,23 +125,27 @@ export default function Journal() {
     />
   ) : null;
 
+  /* =========================================================
+     OPEN BOOK
+     bookState only flips to 'open' inside onAnimationComplete
+     on the .animated-cover motion.div below — no setTimeout.
+  ========================================================= */
   function openBook() {
     if (bookState !== 'closed-front' || isAnimating) return;
     setShowCoverMenu(false);
     setBookState('opening');
-    window.setTimeout(() => {
-      setBookState('open');
-    }, 720);
   }
 
+  /* =========================================================
+     CLOSE BOOK
+     bookState only flips to 'closed-back' inside onAnimationComplete
+     on the .animated-back-cover motion.div below.
+  ========================================================= */
   function closeBook() {
     if (bookState !== 'open' || isAnimating) return;
     setPageView({ type: 'back' });
     setTurningPage(null);
     setBookState('closing');
-    window.setTimeout(() => {
-      setBookState('closed-back');
-    }, 720);
   }
 
   function reopenFromBack() {
@@ -137,24 +157,29 @@ export default function Journal() {
   /* =========================================================
      EXIT TO FRONT COVER
      Plays the opening animation in reverse and lands back on
-     the closed front cover, resetting to the table of contents.
+     the closed front cover — bookState flips inside
+     onAnimationComplete, not a timer.
   ========================================================= */
   function exitToFront() {
     if (bookState !== 'open' || isAnimating) return;
     setBookState('exiting');
   }
 
+  /* =========================================================
+     PAGE TURN
+     pageView is NOT updated here. It only updates once the
+     turning sheet's flip animation actually completes
+     (see renderTurningPage's onAnimationComplete), so the
+     next page's content can't render early or late.
+  ========================================================= */
   function turnTo(nextView, direction) {
     if (!isOpen || isAnimating) return;
+    setPageDirection(direction);
     setTurningPage({
       view: pageView,
+      nextView,
       direction,
     });
-    setPageDirection(direction);
-    setPageView(nextView);
-    window.setTimeout(() => {
-      setTurningPage(null);
-    }, TURN_DURATION * 1000);
   }
 
   function goNext() {
@@ -230,6 +255,7 @@ export default function Journal() {
   if (journalLoading) {
     return <Loading label="Opening journal" />;
   }
+
   if (!journal) {
     return <p className="p-6">Journal not found.</p>;
   }
@@ -252,7 +278,6 @@ export default function Journal() {
         </div>
       );
     }
-
     if (pageView.type === 'poem') {
       const poem = poems?.[pageView.index];
       return (
@@ -269,7 +294,7 @@ export default function Journal() {
                     updatePoemWidgetBox(poem.id, box).catch(() => {});
                   }}
                 >
-                  <SpotifyPlayer spotifyUrl={poem.spotify_url} />
+                  <SpotifyPlayer spotifyUrl={poem.spotify_url} active={!turningPage} />
                 </DraggableWidget>
               ) : (
                 <p className="flex h-full items-center justify-center text-center font-mono text-[10px] uppercase tracking-wide text-ink-soft/50">
@@ -281,7 +306,6 @@ export default function Journal() {
         </div>
       );
     }
-
     return (
       <div className="book-left-page">
         <div className="page-back">
@@ -291,6 +315,15 @@ export default function Journal() {
     );
   }
 
+  /* =========================================================
+     PAGE TURNING SHEET
+     The front face shows the OLD page throughout the entire
+     flip. The base layers underneath (book-left-page /
+     book-right-page) also still show the OLD pageView. Only
+     once onAnimationComplete fires do we swap pageView to
+     nextView and clear turningPage — so the new content is
+     mounted for the very first time already fully visible.
+  ========================================================= */
   function renderTurningPage() {
     if (!turningPage) return null;
     const isForward = turningPage.direction > 0;
@@ -300,12 +333,34 @@ export default function Journal() {
         initial={{ rotateY: 0 }}
         animate={{ rotateY: isForward ? -180 : 180 }}
         transition={{ duration: TURN_DURATION, ease: TURN_EASE }}
+        onAnimationComplete={() => {
+          setPageView(turningPage.nextView);
+          setTurningPage(null);
+        }}
       >
         <div className="page-turn-face page-turn-front">
-          {renderPageContent(turningPage.view)}
+           {renderPageContent(turningPage.view)}
         </div>
         <div className="page-turn-face page-turn-back">
-          <div className="page-turn-back-inner" />
+          {isForward && turningPage.nextView.type === 'poem' ? (
+            // Render a simplified, static backface for forward flips so
+            // widgets (Spotify/Draggable) don't mount early and cause glitches.
+            <div className="book-right-page">
+              <div className="page-content">
+                <div className="page-inner">
+                  <h2>{(poems && poems[turningPage.nextView.index]?.title) || 'Untitled'}</h2>
+                  <p className="page-label">
+                    {(poems && poems[turningPage.nextView.index]?.poem_date) || ''}
+                  </p>
+                  <div className="poem-text">
+                    {(poems && poems[turningPage.nextView.index]?.content) || ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            renderPageContent(turningPage.nextView)
+          )}
         </div>
       </motion.div>
     );
@@ -450,30 +505,49 @@ export default function Journal() {
           bookState === 'closing' ||
           bookState === 'exiting') && (
           <div className="open-book">
-            {renderLeftPage()}
-            <div className="book-right-page">{renderPageContent(pageView)}</div>
+            {/*
+              page-spread fades in/out in sync with the cover flip
+              (TURN_DURATION / TURN_EASE) so the left/right pages
+              never pop into view uncovered — that pop was the
+              "split second" glitch on open/close.
+            */}
+            <motion.div
+              className="page-spread"
+              initial={{ opacity: 0 }}
+              animate={{
+                opacity: bookState === 'open' || bookState === 'opening' ? 1 : 0,
+              }}
+              transition={{
+                duration: TURN_DURATION,
+                ease: TURN_EASE,
+                delay: bookState === 'opening' ? TURN_DURATION * 0.5 : 0,
+              }}
+            >
+              {renderLeftPage()}
+              <div className="book-right-page">{renderPageContent(pageView)}</div>
+            </motion.div>
             {renderTurningPage()}
-
             {bookState === 'opening' && (
               <motion.div
                 className="animated-cover"
                 initial={{ rotateY: 0 }}
                 animate={{ rotateY: -180 }}
                 transition={{ duration: TURN_DURATION, ease: TURN_EASE }}
-                style={{ transformOrigin: 'left center' }}
+                onAnimationComplete={() => setBookState('open')}
+                style={{ transformOrigin: 'left center', position: 'absolute', left: 180, top: 0, zIndex: 2000 }}
               >
                 <div className="cover-front-face">{coverFront}</div>
                 <div className="cover-back-face">{insideCover}</div>
               </motion.div>
             )}
-
             {bookState === 'closing' && (
               <motion.div
                 className="animated-back-cover"
                 initial={{ rotateY: 0 }}
                 animate={{ rotateY: -180 }}
                 transition={{ duration: TURN_DURATION, ease: TURN_EASE }}
-                style={{ transformOrigin: 'left center' }}
+                onAnimationComplete={() => setBookState('closed-back')}
+                style={{ transformOrigin: 'left center', position: 'absolute', left: 540, top: 0, zIndex: 2000 }}
               >
                 <div className="back-cover-animation-face back-cover-animation-front">
                   <NotebookBackCover journal={activeJournal} />
@@ -490,7 +564,6 @@ export default function Journal() {
                 </div>
               </motion.div>
             )}
-
             {/* =========================================
                 EXIT ANIMATION — reverse of the opening
                 flip, landing back on the closed front cover
@@ -505,7 +578,7 @@ export default function Journal() {
                   setBookState('closed-front');
                   setPageView({ type: 'toc' });
                 }}
-                style={{ transformOrigin: 'left center' }}
+                style={{ transformOrigin: 'left center', position: 'absolute', left: 180, top: 0, zIndex: 2000 }}
               >
                 <div className="cover-front-face">{coverFront}</div>
                 <div className="cover-back-face">{insideCover}</div>
@@ -518,7 +591,6 @@ export default function Journal() {
       {showShare && (
         <ShareModal journalId={journalId} onClose={() => setShowShare(false)} />
       )}
-
       {showEditModal && (
         <EditJournalModal
           journal={activeJournal}
