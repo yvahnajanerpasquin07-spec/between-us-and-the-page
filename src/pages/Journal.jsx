@@ -40,6 +40,9 @@ import EditJournalModal from '../components/EditJournalModal';
    CONSTANTS
 ========================================================= */
 
+const PAGE_W = 360;
+const PAGE_H = 480;
+
 const TURN_DURATION = 720;
 
 
@@ -69,6 +72,9 @@ export default function Journal() {
 
     ...
 
+    poems.length + 2
+        = LAST POEM MEDIA | LAST POEM
+
     poems.length + 3
         = BLANK PAGE | INSIDE BACK COVER
 
@@ -80,17 +86,25 @@ export default function Journal() {
     useState(1);
 
 
+  /*
+    flippedPapers contains the paper IDs
+    that have already turned from right → left.
+  */
+
   const [flippedPapers, setFlippedPapers] =
     useState(() => new Set());
 
 
+  /*
+    Prevent multiple page turns from being
+    triggered at the same time.
+  */
+
   const [isTurning, setIsTurning] =
     useState(false);
 
-
   const turningPaperRef =
     useRef(null);
-
 
   const locationRef =
     useRef(1);
@@ -99,14 +113,11 @@ export default function Journal() {
   const [showShare, setShowShare] =
     useState(false);
 
-
   const [showCoverMenu, setShowCoverMenu] =
     useState(false);
 
-
   const [showEditModal, setShowEditModal] =
     useState(false);
-
 
   const [journalOverride, setJournalOverride] =
     useState(null);
@@ -171,6 +182,10 @@ export default function Journal() {
     user &&
     journal.owner_id === user.id;
 
+
+  /*
+    Keep location ref synchronized.
+  */
 
   locationRef.current =
     currentLocation;
@@ -433,6 +448,10 @@ export default function Journal() {
   }
 
 
+  /*
+    Turn ONE paper forward.
+  */
+
   function turnForwardOne() {
 
     if (isTurning) {
@@ -459,7 +478,6 @@ export default function Journal() {
 
     turningPaperRef.current =
       paperId;
-
 
     setIsTurning(true);
 
@@ -499,6 +517,10 @@ export default function Journal() {
   }
 
 
+  /*
+    Turn ONE paper backward.
+  */
+
   function turnBackwardOne() {
 
     if (isTurning) {
@@ -512,7 +534,6 @@ export default function Journal() {
 
     if (location <= 1) {
       return;
-
     }
 
 
@@ -522,7 +543,6 @@ export default function Journal() {
 
     turningPaperRef.current =
       paperId;
-
 
     setIsTurning(true);
 
@@ -589,6 +609,16 @@ export default function Journal() {
     }
 
 
+    /*
+      TOC = location 2
+
+      poem 0 = location 3
+
+      poem 1 = location 4
+
+      etc.
+    */
+
     const target =
       poemIndex + 3;
 
@@ -625,7 +655,6 @@ export default function Journal() {
 
         turningPaperRef.current =
           paperId;
-
 
         setIsTurning(true);
 
@@ -863,9 +892,15 @@ export default function Journal() {
   const papers = [];
 
 
-  /* =========================================================
-     PAPER 1
-  ========================================================= */
+  /*
+    ==========================================================
+    PAPER 1
+
+    FRONT = FRONT COVER
+
+    BACK = INSIDE FRONT COVER
+    ==========================================================
+  */
 
   papers.push({
 
@@ -975,9 +1010,15 @@ export default function Journal() {
   });
 
 
-  /* =========================================================
-     PAPER 2
-  ========================================================= */
+  /*
+    ==========================================================
+    PAPER 2
+
+    FRONT = TABLE OF CONTENTS
+
+    BACK = POEM 1 MEDIA
+    ==========================================================
+  */
 
   papers.push({
 
@@ -998,9 +1039,6 @@ export default function Journal() {
           isOwner={isOwner}
           onSelectPoem={
             goToPoem
-          }
-          onExit={
-            goPreviousPage
           }
           onShare={() =>
             setShowShare(true)
@@ -1033,9 +1071,21 @@ export default function Journal() {
   });
 
 
-  /* =========================================================
-     POEM PAPERS
-  ========================================================= */
+  /*
+    ==========================================================
+    POEM PAPERS
+
+    PAPER 3:
+      FRONT = POEM 1
+      BACK = POEM 2 MEDIA
+
+    PAPER 4:
+      FRONT = POEM 2
+      BACK = POEM 3 MEDIA
+
+    etc.
+    ==========================================================
+  */
 
   poems?.forEach(
     (poem, index) => {
@@ -1061,12 +1111,6 @@ export default function Journal() {
               isOwner={
                 isOwner
               }
-              onNext={
-                goNextPage
-              }
-              onPrev={
-                goPreviousPage
-              }
               hasNext={
                 index <
                 poems.length - 1
@@ -1076,6 +1120,12 @@ export default function Journal() {
               }
               totalPages={
                 poems.length
+              }
+              onAddImage={(file) =>
+                addImageForPoem(
+                  poem.id,
+                  file
+                )
               }
             />
 
@@ -1104,9 +1154,15 @@ export default function Journal() {
   );
 
 
-  /* =========================================================
-     FINAL PAPER
-  ========================================================= */
+  /*
+    ==========================================================
+    FINAL PAPER
+
+    FRONT = INSIDE BACK COVER
+
+    BACK = CLOSED BACK COVER
+    ==========================================================
+  */
 
   const finalPaperId =
     papers.length + 1;
@@ -1143,6 +1199,99 @@ export default function Journal() {
     ),
 
   });
+
+
+  /* =========================================================
+     BOOK AREA CLICK HANDLER
+
+     IMPORTANT:
+
+     The invisible page-turn zones no longer receive
+     pointer events.
+
+     This means clicks pass through to the actual book
+     content, including the Edit button.
+
+     We only turn the page when the user clicks the
+     empty left/right edge area.
+  ========================================================= */
+
+  function handleBookAreaClick(e) {
+
+    if (
+      !isOpen ||
+      isTurning
+    ) {
+
+      return;
+
+    }
+
+
+    /*
+      Do not turn the page when clicking an
+      interactive element.
+
+      This protects:
+        - Edit button
+        - TOC buttons
+        - Share button
+        - New poem button
+        - links
+        - inputs
+        - textareas
+        - selects
+        - other role="button" elements
+    */
+
+    const interactiveElement =
+      e.target.closest(
+        'button, a, input, textarea, select, [role="button"]'
+      );
+
+
+    if (interactiveElement) {
+
+      return;
+
+    }
+
+
+    const rect =
+      e.currentTarget.getBoundingClientRect();
+
+
+    const x =
+      e.clientX - rect.left;
+
+
+    /*
+      Keep the original 65px page-turn areas.
+
+      LEFT  = previous
+      RIGHT = next
+    */
+
+    if (
+      x <= 65
+    ) {
+
+      goPreviousPage();
+
+      return;
+
+    }
+
+
+    if (
+      x >= rect.width - 65
+    ) {
+
+      goNextPage();
+
+    }
+
+  }
 
 
   /* =========================================================
@@ -1293,7 +1442,12 @@ export default function Journal() {
           BOOK
       ===================================================== */}
 
-      <div className="book-stack-wrapper">
+      <div
+        className="book-stack-wrapper"
+        onClick={
+          handleBookAreaClick
+        }
+      >
 
         <div
           className={`
@@ -1379,6 +1533,10 @@ export default function Journal() {
                   }}
                 >
 
+                  {/* =========================================
+                      FRONT FACE
+                  ========================================= */}
+
                   <div className="bs-front">
 
                     <div className="bs-front-content">
@@ -1389,6 +1547,10 @@ export default function Journal() {
 
                   </div>
 
+
+                  {/* =========================================
+                      BACK FACE
+                  ========================================= */}
 
                   <div className="bs-back">
 
@@ -1407,49 +1569,49 @@ export default function Journal() {
             }
           )}
 
-
-          {/* =================================================
-              CLICK NAVIGATION
-
-              Only active while book is open.
-          ================================================= */}
-
-          {isOpen && !isTurning && (
-
-            <>
-
-              <button
-                type="button"
-                aria-label="Previous page"
-                className="book-click-zone book-click-zone-left"
-                onClick={(e) => {
-
-                  e.stopPropagation();
-
-                  goPreviousPage();
-
-                }}
-              />
-
-
-              <button
-                type="button"
-                aria-label="Next page"
-                className="book-click-zone book-click-zone-right"
-                onClick={(e) => {
-
-                  e.stopPropagation();
-
-                  goNextPage();
-
-                }}
-              />
-
-            </>
-
-          )}
-
         </div>
+
+
+        {/* ===================================================
+            PAGE-TURN AREAS
+
+            IMPORTANT:
+
+            pointerEvents: 'none' means these areas
+            no longer steal clicks from buttons.
+
+            They remain in the exact same position
+            and keep the existing visual hover styling
+            from index.css.
+
+            Clicks pass through them to the actual
+            book/page underneath.
+        =================================================== */}
+
+        {isOpen && (
+
+          <>
+
+            <div
+              className="page-turn-zone page-turn-zone-left"
+              aria-hidden="true"
+              style={{
+                pointerEvents: 'none',
+              }}
+            />
+
+
+            <div
+              className="page-turn-zone page-turn-zone-right"
+              aria-hidden="true"
+              style={{
+                pointerEvents: 'none',
+              }}
+            />
+
+          </>
+
+        )}
 
       </div>
 
@@ -1515,7 +1677,6 @@ function TocPage({
   poemsLoading,
   isOwner,
   onSelectPoem,
-  onExit,
   onShare,
   onNewPoem,
 }) {
@@ -1524,15 +1685,129 @@ function TocPage({
 
     <div className="page-inner">
 
-      <h2>
-        {journal.title}
-      </h2>
+      {/* ===================================================
+          TOC HEADER
+      =================================================== */}
+
+      <div className="toc-header">
+
+        <div>
+
+          <h2>
+            {journal.title}
+          </h2>
 
 
-      <p className="page-label">
-        TABLE OF CONTENTS
-      </p>
+          <p className="page-label">
+            TABLE OF CONTENTS
+          </p>
 
+        </div>
+
+
+        {isOwner && (
+
+          <div className="toc-actions">
+
+            {/* SHARE */}
+
+            <button
+              type="button"
+              className="toc-icon-button"
+              onClick={
+                onShare
+              }
+              aria-label="Share journal"
+              title="Share journal"
+            >
+
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+
+                <circle
+                  cx="18"
+                  cy="5"
+                  r="2"
+                />
+
+                <circle
+                  cx="6"
+                  cy="12"
+                  r="2"
+                />
+
+                <circle
+                  cx="18"
+                  cy="19"
+                  r="2"
+                />
+
+                <line
+                  x1="8"
+                  y1="11"
+                  x2="16"
+                  y2="6"
+                />
+
+                <line
+                  x1="8"
+                  y1="13"
+                  x2="16"
+                  y2="18"
+                />
+
+              </svg>
+
+            </button>
+
+
+            {/* NEW POEM */}
+
+            <button
+              type="button"
+              className="toc-icon-button toc-plus-button"
+              onClick={
+                onNewPoem
+              }
+              aria-label="New poem"
+              title="New poem"
+            >
+
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+
+                <line
+                  x1="12"
+                  y1="5"
+                  x2="12"
+                  y2="19"
+                />
+
+                <line
+                  x1="5"
+                  y1="12"
+                  x2="19"
+                  y2="12"
+                />
+
+              </svg>
+
+            </button>
+
+          </div>
+
+        )}
+
+      </div>
+
+
+      {/* ===================================================
+          TOC LIST
+      =================================================== */}
 
       <div className="toc-list">
 
@@ -1595,53 +1870,6 @@ function TocPage({
 
       </div>
 
-
-      <div className="page-footer">
-
-        <button
-          onClick={
-            onExit
-          }
-          className="text-button"
-        >
-
-          ← CLOSE JOURNAL
-
-        </button>
-
-
-        {isOwner && (
-
-          <div className="footer-buttons">
-
-            <Button
-              variant="secondary"
-              onClick={
-                onShare
-              }
-            >
-
-              Share
-
-            </Button>
-
-
-            <Button
-              onClick={
-                onNewPoem
-              }
-            >
-
-              New Poem
-
-            </Button>
-
-          </div>
-
-        )}
-
-      </div>
-
     </div>
 
   );
@@ -1657,6 +1885,9 @@ function PoemPage({
   poem,
   journalId,
   isOwner,
+  pageNumber,
+  totalPages,
+  onAddImage,
 }) {
 
   const navigate =
@@ -1667,7 +1898,7 @@ function PoemPage({
 
     <div className="page-inner poem-page">
 
-      <div className="poem-page-heading">
+      <div>
 
         <h2>
 
@@ -1690,36 +1921,62 @@ function PoemPage({
       </div>
 
 
-      {/* =====================================================
-          EDIT ICON
-      ===================================================== */}
-
-      {isOwner && (
-
-        <button
-          type="button"
-          className="poem-edit-icon"
-          title="Edit this page"
-          aria-label="Edit this page"
-          onClick={() =>
-            navigate(
-              `/journal/${journalId}/poem/${poem.id}`
-            )
-          }
-        >
-
-          ✎
-
-        </button>
-
-      )}
-
-
       <div className="poem-text">
 
         {poem.content}
 
       </div>
+
+
+      {isOwner && (
+
+        <button
+          onClick={(e) => {
+
+            /*
+              Stop the click from reaching the
+              book/page click handler.
+
+              This guarantees that clicking Edit
+              only opens the poem editor and does
+              not turn the page.
+            */
+
+            e.stopPropagation();
+
+            navigate(
+              `/journal/${journalId}/poem/${poem.id}`
+            );
+
+          }}
+          className="edit-button"
+          aria-label="Edit this page"
+          title="Edit this page"
+        >
+
+          {/* Pencil icon */}
+
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+
+            <path
+              d="
+                M12 20h9
+                M16.5 3.5
+                a2.121 2.121 0 0 1 3 3
+                L8 18
+                l-4 1
+                1-4Z
+              "
+            />
+
+          </svg>
+
+        </button>
+
+      )}
 
     </div>
 
@@ -1736,6 +1993,24 @@ function InsideBackCover({
   journal,
 }) {
 
+  const material =
+    journal.cover_material || 'kraft';
+
+
+  const materialTextures = {
+
+    kraft:
+      'repeating-linear-gradient(0deg, rgba(0,0,0,0.03) 0px, transparent 1px, transparent 3px)',
+
+    velvet:
+      'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.08), transparent 60%)',
+
+    leather:
+      'repeating-linear-gradient(135deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 2px, transparent 2px, transparent 6px)',
+
+  };
+
+
   return (
 
     <div
@@ -1743,18 +2018,14 @@ function InsideBackCover({
       style={{
         backgroundColor:
           journal.cover_color,
+
+        backgroundImage:
+          materialTextures[
+            material
+          ] ||
+          materialTextures.kraft,
       }}
-    >
-
-      <div
-        className="inside-back-cover-material"
-        style={{
-          backgroundColor:
-            journal.cover_color,
-        }}
-      />
-
-    </div>
+    />
 
   );
 
@@ -1769,6 +2040,45 @@ function ClosedBackCover({
   journal,
 }) {
 
+  const material =
+    journal.cover_material || 'kraft';
+
+
+  const spineColors = {
+
+    kraft:
+      '#8a6f47',
+
+    velvet:
+      '#4d1119',
+
+    leather:
+      '#221812',
+
+  };
+
+
+  const spineColor =
+    spineColors[
+      material
+    ] ||
+    spineColors.kraft;
+
+
+  const textures = {
+
+    kraft:
+      'repeating-linear-gradient(0deg, rgba(0,0,0,0.03) 0px, transparent 1px, transparent 3px)',
+
+    velvet:
+      'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.08), transparent 60%)',
+
+    leather:
+      'repeating-linear-gradient(135deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 2px, transparent 2px, transparent 6px)',
+
+  };
+
+
   return (
 
     <div
@@ -1776,21 +2086,46 @@ function ClosedBackCover({
       style={{
         backgroundColor:
           journal.cover_color,
+
+        backgroundImage:
+          textures[
+            material
+          ] ||
+          textures.kraft,
+
+        boxShadow:
+          '0 8px 18px rgba(0,0,0,0.20)',
       }}
     >
 
       {/* ===================================================
-          SPINE
+          BACK COVER CONTENT
+      =================================================== */}
 
-          RIGHT SIDE because the back cover is the reverse
-          of the front cover.
+      <div className="closed-back-cover-content">
+
+        <div className="closed-back-cover-title">
+
+          {journal.title}
+
+        </div>
+
+      </div>
+
+
+      {/* ===================================================
+          BACK COVER SPINE
       =================================================== */}
 
       <div
         className="back-cover-spine"
         style={{
-          backgroundColor:
-            journal.cover_color,
+          background: `linear-gradient(
+            to left,
+            ${spineColor},
+            ${spineColor}dd 70%,
+            transparent
+          )`,
         }}
       >
 
@@ -1804,21 +2139,6 @@ function ClosedBackCover({
           <span />
           <span />
           <span />
-
-        </div>
-
-      </div>
-
-
-      {/* ===================================================
-          BACK COVER CONTENT
-      =================================================== */}
-
-      <div className="closed-back-cover-content">
-
-        <div className="closed-back-cover-title">
-
-          {journal.title}
 
         </div>
 

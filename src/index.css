@@ -376,32 +376,14 @@
       1
     );
 
-  /*
-    Subtle shadow to lift the notebook
-    from the background.
-  */
-
-  filter:
-    drop-shadow(
-      0
-      12px
-      14px
-      rgba(
-        0,
-        0,
-        0,
-        0.16
-      )
-    );
-
 }
 
 
 /* =========================================================
    CLOSED FRONT
 
-   FRONT COVER OCCUPIES RIGHT HALF
-   Therefore -180 centers it.
+   A single 360px page centered
+   inside the 720px book.
 ========================================================= */
 
 .bs-book.book-closed-front {
@@ -427,10 +409,16 @@
 /* =========================================================
    CLOSED BACK
 
-   BACK COVER OCCUPIES LEFT HALF
-   Therefore +180 centers it.
+   IMPORTANT:
 
-   THIS IS THE IMPORTANT FIX.
+   The flipped back cover occupies
+   the LEFT half of the 720px book.
+
+   We move it +180px so the single
+   360px cover is centered.
+
+   This also places its RIGHT EDGE
+   at the center of the book.
 ========================================================= */
 
 .bs-book.book-closed-back {
@@ -571,6 +559,8 @@
 
 /* =========================================================
    BACK FACE
+
+   Flipped page becomes LEFT page.
 ========================================================= */
 
 .bs-back {
@@ -728,8 +718,8 @@
   filter:
     drop-shadow(
       0
-      10px
-      14px
+      15px
+      18px
       rgba(
         0,
         0,
@@ -819,7 +809,210 @@
 
 
 /* =========================================================
+   TABLE OF CONTENTS HEADER
+========================================================= */
+
+.toc-header {
+
+  display:
+    flex;
+
+  align-items:
+    flex-start;
+
+  justify-content:
+    space-between;
+
+  gap:
+    20px;
+
+}
+
+
+.toc-header > div:first-child {
+
+  min-width:
+    0;
+
+}
+
+
+/* =========================================================
+   TOC ICON ACTIONS
+========================================================= */
+
+.toc-actions {
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    7px;
+
+  flex-shrink:
+    0;
+
+  padding-top:
+    2px;
+
+}
+
+
+.toc-icon-button {
+
+  width:
+    30px;
+
+  height:
+    30px;
+
+  padding:
+    0;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  border:
+    1px solid
+    rgba(
+      43,
+      42,
+      40,
+      0.16
+    );
+
+  border-radius:
+    50%;
+
+  background:
+    transparent;
+
+  color:
+    #403e39;
+
+  cursor:
+    pointer;
+
+  transition:
+    background
+    0.2s
+    ease,
+
+    color
+    0.2s
+    ease,
+
+    border-color
+    0.2s
+    ease,
+
+    transform
+    0.2s
+    ease;
+
+}
+
+
+.toc-icon-button svg {
+
+  width:
+    15px;
+
+  height:
+    15px;
+
+  fill:
+    none;
+
+  stroke:
+    currentColor;
+
+  stroke-width:
+    1.5;
+
+  stroke-linecap:
+    round;
+
+  stroke-linejoin:
+    round;
+
+}
+
+
+.toc-icon-button:hover {
+
+  background:
+    rgba(
+      43,
+      42,
+      40,
+      0.07
+    );
+
+  border-color:
+    rgba(
+      43,
+      42,
+      40,
+      0.30
+    );
+
+  transform:
+    translateY(-1px);
+
+}
+
+
+.toc-plus-button {
+
+  border-color:
+    rgba(
+      178,
+      58,
+      46,
+      0.30
+    );
+
+  color:
+    #b23a2e;
+
+}
+
+
+.toc-plus-button:hover {
+
+  background:
+    rgba(
+      178,
+      58,
+      46,
+      0.07
+    );
+
+  border-color:
+    rgba(
+      178,
+      58,
+      46,
+      0.55
+    );
+
+}
+
+
+/* =========================================================
    PAGE BACK
+
+   LEFT MEDIA PAGE
 ========================================================= */
 
 .page-back {
@@ -1045,132 +1238,8 @@
   justify-content:
     flex-start;
 
-  position:
-    relative;
-
 }
 
-
-.poem-page-heading {
-
-  position:
-    relative;
-
-  padding-right:
-    30px;
-
-}
-
-
-/* =========================================================
-   POEM EDIT ICON
-========================================================= */
-
-.poem-edit-icon {
-
-  position:
-    absolute;
-
-  top:
-    32px;
-
-  right:
-    30px;
-
-  width:
-    28px;
-
-  height:
-    28px;
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  justify-content:
-    center;
-
-  border:
-    1px solid
-    rgba(
-      43,
-      42,
-      40,
-      0.12
-    );
-
-  border-radius:
-    50%;
-
-  background:
-    rgba(
-      255,
-      255,
-      255,
-      0.18
-    );
-
-  color:
-    rgba(
-      43,
-      42,
-      40,
-      0.55
-    );
-
-  font-family:
-    Georgia,
-    serif;
-
-  font-size:
-    16px;
-
-  line-height:
-    1;
-
-  cursor:
-    pointer;
-
-  transition:
-    background
-    0.2s
-    ease,
-
-    color
-    0.2s
-    ease,
-
-    transform
-    0.2s
-    ease;
-
-}
-
-
-.poem-edit-icon:hover {
-
-  background:
-    rgba(
-      178,
-      58,
-      46,
-      0.08
-    );
-
-  color:
-    #b23a2e;
-
-  transform:
-    translateY(-1px);
-
-}
-
-
-/* =========================================================
-   POEM TEXT
-========================================================= */
 
 .poem-text {
 
@@ -1204,25 +1273,28 @@
 
 
 /* =========================================================
-   FOOTER
+   EDIT ICON
 ========================================================= */
 
-.page-footer {
+.edit-button {
 
-  margin-top:
-    auto;
+  position:
+    absolute;
 
-  padding-top:
-    15px;
+  right:
+    18px;
 
-  border-top:
-    1px solid
-    rgba(
-      43,
-      42,
-      40,
-      0.10
-    );
+  bottom:
+    16px;
+
+  width:
+    28px;
+
+  height:
+    28px;
+
+  padding:
+    0;
 
   display:
     flex;
@@ -1231,12 +1303,139 @@
     center;
 
   justify-content:
-    space-between;
+    center;
+
+  border:
+    1px solid
+    rgba(
+      43,
+      42,
+      40,
+      0.12
+    );
+
+  border-radius:
+    50%;
+
+  background:
+    rgba(
+      248,
+      244,
+      233,
+      0.65
+    );
+
+  color:
+    rgba(
+      64,
+      62,
+      57,
+      0.60
+    );
+
+  cursor:
+    pointer;
+
+  opacity:
+    0.65;
+
+  transition:
+    opacity
+    0.2s
+    ease,
+
+    background
+    0.2s
+    ease,
+
+    color
+    0.2s
+    ease,
+
+    transform
+    0.2s
+    ease;
 
 }
 
 
-.text-button {
+.edit-button svg {
+
+  width:
+    14px;
+
+  height:
+    14px;
+
+  fill:
+    none;
+
+  stroke:
+    currentColor;
+
+  stroke-width:
+    1.5;
+
+  stroke-linecap:
+    round;
+
+  stroke-linejoin:
+    round;
+
+}
+
+
+.edit-button:hover {
+
+  opacity:
+    1;
+
+  color:
+    #b23a2e;
+
+  background:
+    rgba(
+      248,
+      244,
+      233,
+      0.95
+    );
+
+  transform:
+    translateY(-1px);
+
+}
+
+
+/* =========================================================
+   PAGE TURN CLICK ZONES
+
+   These are intentionally narrow so the user can
+   still interact with the page normally.
+
+   LEFT EDGE  = PREVIOUS
+   RIGHT EDGE = NEXT
+========================================================= */
+
+.page-turn-zone {
+
+  position:
+    absolute;
+
+  top:
+    0;
+
+  height:
+    100%;
+
+  width:
+    65px;
+
+  z-index:
+    1000;
+
+  padding:
+    0;
 
   border:
     0;
@@ -1244,84 +1443,75 @@
   background:
     transparent;
 
-  padding:
-    4px;
-
-  font-family:
-    monospace;
-
-  font-size:
-    9px;
-
-  text-transform:
-    uppercase;
-
   cursor:
     pointer;
 
-  color:
-    #403e39;
+}
+
+
+.page-turn-zone-left {
+
+  left:
+    0;
 
 }
 
 
-.text-button:hover {
+.page-turn-zone-right {
 
-  color:
-    #b23a2e;
+  right:
+    0;
 
 }
 
 
-.text-button:disabled {
+.page-turn-zone:hover {
 
-  opacity:
-    0.25;
+  background:
+    linear-gradient(
+      to right,
+      rgba(
+        43,
+        42,
+        40,
+        0.045
+      ),
+      transparent
+    );
+
+}
+
+
+.page-turn-zone-right:hover {
+
+  background:
+    linear-gradient(
+      to left,
+      rgba(
+        43,
+        42,
+        40,
+        0.045
+      ),
+      transparent
+    );
+
+}
+
+
+.page-turn-zone:disabled {
 
   cursor:
     default;
 
-}
-
-
-.page-number {
-
-  font-family:
-    monospace;
-
-  font-size:
-    9px;
-
-  color:
-    #77736b;
-
-}
-
-
-.footer-buttons {
-
-  display:
-    flex;
-
-  gap:
-    8px;
-
-}
-
-
-.empty-text {
-
-  color:
-    #77736b;
+  background:
+    transparent;
 
 }
 
 
 /* =========================================================
    INSIDE BACK COVER
-
-   SAME COLOR AS SELECTED COVER
-   NO SPINE
 ========================================================= */
 
 .inside-back-cover {
@@ -1359,29 +1549,14 @@
 }
 
 
-.inside-back-cover-material {
-
-  width:
-    100%;
-
-  height:
-    100%;
-
-  opacity:
-    0.18;
-
-  pointer-events:
-    none;
-
-}
-
-
 /* =========================================================
    CLOSED BACK COVER
 
    LEFT CORNERS = ROUNDED
-   RIGHT CORNERS = SHARP
-   SPINE = RIGHT
+
+   RIGHT EDGE = SHARP
+
+   RIGHT EDGE = SPINE
 ========================================================= */
 
 .closed-back-cover {
@@ -1407,29 +1582,11 @@
   justify-content:
     center;
 
-  /*
-    IMPORTANT:
-
-    Rounded on LEFT.
-    Sharp on RIGHT.
-  */
-
   border-radius:
     14px
     0
     0
     14px;
-
-  box-shadow:
-    0
-    8px
-    18px
-    rgba(
-      0,
-      0,
-      0,
-      0.20
-    );
 
   border:
     1px solid
@@ -1437,8 +1594,11 @@
       0,
       0,
       0,
-      0.25
+      0.20
     );
+
+  box-sizing:
+    border-box;
 
 }
 
@@ -1467,9 +1627,6 @@
   position:
     relative;
 
-  pointer-events:
-    none;
-
 }
 
 
@@ -1479,7 +1636,7 @@
     white;
 
   opacity:
-    0.45;
+    0.35;
 
   font-size:
     13px;
@@ -1493,7 +1650,9 @@
 /* =========================================================
    BACK COVER SPINE
 
-   RIGHT SIDE
+   RIGHT EDGE = CENTER OF BOOK
+
+   Matches the front-cover spine design.
 ========================================================= */
 
 .back-cover-spine {
@@ -1516,29 +1675,6 @@
   z-index:
     10;
 
-  /*
-    Fade toward the left so the spine looks
-    physically attached to the cover.
-  */
-
-  background:
-    linear-gradient(
-      to left,
-      rgba(
-        0,
-        0,
-        0,
-        0.18
-      ),
-      rgba(
-        0,
-        0,
-        0,
-        0.08
-      ) 70%,
-      transparent
-    );
-
   box-shadow:
     inset
     2px
@@ -1548,7 +1684,7 @@
       0,
       0,
       0,
-      0.35
+      0.40
     );
 
 }
@@ -1564,7 +1700,7 @@
     absolute;
 
   right:
-    6px;
+    5px;
 
   top:
     0;
@@ -1596,13 +1732,13 @@
     absolute;
 
   right:
-    9px;
+    7px;
 
   top:
     0;
 
   width:
-    8px;
+    16px;
 
   height:
     100%;
@@ -1613,8 +1749,18 @@
   flex-direction:
     column;
 
+  align-items:
+    center;
+
   justify-content:
-    space-around;
+    space-evenly;
+
+  padding:
+    16px
+    0;
+
+  box-sizing:
+    border-box;
 
 }
 
@@ -1622,7 +1768,7 @@
 .spine-lines span {
 
   width:
-    8px;
+    16px;
 
   height:
     1px;
@@ -1632,102 +1778,7 @@
       0,
       0,
       0,
-      0.20
-    );
-
-}
-
-
-/* =========================================================
-   BOOK CLICK NAVIGATION
-
-   Left edge of left page:
-   PREVIOUS
-
-   Right edge of right page:
-   NEXT
-========================================================= */
-
-.book-click-zone {
-
-  position:
-    absolute;
-
-  top:
-    0;
-
-  height:
-    100%;
-
-  width:
-    52px;
-
-  padding:
-    0;
-
-  margin:
-    0;
-
-  border:
-    0;
-
-  background:
-    transparent;
-
-  cursor:
-    pointer;
-
-  z-index:
-    1000;
-
-}
-
-
-.book-click-zone-left {
-
-  left:
-    0;
-
-}
-
-
-.book-click-zone-right {
-
-  right:
-    0;
-
-}
-
-
-.book-click-zone-left:hover {
-
-  background:
-    linear-gradient(
-      to right,
-      rgba(
-        0,
-        0,
-        0,
-        0.025
-      ),
-      transparent
-    );
-
-}
-
-
-.book-click-zone-right:hover {
-
-  background:
-    linear-gradient(
-      to left,
-      rgba(
-        0,
-        0,
-        0,
-        0.025
-      ),
-      transparent
+      0.30
     );
 
 }
@@ -1884,10 +1935,10 @@
   }
 
 
-  .book-click-zone {
+  .page-turn-zone {
 
     width:
-      45px;
+      80px;
 
   }
 
@@ -1903,7 +1954,7 @@
   reduce
 ) {
 
-  *,
+  * ,
   *::before,
   *::after {
 
