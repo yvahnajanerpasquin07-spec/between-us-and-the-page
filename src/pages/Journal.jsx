@@ -28,7 +28,6 @@ import NotebookCover, {
   InsideCoverPanel,
 } from '../components/NotebookCover';
 
-import Button from '../components/Button';
 import Loading from '../components/Loading';
 import ShareModal from '../components/ShareModal';
 import SpotifyPlayer from '../components/SpotifyPlayer';
@@ -39,9 +38,6 @@ import EditJournalModal from '../components/EditJournalModal';
 /* =========================================================
    CONSTANTS
 ========================================================= */
-
-const PAGE_W = 360;
-const PAGE_H = 480;
 
 const TURN_DURATION = 720;
 
@@ -72,14 +68,11 @@ export default function Journal() {
 
     ...
 
-    poems.length + 2
-        = LAST POEM MEDIA | LAST POEM
-
     poems.length + 3
-        = BLANK PAGE | INSIDE BACK COVER
+      = INSIDE BACK COVER
 
     poems.length + 4
-        = CLOSED BACK COVER
+      = CLOSED BACK COVER
   */
 
   const [currentLocation, setCurrentLocation] =
@@ -87,8 +80,8 @@ export default function Journal() {
 
 
   /*
-    flippedPapers contains the paper IDs
-    that have already turned from right → left.
+    Stores papers that have already
+    flipped from right → left.
   */
 
   const [flippedPapers, setFlippedPapers] =
@@ -96,19 +89,25 @@ export default function Journal() {
 
 
   /*
-    Prevent multiple page turns from being
-    triggered at the same time.
+    Prevent multiple page turns
+    from happening at once.
   */
 
   const [isTurning, setIsTurning] =
     useState(false);
 
+
   const turningPaperRef =
     useRef(null);
+
 
   const locationRef =
     useRef(1);
 
+
+  /* =========================================================
+     MODALS
+  ========================================================= */
 
   const [showShare, setShowShare] =
     useState(false);
@@ -123,9 +122,15 @@ export default function Journal() {
     useState(null);
 
 
-  /*
-    IMAGE WIDGETS
-  */
+  /* =========================================================
+     IMAGE WIDGET STATE
+  =========================================================
+
+     We keep a local copy for immediate UI updates.
+
+     The actual image widget is ALSO saved to Supabase
+     through updatePoemImageBox().
+  ========================================================= */
 
   const [imageWidgets, setImageWidgets] =
     useState(() => {
@@ -255,12 +260,9 @@ export default function Journal() {
     ) : null;
 
 
-  /*
-    INSIDE FRONT COVER
-
-    Completely blank.
-    No spine.
-  */
+  /* =========================================================
+     INSIDE FRONT COVER
+  ========================================================= */
 
   const insideCover =
     activeJournal ? (
@@ -283,24 +285,41 @@ export default function Journal() {
 
   async function handleNewPoem() {
 
-    const poem =
-      await createPoem({
+    try {
 
-        journalId,
+      const poem =
+        await createPoem({
 
-        title: 'Untitled',
+          journalId,
 
-        content: '',
+          title:
+            'Untitled',
 
-        displayOrder:
-          poems?.length ?? 0,
+          content:
+            '',
 
-      });
+          displayOrder:
+            poems?.length ?? 0,
+
+        });
 
 
-    navigate(
-      `/journal/${journalId}/poem/${poem.id}`
-    );
+      navigate(
+        `/journal/${journalId}/poem/${poem.id}`
+      );
+
+    } catch (error) {
+
+      console.error(
+        'Failed to create poem:',
+        error
+      );
+
+      alert(
+        'Could not create the poem.'
+      );
+
+    }
 
   }
 
@@ -322,24 +341,44 @@ export default function Journal() {
     }
 
 
-    await deleteJournal(
-      journalId
-    );
+    try {
 
+      await deleteJournal(
+        journalId
+      );
 
-    navigate('/dashboard');
+      navigate(
+        '/dashboard'
+      );
+
+    } catch (error) {
+
+      console.error(
+        'Failed to delete journal:',
+        error
+      );
+
+      alert(
+        'Could not delete the journal.'
+      );
+
+    }
 
   }
 
 
   /* =========================================================
-     IMAGE WIDGET
+     SAVE IMAGE WIDGET
   ========================================================= */
 
   function saveImageWidget(
     poemId,
     next
   ) {
+
+    /*
+      Update local React state immediately.
+    */
 
     setImageWidgets(
       (prev) => {
@@ -349,6 +388,10 @@ export default function Journal() {
           [poemId]: next,
         };
 
+
+        /*
+          Keep localStorage as a local cache.
+        */
 
         try {
 
@@ -370,24 +413,50 @@ export default function Journal() {
     );
 
 
+    /*
+      Save the widget position and image URL
+      to Supabase when the user owns the journal.
+    */
+
     if (isOwner) {
 
       updatePoemImageBox(
         poemId,
         next
-      ).catch(() => {});
+      ).catch((error) => {
+
+        console.error(
+          'Failed to save image position:',
+          error
+        );
+
+      });
 
     }
 
   }
 
 
+  /* =========================================================
+     UPLOAD IMAGE FOR POEM
+  ========================================================= */
+
   async function addImageForPoem(
     poemId,
     file
   ) {
 
+    if (!file) {
+      return;
+    }
+
+
     try {
+
+      /*
+        Upload the actual image file
+        to the Supabase Storage bucket.
+      */
 
       const url =
         await uploadPoemImage(
@@ -396,6 +465,13 @@ export default function Journal() {
           file
         );
 
+
+      /*
+        Default position for the image.
+
+        The image is placed near the TOP
+        of the left page.
+      */
 
       const defaultBox = {
 
@@ -412,15 +488,34 @@ export default function Journal() {
       };
 
 
+      /*
+        Save the image widget immediately.
+      */
+
       saveImageWidget(
         poemId,
         defaultBox
       );
 
+
+      /*
+        Also make sure the image widget
+        is stored in Supabase.
+      */
+
+      if (isOwner) {
+
+        await updatePoemImageBox(
+          poemId,
+          defaultBox
+        );
+
+      }
+
     } catch (error) {
 
       console.error(
-        'Upload failed',
+        'Upload failed:',
         error
       );
 
@@ -443,14 +538,16 @@ export default function Journal() {
     turningPaperRef.current =
       null;
 
-    setIsTurning(false);
+    setIsTurning(
+      false
+    );
 
   }
 
 
-  /*
-    Turn ONE paper forward.
-  */
+  /* =========================================================
+     TURN FORWARD
+  ========================================================= */
 
   function turnForwardOne() {
 
@@ -479,7 +576,10 @@ export default function Journal() {
     turningPaperRef.current =
       paperId;
 
-    setIsTurning(true);
+
+    setIsTurning(
+      true
+    );
 
 
     setFlippedPapers(
@@ -488,7 +588,9 @@ export default function Journal() {
         const next =
           new Set(prev);
 
-        next.add(paperId);
+        next.add(
+          paperId
+        );
 
         return next;
 
@@ -517,9 +619,9 @@ export default function Journal() {
   }
 
 
-  /*
-    Turn ONE paper backward.
-  */
+  /* =========================================================
+     TURN BACKWARD
+  ========================================================= */
 
   function turnBackwardOne() {
 
@@ -532,8 +634,12 @@ export default function Journal() {
       locationRef.current;
 
 
-    if (location <= 1) {
+    if (
+      location <= 1
+    ) {
+
       return;
+
     }
 
 
@@ -544,7 +650,10 @@ export default function Journal() {
     turningPaperRef.current =
       paperId;
 
-    setIsTurning(true);
+
+    setIsTurning(
+      true
+    );
 
 
     setFlippedPapers(
@@ -553,7 +662,9 @@ export default function Journal() {
         const next =
           new Set(prev);
 
-        next.delete(paperId);
+        next.delete(
+          paperId
+        );
 
         return next;
 
@@ -597,7 +708,7 @@ export default function Journal() {
 
 
   /* =========================================================
-     GO TO POEM FROM TOC
+     GO TO POEM FROM TABLE OF CONTENTS
   ========================================================= */
 
   function goToPoem(
@@ -608,16 +719,6 @@ export default function Journal() {
       return;
     }
 
-
-    /*
-      TOC = location 2
-
-      poem 0 = location 3
-
-      poem 1 = location 4
-
-      etc.
-    */
 
     const target =
       poemIndex + 3;
@@ -656,7 +757,10 @@ export default function Journal() {
         turningPaperRef.current =
           paperId;
 
-        setIsTurning(true);
+
+        setIsTurning(
+          true
+        );
 
 
         setFlippedPapers(
@@ -665,7 +769,9 @@ export default function Journal() {
             const next =
               new Set(prev);
 
-            next.add(paperId);
+            next.add(
+              paperId
+            );
 
             return next;
 
@@ -692,7 +798,10 @@ export default function Journal() {
             turningPaperRef.current =
               null;
 
-            setIsTurning(false);
+
+            setIsTurning(
+              false
+            );
 
 
             if (
@@ -718,6 +827,17 @@ export default function Journal() {
 
   /* =========================================================
      LEFT MEDIA PAGE
+  =========================================================
+
+     IMPORTANT:
+
+     The old version used:
+
+       IMAGE ? image : SPOTIFY
+
+     which meant only ONE widget could appear.
+
+     This version renders BOTH independently.
   ========================================================= */
 
   function renderLeftPage(
@@ -739,6 +859,41 @@ export default function Journal() {
     }
 
 
+    /*
+      Get the image widget.
+
+      First try local state.
+
+      If it isn't there, use the value
+      stored in the poem from Supabase.
+    */
+
+    const imageWidget =
+      imageWidgets[poem.id] ??
+      poem.image_widget_box ??
+      null;
+
+
+    /*
+      Determine whether an image exists.
+    */
+
+    const hasImage =
+      Boolean(
+        imageWidget?.url
+      );
+
+
+    /*
+      Determine whether Spotify exists.
+    */
+
+    const hasSpotify =
+      Boolean(
+        poem.spotify_url
+      );
+
+
     return (
 
       <div className="book-left-page">
@@ -748,14 +903,21 @@ export default function Journal() {
           ref={leftPageRef}
         >
 
-          <div className="page-back-inner">
+          <div
+            className="page-back-inner"
+            style={{
+              position: 'relative',
+            }}
+          >
 
-            {imageWidgets[
-              poem.id
-            ] ? (
+            {/* =================================================
+                IMAGE WIDGET
+            ================================================= */}
+
+            {hasImage && (
 
               <DraggableWidget
-                key={`${poem.id}-img`}
+                key={`${poem.id}-image`}
                 containerRef={
                   leftPageRef
                 }
@@ -763,9 +925,7 @@ export default function Journal() {
                   isOwner
                 }
                 initial={
-                  imageWidgets[
-                    poem.id
-                  ]
+                  imageWidget
                 }
                 onSave={(box) => {
 
@@ -773,11 +933,8 @@ export default function Journal() {
                     poem.id,
                     {
                       ...box,
-
                       url:
-                        imageWidgets[
-                          poem.id
-                        ].url,
+                        imageWidget.url,
                     }
                   );
 
@@ -786,21 +943,28 @@ export default function Journal() {
 
                 <img
                   src={
-                    imageWidgets[
-                      poem.id
-                    ].url
+                    imageWidget.url
                   }
-                  alt="page image"
+                  alt="Poem page"
+                  draggable="false"
                   style={{
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover',
+                    display: 'block',
                   }}
                 />
 
               </DraggableWidget>
 
-            ) : poem.spotify_url ? (
+            )}
+
+
+            {/* =================================================
+                SPOTIFY WIDGET
+            ================================================= */}
+
+            {hasSpotify && (
 
               <DraggableWidget
                 key={`${poem.id}-spotify`}
@@ -810,17 +974,41 @@ export default function Journal() {
                 editable={
                   isOwner
                 }
+
+                /*
+                  If Spotify already has a saved
+                  position, use it.
+
+                  Otherwise place it BELOW the image
+                  so the two widgets don't overlap.
+                */
+
                 initial={
                   poem.spotify_widget_box ??
-                  undefined
+                  {
+                    x: 20,
+                    y: hasImage
+                      ? 300
+                      : 20,
+                    w: 320,
+                    h: 150,
+                  }
                 }
+
                 onSave={(box) => {
 
                   updatePoemWidgetBox(
                     poem.id,
                     box
                   ).catch(
-                    () => {}
+                    (error) => {
+
+                      console.error(
+                        'Failed to save Spotify position:',
+                        error
+                      );
+
+                    }
                   );
 
                 }}
@@ -835,16 +1023,24 @@ export default function Journal() {
 
               </DraggableWidget>
 
-            ) : (
-
-              <p className="empty-left-page">
-
-                No song, link, or picture
-                added to this page yet.
-
-              </p>
-
             )}
+
+
+            {/* =================================================
+                EMPTY MEDIA PAGE
+            ================================================= */}
+
+            {!hasImage &&
+              !hasSpotify && (
+
+                <p className="empty-left-page">
+
+                  No song, link, or picture
+                  added to this page yet.
+
+                </p>
+
+              )}
 
           </div>
 
@@ -864,9 +1060,11 @@ export default function Journal() {
   if (journalLoading) {
 
     return (
+
       <Loading
         label="Opening journal"
       />
+
     );
 
   }
@@ -877,7 +1075,9 @@ export default function Journal() {
     return (
 
       <p className="p-6">
+
         Journal not found.
+
       </p>
 
     );
@@ -892,15 +1092,12 @@ export default function Journal() {
   const papers = [];
 
 
-  /*
-    ==========================================================
-    PAPER 1
+  /* =========================================================
+     PAPER 1
 
-    FRONT = FRONT COVER
-
-    BACK = INSIDE FRONT COVER
-    ==========================================================
-  */
+     FRONT = FRONT COVER
+     BACK  = INSIDE FRONT COVER
+  ========================================================= */
 
   papers.push({
 
@@ -996,7 +1193,6 @@ export default function Journal() {
 
     ),
 
-
     back: (
 
       <div className="book-left-page">
@@ -1010,15 +1206,12 @@ export default function Journal() {
   });
 
 
-  /*
-    ==========================================================
-    PAPER 2
+  /* =========================================================
+     PAPER 2
 
-    FRONT = TABLE OF CONTENTS
-
-    BACK = POEM 1 MEDIA
-    ==========================================================
-  */
+     FRONT = TABLE OF CONTENTS
+     BACK  = POEM 1 MEDIA
+  ========================================================= */
 
   papers.push({
 
@@ -1032,16 +1225,22 @@ export default function Journal() {
           journal={
             activeJournal
           }
-          poems={poems}
+          poems={
+            poems
+          }
           poemsLoading={
             poemsLoading
           }
-          isOwner={isOwner}
+          isOwner={
+            isOwner
+          }
           onSelectPoem={
             goToPoem
           }
           onShare={() =>
-            setShowShare(true)
+            setShowShare(
+              true
+            )
           }
           onNewPoem={
             handleNewPoem
@@ -1051,7 +1250,6 @@ export default function Journal() {
       </div>
 
     ),
-
 
     back:
       poems?.length
@@ -1071,24 +1269,15 @@ export default function Journal() {
   });
 
 
-  /*
-    ==========================================================
-    POEM PAPERS
-
-    PAPER 3:
-      FRONT = POEM 1
-      BACK = POEM 2 MEDIA
-
-    PAPER 4:
-      FRONT = POEM 2
-      BACK = POEM 3 MEDIA
-
-    etc.
-    ==========================================================
-  */
+  /* =========================================================
+     POEM PAPERS
+  ========================================================= */
 
   poems?.forEach(
-    (poem, index) => {
+    (
+      poem,
+      index
+    ) => {
 
       const nextPoem =
         poems[index + 1];
@@ -1096,7 +1285,8 @@ export default function Journal() {
 
       papers.push({
 
-        id: index + 3,
+        id:
+          index + 3,
 
 
         front: (
@@ -1104,16 +1294,14 @@ export default function Journal() {
           <div className="book-right-page">
 
             <PoemPage
-              poem={poem}
+              poem={
+                poem
+              }
               journalId={
                 journalId
               }
               isOwner={
                 isOwner
-              }
-              hasNext={
-                index <
-                poems.length - 1
               }
               pageNumber={
                 index + 1
@@ -1121,11 +1309,12 @@ export default function Journal() {
               totalPages={
                 poems.length
               }
-              onAddImage={(file) =>
-                addImageForPoem(
-                  poem.id,
-                  file
-                )
+              onAddImage={
+                (file) =>
+                  addImageForPoem(
+                    poem.id,
+                    file
+                  )
               }
             />
 
@@ -1134,19 +1323,20 @@ export default function Journal() {
         ),
 
 
-        back: nextPoem
-          ? renderLeftPage(
-              nextPoem
-            )
-          : (
+        back:
+          nextPoem
+            ? renderLeftPage(
+                nextPoem
+              )
+            : (
 
-            <div className="book-left-page">
+              <div className="book-left-page">
 
-              <div className="blank-paper-page" />
+                <div className="blank-paper-page" />
 
-            </div>
+              </div>
 
-          ),
+            ),
 
       });
 
@@ -1154,15 +1344,12 @@ export default function Journal() {
   );
 
 
-  /*
-    ==========================================================
-    FINAL PAPER
+  /* =========================================================
+     FINAL PAPER
 
-    FRONT = INSIDE BACK COVER
-
-    BACK = CLOSED BACK COVER
-    ==========================================================
-  */
+     FRONT = INSIDE BACK COVER
+     BACK  = CLOSED BACK COVER
+  ========================================================= */
 
   const finalPaperId =
     papers.length + 1;
@@ -1170,7 +1357,8 @@ export default function Journal() {
 
   papers.push({
 
-    id: finalPaperId,
+    id:
+      finalPaperId,
 
 
     front: (
@@ -1203,17 +1391,6 @@ export default function Journal() {
 
   /* =========================================================
      BOOK AREA CLICK HANDLER
-
-     IMPORTANT:
-
-     The invisible page-turn zones no longer receive
-     pointer events.
-
-     This means clicks pass through to the actual book
-     content, including the Edit button.
-
-     We only turn the page when the user clicks the
-     empty left/right edge area.
   ========================================================= */
 
   function handleBookAreaClick(e) {
@@ -1229,24 +1406,13 @@ export default function Journal() {
 
 
     /*
-      Do not turn the page when clicking an
-      interactive element.
-
-      This protects:
-        - Edit button
-        - TOC buttons
-        - Share button
-        - New poem button
-        - links
-        - inputs
-        - textareas
-        - selects
-        - other role="button" elements
+      Don't turn pages when clicking
+      interactive elements.
     */
 
     const interactiveElement =
       e.target.closest(
-        'button, a, input, textarea, select, [role="button"]'
+        'button, a, input, textarea, select, [role="button"], iframe'
       );
 
 
@@ -1262,13 +1428,12 @@ export default function Journal() {
 
 
     const x =
-      e.clientX - rect.left;
+      e.clientX -
+      rect.left;
 
 
     /*
-      Keep the original 65px page-turn areas.
-
-      LEFT  = previous
+      LEFT = previous
       RIGHT = next
     */
 
@@ -1284,7 +1449,8 @@ export default function Journal() {
 
 
     if (
-      x >= rect.width - 65
+      x >=
+      rect.width - 65
     ) {
 
       goNextPage();
@@ -1343,7 +1509,7 @@ export default function Journal() {
 
 
       {/* =====================================================
-          DELETE
+          DELETE JOURNAL
       ===================================================== */}
 
       {isOwner && (
@@ -1519,7 +1685,9 @@ export default function Journal() {
               return (
 
                 <div
-                  key={paper.id}
+                  key={
+                    paper.id
+                  }
                   className={`
                     bs-paper
                     ${
@@ -1573,19 +1741,12 @@ export default function Journal() {
 
 
         {/* ===================================================
-            PAGE-TURN AREAS
+            PAGE TURN ZONES
 
-            IMPORTANT:
+            pointerEvents = none
 
-            pointerEvents: 'none' means these areas
-            no longer steal clicks from buttons.
-
-            They remain in the exact same position
-            and keep the existing visual hover styling
-            from index.css.
-
-            Clicks pass through them to the actual
-            book/page underneath.
+            This allows buttons and widgets underneath
+            to receive clicks.
         =================================================== */}
 
         {isOpen && (
@@ -1596,7 +1757,8 @@ export default function Journal() {
               className="page-turn-zone page-turn-zone-left"
               aria-hidden="true"
               style={{
-                pointerEvents: 'none',
+                pointerEvents:
+                  'none',
               }}
             />
 
@@ -1605,7 +1767,8 @@ export default function Journal() {
               className="page-turn-zone page-turn-zone-right"
               aria-hidden="true"
               style={{
-                pointerEvents: 'none',
+                pointerEvents:
+                  'none',
               }}
             />
 
@@ -1617,7 +1780,7 @@ export default function Journal() {
 
 
       {/* =====================================================
-          SHARE
+          SHARE MODAL
       ===================================================== */}
 
       {showShare && (
@@ -1637,7 +1800,7 @@ export default function Journal() {
 
 
       {/* =====================================================
-          EDIT
+          EDIT JOURNAL MODAL
       ===================================================== */}
 
       {showEditModal && (
@@ -1686,7 +1849,7 @@ function TocPage({
     <div className="page-inner">
 
       {/* ===================================================
-          TOC HEADER
+          HEADER
       =================================================== */}
 
       <div className="toc-header">
@@ -1699,7 +1862,9 @@ function TocPage({
 
 
           <p className="page-label">
+
             TABLE OF CONTENTS
+
           </p>
 
         </div>
@@ -1806,7 +1971,7 @@ function TocPage({
 
 
       {/* ===================================================
-          TOC LIST
+          POEM LIST
       =================================================== */}
 
       <div className="toc-list">
@@ -1826,7 +1991,9 @@ function TocPage({
             ) => (
 
               <button
-                key={poem.id}
+                key={
+                  poem.id
+                }
                 onClick={() =>
                   onSelectPoem(
                     index
@@ -1885,9 +2052,6 @@ function PoemPage({
   poem,
   journalId,
   isOwner,
-  pageNumber,
-  totalPages,
-  onAddImage,
 }) {
 
   const navigate =
@@ -1934,15 +2098,12 @@ function PoemPage({
           onClick={(e) => {
 
             /*
-              Stop the click from reaching the
-              book/page click handler.
-
-              This guarantees that clicking Edit
-              only opens the poem editor and does
-              not turn the page.
+              Stop this click from reaching
+              the book page handler.
             */
 
             e.stopPropagation();
+
 
             navigate(
               `/journal/${journalId}/poem/${poem.id}`
@@ -1953,8 +2114,6 @@ function PoemPage({
           aria-label="Edit this page"
           title="Edit this page"
         >
-
-          {/* Pencil icon */}
 
           <svg
             viewBox="0 0 24 24"
@@ -1994,7 +2153,8 @@ function InsideBackCover({
 }) {
 
   const material =
-    journal.cover_material || 'kraft';
+    journal.cover_material ||
+    'kraft';
 
 
   const materialTextures = {
@@ -2041,7 +2201,8 @@ function ClosedBackCover({
 }) {
 
   const material =
-    journal.cover_material || 'kraft';
+    journal.cover_material ||
+    'kraft';
 
 
   const spineColors = {
@@ -2120,16 +2281,18 @@ function ClosedBackCover({
       <div
         className="back-cover-spine"
         style={{
-          background: `linear-gradient(
-            to left,
-            ${spineColor},
-            ${spineColor}dd 70%,
-            transparent
-          )`,
+          background:
+            `linear-gradient(
+              to left,
+              ${spineColor},
+              ${spineColor}dd 70%,
+              transparent
+            )`,
         }}
       >
 
         <div className="spine-highlight" />
+
 
         <div className="spine-lines">
 
