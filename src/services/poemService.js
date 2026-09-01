@@ -66,3 +66,20 @@ export async function updatePoemWidgetBox(poemId, box) {
     .eq('id', poemId);
   if (error) throw error;
 }
+
+export async function uploadPoemImage(journalId, poemId, file) {
+  const bucket = 'poem-images';
+  const path = `${journalId}/${poemId}/${Date.now()}_${file.name}`;
+  const { data, error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true });
+  if (error) throw error;
+  const { publicURL } = supabase.storage.from(bucket).getPublicUrl(path);
+  return publicURL;
+}
+
+export async function updatePoemImageBox(poemId, box) {
+  const { error } = await supabase
+    .from('poems')
+    .update({ image_widget_box: box })
+    .eq('id', poemId);
+  if (error) throw error;
+}

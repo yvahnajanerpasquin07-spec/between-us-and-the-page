@@ -27,11 +27,14 @@ const MATERIALS = {
 
 export function materialOptions() {
 
-  return Object.entries(MATERIALS)
-    .map(([value, material]) => ({
+  return Object.entries(
+    MATERIALS
+  ).map(
+    ([value, material]) => ({
       value,
       label: material.label,
-    }));
+    })
+  );
 
 }
 
@@ -55,6 +58,7 @@ export default function NotebookCover({
     MATERIALS[coverMaterial] ??
     MATERIALS.kraft;
 
+
   const bg =
     coverColor ||
     material.base;
@@ -63,20 +67,27 @@ export default function NotebookCover({
   return (
 
     <div
-      className="relative h-full w-full overflow-hidden rounded-r-[14px]"
+      className="
+        relative
+        h-full
+        w-full
+        overflow-hidden
+        rounded-r-[14px]
+      "
       style={{
-        backgroundColor: bg,
+        backgroundColor:
+          bg,
 
         backgroundImage:
           coverImageUrl
             ? `
-              linear-gradient(
-                rgba(0,0,0,0.35),
-                rgba(0,0,0,0.45)
-              ),
-              url(${coverImageUrl}),
-              ${material.texture}
-            `
+                linear-gradient(
+                  rgba(0,0,0,0.35),
+                  rgba(0,0,0,0.45)
+                ),
+                url(${coverImageUrl}),
+                ${material.texture}
+              `
             : material.texture,
 
         backgroundSize:
@@ -96,7 +107,6 @@ export default function NotebookCover({
           '1px solid rgba(0,0,0,0.25)',
       }}
     >
-
 
       {/* ============================================
           COVER CONTENT
@@ -118,6 +128,7 @@ export default function NotebookCover({
           text-white
         "
       >
+
         <h3
           className="
             font-display
@@ -125,10 +136,14 @@ export default function NotebookCover({
             drop-shadow-sm
           "
         >
+
           {title}
+
         </h3>
 
+
         {description && (
+
           <p
             className="
               line-clamp-3
@@ -137,11 +152,16 @@ export default function NotebookCover({
               text-white/85
             "
           >
+
             {description}
+
           </p>
+
         )}
 
+
         {authorName && (
+
           <p
             className="
               font-mono
@@ -151,9 +171,13 @@ export default function NotebookCover({
               text-white/70
             "
           >
+
             By: {authorName}
+
           </p>
+
         )}
+
 
         <p
           className="
@@ -164,10 +188,14 @@ export default function NotebookCover({
             text-white/70
           "
         >
+
           {date}
+
         </p>
 
+
         {readOnly && (
+
           <span
             className="
               font-mono
@@ -177,14 +205,19 @@ export default function NotebookCover({
               text-white/70
             "
           >
+
             View only
+
           </span>
+
         )}
+
       </div>
 
 
       {/* ============================================
-          SPINE
+          FRONT COVER SPINE
+          LEFT SIDE
       ============================================ */}
 
       <div
@@ -221,9 +254,10 @@ export default function NotebookCover({
           "
         >
 
-          {Array
-            .from({ length: 6 })
-            .map((_, index) => (
+          {Array.from({
+            length: 6,
+          }).map(
+            (_, index) => (
 
               <div
                 key={index}
@@ -234,7 +268,8 @@ export default function NotebookCover({
                 "
               />
 
-            ))}
+            )
+          )}
 
         </div>
 
@@ -243,11 +278,14 @@ export default function NotebookCover({
     </div>
 
   );
+
 }
 
 
 /* =========================================================
    INSIDE OF FRONT COVER
+
+   NO SPINE
 ========================================================= */
 
 export function InsideCoverPanel({
@@ -258,6 +296,7 @@ export function InsideCoverPanel({
   const material =
     MATERIALS[coverMaterial] ??
     MATERIALS.kraft;
+
 
   const bg =
     coverColor ||
@@ -275,7 +314,8 @@ export function InsideCoverPanel({
         rounded-l-[14px]
       "
       style={{
-        backgroundColor: bg,
+        backgroundColor:
+          bg,
 
         backgroundImage:
           material.texture,
@@ -285,61 +325,17 @@ export function InsideCoverPanel({
       }}
     >
 
-      {/* Inner spine */}
+      {/*
 
-      <div
-        className="
-          absolute
-          right-0
-          top-0
-          h-full
-          w-7
-        "
-        style={{
-          background:
-            `linear-gradient(
-              to left,
-              ${material.spineColor},
-              ${material.spineColor}dd 70%,
-              transparent
-            )`,
+        Intentionally no spine here.
 
-          boxShadow:
-            'inset 2px 0 4px rgba(0,0,0,0.35)',
-        }}
-      >
+        The inside front cover should be completely
+        clean and match the selected cover material.
 
-        <div
-          className="
-            flex
-            h-full
-            flex-col
-            items-center
-            justify-evenly
-            py-4
-          "
-        >
-
-          {Array
-            .from({ length: 6 })
-            .map((_, index) => (
-
-              <div
-                key={index}
-                className="
-                  h-px
-                  w-4
-                  bg-black/30
-                "
-              />
-
-            ))}
-
-        </div>
-
-      </div>
+      */}
 
     </div>
 
   );
+
 }

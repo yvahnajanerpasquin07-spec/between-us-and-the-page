@@ -2,23 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+
 /* =========================================================
-   GENERAL PAGE
+   GENERAL
 ========================================================= */
+
 @layer base {
+
   html {
     scroll-behavior: smooth;
   }
 
   body {
     margin: 0;
+
     background-color: #f5f0e4;
+
     background-image:
       radial-gradient(
         circle at 1px 1px,
         rgba(43, 42, 40, 0.05) 1px,
         transparent 0
       );
+
     background-size: 18px 18px;
   }
 
@@ -30,18 +36,23 @@
     outline: 2px solid #B23A2E;
     outline-offset: 2px;
   }
+
 }
+
 
 /* =========================================================
    BUTTONS
 ========================================================= */
+
 @layer components {
+
   .btn-primary {
     @apply inline-flex items-center justify-center rounded-sm
       border border-ink bg-ink px-5 py-2
       font-body text-paper transition-colors
       hover:bg-ink-soft;
   }
+
 
   .btn-secondary {
     @apply inline-flex items-center justify-center rounded-sm
@@ -50,750 +61,1858 @@
       hover:border-ink hover:bg-ink/5;
   }
 
-  .input-field {
-    @apply w-full rounded-sm border border-ink/30
-      bg-paper px-3 py-2 font-body text-ink
-      placeholder:text-ink-soft/60
-      focus:border-margin;
-  }
-
-  .page-card {
-    @apply rounded-sm border border-ink/15
-      bg-paper shadow-[3px_3px_0_0_rgba(43,42,40,0.08)];
-  }
 }
+
 
 /* =========================================================
-   JOURNAL PAGE
+   JOURNAL
 ========================================================= */
+
 .journal-page {
+
   min-height: 100vh;
-  padding: 22px 40px 80px;
+
+  padding:
+    22px
+    40px
+    80px;
+
   position: relative;
-  font-family: Georgia, "Times New Roman", serif;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
 }
+
 
 /* =========================================================
    HEADER
 ========================================================= */
+
 .journal-header {
-  width: min(1100px, calc(100vw - 80px));
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 24px;
-  border-bottom: 1px solid rgba(43, 42, 40, 0.08);
+
+  width:
+    min(
+      1100px,
+      calc(100vw - 80px)
+    );
+
+  margin:
+    0 auto;
+
+  display:
+    flex;
+
+  justify-content:
+    space-between;
+
+  align-items:
+    center;
+
+  padding-bottom:
+    24px;
+
+  border-bottom:
+    1px solid
+    rgba(
+      43,
+      42,
+      40,
+      0.08
+    );
+
 }
+
 
 .journal-header h1 {
-  margin: 0;
-  font-size: 18px;
-  font-style: italic;
-  font-weight: 600;
+
+  margin:
+    0;
+
+  font-size:
+    18px;
+
+  font-style:
+    italic;
+
+  font-weight:
+    600;
+
 }
+
 
 .journal-header-links {
-  display: flex;
-  gap: 22px;
-  font-family: monospace;
-  font-size: 12px;
-  color: #403e39;
+
+  display:
+    flex;
+
+  gap:
+    22px;
+
+  font-family:
+    monospace;
+
+  font-size:
+    12px;
+
+  color:
+    #403e39;
+
 }
 
+
 /* =========================================================
-   DELETE BUTTON
+   DELETE
 ========================================================= */
+
 .delete-journal {
-  position: absolute;
-  right: 40px;
-  top: 90px;
-  border: 0;
-  background: transparent;
-  color: #b23a2e;
-  font-family: monospace;
-  font-size: 10px;
-  letter-spacing: 1px;
-  cursor: pointer;
+
+  position:
+    absolute;
+
+  right:
+    40px;
+
+  top:
+    90px;
+
+  border:
+    0;
+
+  background:
+    transparent;
+
+  color:
+    #b23a2e;
+
+  font-family:
+    monospace;
+
+  font-size:
+    10px;
+
+  letter-spacing:
+    1px;
+
+  cursor:
+    pointer;
+
 }
 
+
 /* =========================================================
-   BOOK CONTROLS
+   CONTROLS
 ========================================================= */
+
 .book-controls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 28px;
-  margin-top: 60px;
-  margin-bottom: 18px;
-  font-family: monospace;
-  font-size: 11px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  gap:
+    28px;
+
+  margin-top:
+    60px;
+
+  margin-bottom:
+    18px;
+
+  font-family:
+    monospace;
+
+  font-size:
+    11px;
+
 }
+
 
 .book-controls button {
-  padding: 8px 14px;
-  border: 1px solid rgba(43, 42, 40, 0.18);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.25);
-  font-family: monospace;
-  font-size: 10px;
-  cursor: pointer;
-  transition: background 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+
+  padding:
+    8px 14px;
+
+  border:
+    1px solid
+    rgba(
+      43,
+      42,
+      40,
+      0.18
+    );
+
+  border-radius:
+    20px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.25
+    );
+
+  font-family:
+    monospace;
+
+  font-size:
+    10px;
+
+  cursor:
+    pointer;
+
+  transition:
+    background
+    0.2s
+    ease,
+
+    opacity
+    0.2s
+    ease,
+
+    transform
+    0.2s
+    ease;
+
 }
+
 
 .book-controls button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.65);
-  transform: translateY(-1px);
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.65
+    );
+
+  transform:
+    translateY(-1px);
+
 }
+
 
 .book-controls button:disabled {
-  opacity: 0.25;
-  cursor: default;
+
+  opacity:
+    0.25;
+
+  cursor:
+    default;
+
 }
+
 
 /* =========================================================
-   BOOK WRAPPER
-   This is the ONLY element that should establish perspective.
-   Every rotating child (cover, back cover, page-turn layers)
-   shares this single 3D space so they don't visually split.
+   BOOK STACK WRAPPER
+
+   OPEN BOOK =
+   720 x 480
+
+   Each page =
+   360 x 480
 ========================================================= */
-.book-wrapper {
-  position: relative;
-  width: 360px;
-  height: 480px;
-  margin: 0 auto;
-  perspective: 2200px;
-  -webkit-transform-style: preserve-3d;
-  transform-style: preserve-3d;
+
+.book-stack-wrapper {
+
+  position:
+    relative;
+
+  width:
+    720px;
+
+  height:
+    480px;
+
+  margin:
+    0 auto;
+
+  perspective:
+    1800px;
+
+  perspective-origin:
+    center center;
+
 }
+
 
 /* =========================================================
-   CLOSED BOOK
+   BOOK
 ========================================================= */
-.closed-book {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 360px;
-  height: 480px;
-  cursor: pointer;
-  -webkit-transform-style: preserve-3d;
-  transform-style: preserve-3d;
-  filter: drop-shadow(0 15px 18px rgba(0, 0, 0, 0.18));
-  z-index: 20;
+
+.bs-book {
+
+  position:
+    relative;
+
+  width:
+    720px;
+
+  height:
+    480px;
+
+  transform-style:
+    preserve-3d;
+
+  transform-origin:
+    center center;
+
+  transition:
+    transform
+    0.72s
+    cubic-bezier(
+      0.22,
+      0.61,
+      0.36,
+      1
+    );
+
+  /*
+    Subtle shadow to lift the notebook
+    from the background.
+  */
+
+  filter:
+    drop-shadow(
+      0
+      12px
+      14px
+      rgba(
+        0,
+        0,
+        0,
+        0.16
+      )
+    );
+
 }
 
-.closed-book > * {
-  width: 100%;
-  height: 100%;
+
+/* =========================================================
+   CLOSED FRONT
+
+   FRONT COVER OCCUPIES RIGHT HALF
+   Therefore -180 centers it.
+========================================================= */
+
+.bs-book.book-closed-front {
+
+  transform:
+    translateX(-180px);
+
 }
+
 
 /* =========================================================
    OPEN BOOK
-   perspective removed — inherits from .book-wrapper only
 ========================================================= */
-.open-book {
-  position: absolute;
-  left: -180px;
-  top: 0;
-  width: 720px;
-  height: 480px;
-  display: flex;
-  -webkit-transform-style: preserve-3d;
-  transform-style: preserve-3d;
-  filter: drop-shadow(0 15px 18px rgba(0, 0, 0, 0.14));
-  z-index: 5;
+
+.bs-book.book-open {
+
+  transform:
+    translateX(0);
+
 }
 
+
 /* =========================================================
-   PAGE SPREAD
-   Wraps the left+right pages in a single fadeable layer
-   (see Journal.jsx) so they never pop into view uncovered
-   during the open/close cover animation.
+   CLOSED BACK
+
+   BACK COVER OCCUPIES LEFT HALF
+   Therefore +180 centers it.
+
+   THIS IS THE IMPORTANT FIX.
 ========================================================= */
-.page-spread {
-  display: flex;
-  width: 100%;
-  height: 100%;
+
+.bs-book.book-closed-back {
+
+  transform:
+    translateX(180px);
+
 }
+
+
+/* =========================================================
+   PAPER
+========================================================= */
+
+.bs-paper {
+
+  position:
+    absolute;
+
+  width:
+    360px;
+
+  height:
+    480px;
+
+  top:
+    0;
+
+  left:
+    360px;
+
+  transform-origin:
+    left center;
+
+  transform-style:
+    preserve-3d;
+
+  transform:
+    rotateY(0deg);
+
+  transition:
+    transform
+    0.72s
+    cubic-bezier(
+      0.22,
+      0.61,
+      0.36,
+      1
+    );
+
+  will-change:
+    transform;
+
+}
+
+
+/* =========================================================
+   FLIPPED PAPER
+========================================================= */
+
+.bs-paper.flipped {
+
+  transform:
+    rotateY(-180deg);
+
+}
+
+
+/* =========================================================
+   PAPER FACES
+========================================================= */
+
+.bs-front,
+.bs-back {
+
+  position:
+    absolute;
+
+  width:
+    360px;
+
+  height:
+    480px;
+
+  top:
+    0;
+
+  left:
+    0;
+
+  transform-style:
+    preserve-3d;
+
+  backface-visibility:
+    hidden;
+
+  -webkit-backface-visibility:
+    hidden;
+
+  overflow:
+    hidden;
+
+}
+
+
+/* =========================================================
+   FRONT FACE
+========================================================= */
+
+.bs-front {
+
+  z-index:
+    2;
+
+  background:
+    #f8f4e9;
+
+  border-radius:
+    0
+    14px
+    14px
+    0;
+
+  box-shadow:
+    inset
+    12px
+    0
+    20px
+    rgba(
+      0,
+      0,
+      0,
+      0.035
+    );
+
+}
+
+
+/* =========================================================
+   BACK FACE
+========================================================= */
+
+.bs-back {
+
+  z-index:
+    1;
+
+  background:
+    #eee9dc;
+
+  transform:
+    rotateY(180deg);
+
+  border-radius:
+    14px
+    0
+    0
+    14px;
+
+  box-shadow:
+    inset
+    -12px
+    0
+    20px
+    rgba(
+      0,
+      0,
+      0,
+      0.045
+    );
+
+}
+
+
+/* =========================================================
+   CONTENT
+========================================================= */
+
+.bs-front-content,
+.bs-back-content {
+
+  width:
+    360px;
+
+  height:
+    480px;
+
+  position:
+    relative;
+
+}
+
 
 /* =========================================================
    BOOK PAGES
 ========================================================= */
+
 .book-left-page,
 .book-right-page {
-  width: 360px;
-  height: 480px;
-  position: relative;
-  flex-shrink: 0;
-  overflow: hidden;
-  border: 1px solid rgba(43, 42, 40, 0.10);
+
+  width:
+    360px;
+
+  height:
+    480px;
+
+  position:
+    relative;
+
+  overflow:
+    hidden;
+
 }
+
 
 .book-left-page {
-  border-radius: 14px 0 0 14px;
-  background: #eee9dc;
-  box-shadow: inset -12px 0 20px rgba(0, 0, 0, 0.045);
+
+  background:
+    #eee9dc;
+
+  border-radius:
+    14px
+    0
+    0
+    14px;
+
+  box-shadow:
+    inset
+    -12px
+    0
+    20px
+    rgba(
+      0,
+      0,
+      0,
+      0.045
+    );
+
 }
+
 
 .book-right-page {
-  border-radius: 0 14px 14px 0;
-  background: #f8f4e9;
-  box-shadow: inset 12px 0 20px rgba(0, 0, 0, 0.035);
+
+  background:
+    #f8f4e9;
+
+  border-radius:
+    0
+    14px
+    14px
+    0;
+
+  box-shadow:
+    inset
+    12px
+    0
+    20px
+    rgba(
+      0,
+      0,
+      0,
+      0.035
+    );
+
 }
 
+
 /* =========================================================
-   PAGE CONTENT
+   CLOSED FRONT COVER
 ========================================================= */
-.page-content {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  -webkit-transform-style: preserve-3d;
-  transform-style: preserve-3d;
+
+.closed-book {
+
+  width:
+    360px;
+
+  height:
+    480px;
+
+  position:
+    relative;
+
+  cursor:
+    pointer;
+
+  overflow:
+    hidden;
+
+  border-radius:
+    0
+    14px
+    14px
+    0;
+
+  filter:
+    drop-shadow(
+      0
+      10px
+      14px
+      rgba(
+        0,
+        0,
+        0,
+        0.18
+      )
+    );
+
 }
+
+
+.closed-book > *:not(.cover-menu) {
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+}
+
 
 /* =========================================================
    PAGE INNER
 ========================================================= */
+
 .page-inner {
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  padding: 42px;
-  display: flex;
-  flex-direction: column;
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  box-sizing:
+    border-box;
+
+  padding:
+    42px;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
 }
+
 
 .page-inner h2 {
-  margin: 0 0 4px;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 25px;
-  line-height: 1.2;
+
+  margin:
+    0
+    0
+    4px;
+
+  font-size:
+    25px;
+
+  line-height:
+    1.2;
+
 }
+
 
 .page-label {
-  margin: 0;
-  font-family: monospace;
-  font-size: 9px;
-  letter-spacing: 1.2px;
-  color: #77736b;
-  text-transform: uppercase;
+
+  margin:
+    0;
+
+  font-family:
+    monospace;
+
+  font-size:
+    9px;
+
+  letter-spacing:
+    1.2px;
+
+  color:
+    #77736b;
+
+  text-transform:
+    uppercase;
+
 }
+
 
 /* =========================================================
-   PAGE BACK / REVERSE SIDE
+   PAGE BACK
 ========================================================= */
+
 .page-back {
-  width: 360px;
-  height: 480px;
-  position: relative;
-  box-sizing: border-box;
-  overflow: hidden;
-  background: #eee9dc;
-  border: 1px solid rgba(43, 42, 40, 0.10);
-  box-shadow: inset -12px 0 20px rgba(0, 0, 0, 0.045);
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  position:
+    relative;
+
+  overflow:
+    hidden;
+
+  background:
+    #eee9dc;
+
 }
+
 
 .page-back-inner {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  padding: 42px;
-  box-sizing: border-box;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.12),
-    transparent 18%,
-    transparent 82%,
-    rgba(0, 0, 0, 0.025)
-  );
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  position:
+    relative;
+
+  padding:
+    42px;
+
+  box-sizing:
+    border-box;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(
+        255,
+        255,
+        255,
+        0.12
+      ),
+      transparent 18%,
+      transparent 82%,
+      rgba(
+        0,
+        0,
+        0,
+        0.025
+      )
+    );
+
 }
 
-.page-back::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 1px;
-  height: 100%;
-  background: rgba(43, 42, 40, 0.08);
+
+/* =========================================================
+   BLANK PAGE
+========================================================= */
+
+.blank-paper-page {
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  background:
+    #eee9dc;
+
 }
+
+
+/* =========================================================
+   EMPTY LEFT PAGE
+========================================================= */
+
+.empty-left-page {
+
+  height:
+    100%;
+
+  margin:
+    0;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  padding:
+    30px;
+
+  text-align:
+    center;
+
+  font-family:
+    monospace;
+
+  font-size:
+    10px;
+
+  text-transform:
+    uppercase;
+
+  color:
+    rgba(
+      43,
+      42,
+      40,
+      0.45
+    );
+
+}
+
 
 /* =========================================================
    TABLE OF CONTENTS
 ========================================================= */
+
 .toc-list {
-  flex: 1;
-  margin-top: 28px;
-  overflow-y: auto;
-  scrollbar-width: thin;
+
+  flex:
+    1;
+
+  margin-top:
+    28px;
+
+  overflow-y:
+    auto;
+
+  scrollbar-width:
+    thin;
+
 }
+
 
 .toc-item {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 0;
-  border: 0;
-  border-bottom: 1px solid rgba(43, 42, 40, 0.10);
-  background: transparent;
-  text-align: left;
-  font-family: Georgia, "Times New Roman", serif;
-  cursor: pointer;
-  transition: color 0.2s ease, padding-left 0.2s ease;
+
+  width:
+    100%;
+
+  display:
+    flex;
+
+  justify-content:
+    space-between;
+
+  align-items:
+    center;
+
+  padding:
+    14px
+    0;
+
+  border:
+    0;
+
+  border-bottom:
+    1px solid
+    rgba(
+      43,
+      42,
+      40,
+      0.10
+    );
+
+  background:
+    transparent;
+
+  text-align:
+    left;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  cursor:
+    pointer;
+
 }
+
 
 .toc-item:hover {
-  color: #b23a2e;
-  padding-left: 4px;
+
+  color:
+    #b23a2e;
+
 }
 
+
 .toc-item span:last-child {
-  font-family: monospace;
-  font-size: 9px;
-  color: #77736b;
+
+  font-family:
+    monospace;
+
+  font-size:
+    9px;
+
+  color:
+    #77736b;
+
 }
+
 
 /* =========================================================
    POEM
 ========================================================= */
+
 .poem-page {
-  justify-content: flex-start;
+
+  justify-content:
+    flex-start;
+
+  position:
+    relative;
+
 }
+
+
+.poem-page-heading {
+
+  position:
+    relative;
+
+  padding-right:
+    30px;
+
+}
+
+
+/* =========================================================
+   POEM EDIT ICON
+========================================================= */
+
+.poem-edit-icon {
+
+  position:
+    absolute;
+
+  top:
+    32px;
+
+  right:
+    30px;
+
+  width:
+    28px;
+
+  height:
+    28px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  border:
+    1px solid
+    rgba(
+      43,
+      42,
+      40,
+      0.12
+    );
+
+  border-radius:
+    50%;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.18
+    );
+
+  color:
+    rgba(
+      43,
+      42,
+      40,
+      0.55
+    );
+
+  font-family:
+    Georgia,
+    serif;
+
+  font-size:
+    16px;
+
+  line-height:
+    1;
+
+  cursor:
+    pointer;
+
+  transition:
+    background
+    0.2s
+    ease,
+
+    color
+    0.2s
+    ease,
+
+    transform
+    0.2s
+    ease;
+
+}
+
+
+.poem-edit-icon:hover {
+
+  background:
+    rgba(
+      178,
+      58,
+      46,
+      0.08
+    );
+
+  color:
+    #b23a2e;
+
+  transform:
+    translateY(-1px);
+
+}
+
+
+/* =========================================================
+   POEM TEXT
+========================================================= */
 
 .poem-text {
-  flex: 1;
-  margin-top: 30px;
-  overflow-y: auto;
-  white-space: pre-line;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 16px;
-  line-height: 1.9;
-  color: #302e2a;
-  scrollbar-width: thin;
+
+  flex:
+    1;
+
+  margin-top:
+    30px;
+
+  overflow-y:
+    auto;
+
+  white-space:
+    pre-line;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-size:
+    16px;
+
+  line-height:
+    1.9;
+
+  color:
+    #302e2a;
+
 }
 
-.edit-button {
-  align-self: flex-start;
-  margin-bottom: 15px;
-  border: 0;
-  background: transparent;
-  color: rgba(178, 58, 46, 0.8);
-  font-family: monospace;
-  font-size: 9px;
-  letter-spacing: 1px;
-  cursor: pointer;
-}
 
 /* =========================================================
    FOOTER
 ========================================================= */
+
 .page-footer {
-  margin-top: auto;
-  padding-top: 15px;
-  border-top: 1px solid rgba(43, 42, 40, 0.10);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+
+  margin-top:
+    auto;
+
+  padding-top:
+    15px;
+
+  border-top:
+    1px solid
+    rgba(
+      43,
+      42,
+      40,
+      0.10
+    );
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
 }
+
 
 .text-button {
-  border: 0;
-  background: transparent;
-  padding: 4px;
-  font-family: monospace;
-  font-size: 9px;
-  text-transform: uppercase;
-  cursor: pointer;
-  color: #403e39;
-  transition: color 0.2s ease, opacity 0.2s ease;
+
+  border:
+    0;
+
+  background:
+    transparent;
+
+  padding:
+    4px;
+
+  font-family:
+    monospace;
+
+  font-size:
+    9px;
+
+  text-transform:
+    uppercase;
+
+  cursor:
+    pointer;
+
+  color:
+    #403e39;
+
 }
+
 
 .text-button:hover {
-  color: #b23a2e;
+
+  color:
+    #b23a2e;
+
 }
+
 
 .text-button:disabled {
-  opacity: 0.25;
-  cursor: default;
+
+  opacity:
+    0.25;
+
+  cursor:
+    default;
+
 }
+
 
 .page-number {
-  font-family: monospace;
-  font-size: 9px;
-  color: #77736b;
+
+  font-family:
+    monospace;
+
+  font-size:
+    9px;
+
+  color:
+    #77736b;
+
 }
+
 
 .footer-buttons {
-  display: flex;
-  gap: 8px;
+
+  display:
+    flex;
+
+  gap:
+    8px;
+
 }
 
-/* =========================================================
-   EMPTY TEXT
-========================================================= */
+
 .empty-text {
-  color: #77736b;
-  font-family: Georgia, "Times New Roman", serif;
+
+  color:
+    #77736b;
+
 }
+
 
 /* =========================================================
-   PHYSICAL PAGE TURN
-   perspective removed — inherits from .book-wrapper only
+   INSIDE BACK COVER
+
+   SAME COLOR AS SELECTED COVER
+   NO SPINE
 ========================================================= */
-.page-turn-layer {
-  position: absolute;
-  top: 0;
-  width: 360px;
-  height: 480px;
-  z-index: 100;
-  pointer-events: none;
-  -webkit-transform-style: preserve-3d;
-  transform-style: preserve-3d;
-  will-change: transform;
+
+.inside-back-cover {
+
+  width:
+    360px;
+
+  height:
+    480px;
+
+  position:
+    relative;
+
+  overflow:
+    hidden;
+
+  border-radius:
+    0
+    14px
+    14px
+    0;
+
+  box-shadow:
+    inset
+    12px
+    0
+    20px
+    rgba(
+      0,
+      0,
+      0,
+      0.06
+    );
+
 }
 
-.page-turn-layer.forward {
-  left: 360px;
-  transform-origin: left center;
+
+.inside-back-cover-material {
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  opacity:
+    0.18;
+
+  pointer-events:
+    none;
+
 }
 
-.page-turn-layer.backward {
-  left: 0;
-  transform-origin: right center;
-}
-
-.page-turn-face {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  -webkit-transform-style: preserve-3d;
-  transform-style: preserve-3d;
-  border: 1px solid rgba(43, 42, 40, 0.10);
-  background: #f8f4e9;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
-}
-
-.page-turn-front {
-  z-index: 2;
-}
-
-.page-turn-back {
-  z-index: 1;
-  transform: rotateY(180deg);
-  background: #eee9dc;
-  box-shadow: inset -12px 0 20px rgba(0, 0, 0, 0.045);
-}
-
-.page-turn-back-inner {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.10),
-    transparent 22%,
-    transparent 78%,
-    rgba(0, 0, 0, 0.025)
-  );
-}
-
-/* =========================================================
-   FRONT COVER OPENING ANIMATION
-   perspective removed — inherits from .book-wrapper only
-========================================================= */
-.animated-cover {
-  position: absolute;
-  left: 180px;
-  top: 0;
-  width: 360px;
-  height: 480px;
-  z-index: 200;
-  -webkit-transform-style: preserve-3d;
-  transform-style: preserve-3d;
-  transform-origin: left center;
-  pointer-events: none;
-  will-change: transform;
-}
-
-.cover-front-face,
-.cover-back-face {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  -webkit-transform-style: preserve-3d;
-  transform-style: preserve-3d;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-}
-
-.cover-front-face {
-  transform: rotateY(0deg);
-}
-
-.cover-back-face {
-  transform: rotateY(180deg);
-}
-
-/* =========================================================
-   BACK COVER CLOSING ANIMATION
-   perspective removed — inherits from .book-wrapper only
-========================================================= */
-.animated-back-cover {
-  position: absolute;
-  left: 540px;
-  top: 0;
-  width: 360px;
-  height: 480px;
-  z-index: 200;
-  -webkit-transform-style: preserve-3d;
-  transform-style: preserve-3d;
-  transform-origin: left center;
-  pointer-events: none;
-  will-change: transform;
-}
-
-.back-cover-animation-face {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  -webkit-transform-style: preserve-3d;
-  transform-style: preserve-3d;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-}
-
-.back-cover-animation-front {
-  transform: rotateY(0deg);
-}
-
-.back-cover-animation-back {
-  transform: rotateY(180deg);
-}
-
-/* =========================================================
-   BACK COVER — OPEN / INSIDE
-   now fills the entire page, matching the inside front cover
-========================================================= */
-.back-cover-page {
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  position: relative;
-  overflow: hidden;
-}
-
-.back-cover-design {
-  width: 100%;
-  height: 100%;
-  border-radius: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.18);
-}
-
-.back-cover-title {
-  opacity: 0.45;
-  font-family: Georgia, serif;
-  font-size: 13px;
-  font-style: italic;
-}
 
 /* =========================================================
    CLOSED BACK COVER
+
+   LEFT CORNERS = ROUNDED
+   RIGHT CORNERS = SHARP
+   SPINE = RIGHT
 ========================================================= */
+
 .closed-back-cover {
-  width: 360px;
-  height: 480px;
-  position: relative;
-  overflow: hidden;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+
+  width:
+    360px;
+
+  height:
+    480px;
+
+  position:
+    relative;
+
+  overflow:
+    hidden;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  /*
+    IMPORTANT:
+
+    Rounded on LEFT.
+    Sharp on RIGHT.
+  */
+
+  border-radius:
+    14px
+    0
+    0
+    14px;
+
   box-shadow:
-    inset 0 0 28px rgba(0, 0, 0, 0.18),
-    0 15px 18px rgba(0, 0, 0, 0.18);
+    0
+    8px
+    18px
+    rgba(
+      0,
+      0,
+      0,
+      0.20
+    );
+
+  border:
+    1px solid
+    rgba(
+      0,
+      0,
+      0,
+      0.25
+    );
+
 }
 
-.closed-back-cover::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+
+/* =========================================================
+   BACK COVER CONTENT
+========================================================= */
+
+.closed-back-cover-content {
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  position:
+    relative;
+
+  pointer-events:
+    none;
+
 }
+
 
 .closed-back-cover-title {
-  color: white;
-  opacity: 0.45;
-  font-family: Georgia, serif;
-  font-size: 13px;
-  font-style: italic;
+
+  color:
+    white;
+
+  opacity:
+    0.45;
+
+  font-size:
+    13px;
+
+  font-style:
+    italic;
+
 }
+
+
+/* =========================================================
+   BACK COVER SPINE
+
+   RIGHT SIDE
+========================================================= */
+
+.back-cover-spine {
+
+  position:
+    absolute;
+
+  right:
+    0;
+
+  top:
+    0;
+
+  width:
+    28px;
+
+  height:
+    100%;
+
+  z-index:
+    10;
+
+  /*
+    Fade toward the left so the spine looks
+    physically attached to the cover.
+  */
+
+  background:
+    linear-gradient(
+      to left,
+      rgba(
+        0,
+        0,
+        0,
+        0.18
+      ),
+      rgba(
+        0,
+        0,
+        0,
+        0.08
+      ) 70%,
+      transparent
+    );
+
+  box-shadow:
+    inset
+    2px
+    0
+    4px
+    rgba(
+      0,
+      0,
+      0,
+      0.35
+    );
+
+}
+
+
+/* =========================================================
+   SPINE HIGHLIGHT
+========================================================= */
+
+.spine-highlight {
+
+  position:
+    absolute;
+
+  right:
+    6px;
+
+  top:
+    0;
+
+  width:
+    2px;
+
+  height:
+    100%;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.16
+    );
+
+}
+
+
+/* =========================================================
+   SPINE DETAILS
+========================================================= */
+
+.spine-lines {
+
+  position:
+    absolute;
+
+  right:
+    9px;
+
+  top:
+    0;
+
+  width:
+    8px;
+
+  height:
+    100%;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  justify-content:
+    space-around;
+
+}
+
+
+.spine-lines span {
+
+  width:
+    8px;
+
+  height:
+    1px;
+
+  background:
+    rgba(
+      0,
+      0,
+      0,
+      0.20
+    );
+
+}
+
+
+/* =========================================================
+   BOOK CLICK NAVIGATION
+
+   Left edge of left page:
+   PREVIOUS
+
+   Right edge of right page:
+   NEXT
+========================================================= */
+
+.book-click-zone {
+
+  position:
+    absolute;
+
+  top:
+    0;
+
+  height:
+    100%;
+
+  width:
+    52px;
+
+  padding:
+    0;
+
+  margin:
+    0;
+
+  border:
+    0;
+
+  background:
+    transparent;
+
+  cursor:
+    pointer;
+
+  z-index:
+    1000;
+
+}
+
+
+.book-click-zone-left {
+
+  left:
+    0;
+
+}
+
+
+.book-click-zone-right {
+
+  right:
+    0;
+
+}
+
+
+.book-click-zone-left:hover {
+
+  background:
+    linear-gradient(
+      to right,
+      rgba(
+        0,
+        0,
+        0,
+        0.025
+      ),
+      transparent
+    );
+
+}
+
+
+.book-click-zone-right:hover {
+
+  background:
+    linear-gradient(
+      to left,
+      rgba(
+        0,
+        0,
+        0,
+        0.025
+      ),
+      transparent
+    );
+
+}
+
 
 /* =========================================================
    COVER MENU
 ========================================================= */
+
 .cover-menu {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 300;
-  padding: 5px;
-  background: #f8f4e9;
-  border: 1px solid rgba(43, 42, 40, 0.15);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+
+  position:
+    absolute;
+
+  top:
+    10px;
+
+  left:
+    10px;
+
+  z-index:
+    500;
+
+  padding:
+    5px;
+
+  background:
+    #f8f4e9;
+
+  border:
+    1px solid
+    rgba(
+      43,
+      42,
+      40,
+      0.15
+    );
+
+  box-shadow:
+    0
+    5px
+    15px
+    rgba(
+      0,
+      0,
+      0,
+      0.15
+    );
+
 }
+
 
 .cover-menu button {
-  border: 0;
-  background: transparent;
-  padding: 8px 12px;
-  font-family: monospace;
-  font-size: 10px;
-  color: #b23a2e;
-  cursor: pointer;
+
+  display:
+    block;
+
+  width:
+    100%;
+
+  border:
+    0;
+
+  background:
+    transparent;
+
+  padding:
+    8px
+    12px;
+
+  font-family:
+    monospace;
+
+  font-size:
+    10px;
+
+  color:
+    #b23a2e;
+
+  cursor:
+    pointer;
+
 }
 
-/* =========================================================
-   BOOK STATE
-========================================================= */
-.book-wrapper.is-opening,
-.book-wrapper.is-closing {
-  pointer-events: none;
+
+.cover-menu button:hover {
+
+  background:
+    rgba(
+      178,
+      58,
+      46,
+      0.06
+    );
+
 }
 
-.book-wrapper.is-open {
-  width: 360px;
-}
-
-/* =========================================================
-   REDUCED MOTION
-========================================================= */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
 
 /* =========================================================
    MOBILE
 ========================================================= */
+
 @media (max-width: 800px) {
+
   .journal-page {
-    padding: 20px;
+
+    padding:
+      20px;
+
+    overflow-x:
+      hidden;
+
   }
+
 
   .journal-header {
-    width: 100%;
+
+    width:
+      100%;
+
   }
+
 
   .journal-header-links {
-    display: none;
+
+    display:
+      none;
+
   }
 
-  .book-wrapper {
-    transform: scale(0.8);
-    transform-origin: top center;
-    margin-bottom: -90px;
+
+  .book-stack-wrapper {
+
+    transform:
+      scale(0.8);
+
+    transform-origin:
+      top center;
+
+    margin-bottom:
+      -90px;
+
   }
+
 
   .book-controls {
-    margin-top: 30px;
+
+    margin-top:
+      30px;
+
+    gap:
+      12px;
+
   }
+
+
+  .book-click-zone {
+
+    width:
+      45px;
+
+  }
+
 }
+
 
 /* =========================================================
-   BOOK STACK (3D tutorial port)
+   REDUCED MOTION
 ========================================================= */
-.bs-book {
-  position: relative;
-  width: 360px;
-  height: 480px;
-  transform-style: preserve-3d;
-}
 
-.bs-paper {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  perspective: 1500px;
-  transform-style: preserve-3d;
-  transition: transform 0.72s cubic-bezier(0.22, 0.61, 0.36, 1);
-}
+@media (
+  prefers-reduced-motion:
+  reduce
+) {
 
-.bs-front,
-.bs-back {
-  background-color: transparent;
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  transform-origin: left;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  transform-style: preserve-3d;
-  transition: transform 0.72s cubic-bezier(0.22, 0.61, 0.36, 1);
-}
+  *,
+  *::before,
+  *::after {
 
-.bs-front {
-  z-index: 2;
-  transform: rotateY(0deg);
-}
+    animation-duration:
+      0.01ms !important;
 
-.bs-back {
-  z-index: 1;
-  transform: rotateY(180deg);
-}
+    transition-duration:
+      0.01ms !important;
 
-.bs-front-content,
-.bs-back-content {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+  }
 
-.bs-paper.flipped .bs-front {
-  transform: rotateY(-180deg);
-}
-
-.bs-paper.flipped .bs-back {
-  transform: rotateY(0deg);
-}
-
-/* Make stack faces visually match book pages */
-.bs-front,
-.bs-back {
-  border: 1px solid rgba(43, 42, 40, 0.10);
-  border-radius: 0 14px 14px 0;
-  background: #f8f4e9;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-}
-
-.bs-back {
-  background: #eee9dc;
-  box-shadow: inset -12px 0 20px rgba(0,0,0,0.045);
 }

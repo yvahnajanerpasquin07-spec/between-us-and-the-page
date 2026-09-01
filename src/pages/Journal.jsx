@@ -1,21 +1,33 @@
-import { useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import {
+  useState,
+  useRef,
+} from 'react';
+
+import {
+  useParams,
+  useNavigate,
+} from 'react-router-dom';
+
 import {
   deleteJournal,
   getJournal,
 } from '../services/journalService';
+
 import {
   createPoem,
   getPoemsForJournal,
   updatePoemWidgetBox,
+  uploadPoemImage,
+  updatePoemImageBox,
 } from '../services/poemService';
+
 import { useAsync } from '../hooks/useAsync';
 import { useAuth } from '../context/AuthContext';
+
 import NotebookCover, {
   InsideCoverPanel,
 } from '../components/NotebookCover';
-import Book3D from '../components/Book3D';
+
 import Button from '../components/Button';
 import Loading from '../components/Loading';
 import ShareModal from '../components/ShareModal';
@@ -23,588 +35,1480 @@ import SpotifyPlayer from '../components/SpotifyPlayer';
 import DraggableWidget from '../components/DraggableWidget';
 import EditJournalModal from '../components/EditJournalModal';
 
-const PAGE_W = 360;
-const PAGE_H = 480;
-const TURN_DURATION = 0.72;
-const TURN_EASE = [0.22, 0.61, 0.36, 1];
+
+/* =========================================================
+   CONSTANTS
+========================================================= */
+
+const TURN_DURATION = 720;
+
 
 /* =========================================================
    JOURNAL
 ========================================================= */
+
 export default function Journal() {
+
   const { journalId } = useParams();
+
   const navigate = useNavigate();
+
   const { user } = useAuth();
 
-  const [bookState, setBookState] = useState('closed-front');
-  const [pageView, setPageView] = useState({ type: 'toc' });
-  const [pageDirection, setPageDirection] = useState(1);
 
   /*
-    turningPage:
-    null
-      = no page animation in progress
-    {
-      view: page still visible on the front face of the turning sheet
-      nextView: page to reveal once the flip finishes
-      direction: 1 | -1
-    }
-    pageView does NOT change until the flip's onAnimationComplete fires,
-    so the new page's text/spotify can never appear early or late.
+    LOCATION
+
+    1 = CLOSED FRONT COVER
+
+    2 = INSIDE COVER | TABLE OF CONTENTS
+
+    3 = POEM 1 MEDIA | POEM 1
+
+    4 = POEM 2 MEDIA | POEM 2
+
+    ...
+
+    poems.length + 3
+        = BLANK PAGE | INSIDE BACK COVER
+
+    poems.length + 4
+        = CLOSED BACK COVER
   */
-  const [turningPage, setTurningPage] = useState(null);
 
-  const [showShare, setShowShare] = useState(false);
-  const [showCoverMenu, setShowCoverMenu] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [journalOverride, setJournalOverride] = useState(null);
+  const [currentLocation, setCurrentLocation] =
+    useState(1);
 
-  const leftPageRef = useRef(null);
 
-  const isOpen = bookState === 'open';
-  const isAnimating =
-    bookState === 'opening' ||
-    bookState === 'closing' ||
-    bookState === 'exiting' ||
-    turningPage !== null;
+  const [flippedPapers, setFlippedPapers] =
+    useState(() => new Set());
 
-  const { data: journal, loading: journalLoading } = useAsync(
+
+  const [isTurning, setIsTurning] =
+    useState(false);
+
+
+  const turningPaperRef =
+    useRef(null);
+
+
+  const locationRef =
+    useRef(1);
+
+
+  const [showShare, setShowShare] =
+    useState(false);
+
+
+  const [showCoverMenu, setShowCoverMenu] =
+    useState(false);
+
+
+  const [showEditModal, setShowEditModal] =
+    useState(false);
+
+
+  const [journalOverride, setJournalOverride] =
+    useState(null);
+
+
+  /*
+    IMAGE WIDGETS
+  */
+
+  const [imageWidgets, setImageWidgets] =
+    useState(() => {
+
+      try {
+
+        return JSON.parse(
+          localStorage.getItem(
+            'imageWidgets'
+          ) || '{}'
+        );
+
+      } catch {
+
+        return {};
+
+      }
+
+    });
+
+
+  const leftPageRef =
+    useRef(null);
+
+
+  /* =========================================================
+     DATA
+  ========================================================= */
+
+  const {
+    data: journal,
+    loading: journalLoading,
+  } = useAsync(
     () => getJournal(journalId),
     [journalId]
   );
-  const { data: poems, loading: poemsLoading } = useAsync(
+
+
+  const {
+    data: poems,
+    loading: poemsLoading,
+  } = useAsync(
     () => getPoemsForJournal(journalId),
     [journalId]
   );
 
-  const isOwner = journal && user && journal.owner_id === user.id;
-  const activeJournal = journalOverride ?? journal;
+
+  const activeJournal =
+    journalOverride ?? journal;
+
+
+  const isOwner =
+    journal &&
+    user &&
+    journal.owner_id === user.id;
+
+
+  locationRef.current =
+    currentLocation;
+
+
+  const maxLocation =
+    (poems?.length ?? 0) + 4;
+
+
+  const isClosedFront =
+    currentLocation === 1;
+
+
+  const isClosedBack =
+    currentLocation === maxLocation;
+
+
+  const isOpen =
+    !isClosedFront &&
+    !isClosedBack;
+
+
+  const date =
+    activeJournal
+      ? new Date(
+          activeJournal.created_at
+        ).toLocaleDateString(
+          undefined,
+          {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+          }
+        )
+      : '';
+
+
+  /* =========================================================
+     COVER
+  ========================================================= */
+
+  const coverFront =
+    activeJournal ? (
+
+      <NotebookCover
+        title={
+          activeJournal.title
+        }
+        description={
+          activeJournal.description
+        }
+        date={date}
+        authorName={
+          activeJournal.author_name
+        }
+        coverColor={
+          activeJournal.cover_color
+        }
+        coverMaterial={
+          activeJournal.cover_material
+        }
+        coverImageUrl={
+          activeJournal.cover_image_url
+        }
+      />
+
+    ) : null;
+
+
+  /*
+    INSIDE FRONT COVER
+
+    Completely blank.
+    No spine.
+  */
+
+  const insideCover =
+    activeJournal ? (
+
+      <InsideCoverPanel
+        coverColor={
+          activeJournal.cover_color
+        }
+        coverMaterial={
+          activeJournal.cover_material
+        }
+      />
+
+    ) : null;
+
+
+  /* =========================================================
+     CREATE POEM
+  ========================================================= */
 
   async function handleNewPoem() {
-    const poem = await createPoem({
-      journalId,
-      title: 'Untitled',
-      content: '',
-      displayOrder: poems?.length ?? 0,
-    });
-    navigate(`/journal/${journalId}/poem/${poem.id}`);
+
+    const poem =
+      await createPoem({
+
+        journalId,
+
+        title: 'Untitled',
+
+        content: '',
+
+        displayOrder:
+          poems?.length ?? 0,
+
+      });
+
+
+    navigate(
+      `/journal/${journalId}/poem/${poem.id}`
+    );
+
   }
+
+
+  /* =========================================================
+     DELETE JOURNAL
+  ========================================================= */
 
   async function handleDeleteJournal() {
-    if (!confirm('Delete this journal and all its poems? This cannot be undone.')) {
+
+    if (
+      !confirm(
+        'Delete this journal and all its poems? This cannot be undone.'
+      )
+    ) {
+
       return;
+
     }
-    await deleteJournal(journalId);
+
+
+    await deleteJournal(
+      journalId
+    );
+
+
     navigate('/dashboard');
+
   }
 
-  const date = activeJournal
-    ? new Date(activeJournal.created_at).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      })
-    : '';
-
-  const coverFront = activeJournal ? (
-    <NotebookCover
-      title={activeJournal.title}
-      description={activeJournal.description}
-      date={date}
-      authorName={activeJournal.author_name}
-      coverColor={activeJournal.cover_color}
-      coverMaterial={activeJournal.cover_material}
-      coverImageUrl={activeJournal.cover_image_url}
-    />
-  ) : null;
-
-  const insideCover = activeJournal ? (
-    <InsideCoverPanel
-      coverColor={activeJournal.cover_color}
-      coverMaterial={activeJournal.cover_material}
-    />
-  ) : null;
 
   /* =========================================================
-     OPEN BOOK
-     bookState only flips to 'open' inside onAnimationComplete
-     on the .animated-cover motion.div below — no setTimeout.
+     IMAGE WIDGET
   ========================================================= */
-  function openBook() {
-    if (bookState !== 'closed-front' || isAnimating) return;
-    setShowCoverMenu(false);
-    setBookState('opening');
+
+  function saveImageWidget(
+    poemId,
+    next
+  ) {
+
+    setImageWidgets(
+      (prev) => {
+
+        const nextMap = {
+          ...prev,
+          [poemId]: next,
+        };
+
+
+        try {
+
+          localStorage.setItem(
+            'imageWidgets',
+            JSON.stringify(
+              nextMap
+            )
+          );
+
+        } catch {
+          // Ignore localStorage errors.
+        }
+
+
+        return nextMap;
+
+      }
+    );
+
+
+    if (isOwner) {
+
+      updatePoemImageBox(
+        poemId,
+        next
+      ).catch(() => {});
+
+    }
+
   }
 
-  /* =========================================================
-     CLOSE BOOK
-     bookState only flips to 'closed-back' inside onAnimationComplete
-     on the .animated-back-cover motion.div below.
-  ========================================================= */
-  function closeBook() {
-    if (bookState !== 'open' || isAnimating) return;
-    setPageView({ type: 'back' });
-    setTurningPage(null);
-    setBookState('closing');
+
+  async function addImageForPoem(
+    poemId,
+    file
+  ) {
+
+    try {
+
+      const url =
+        await uploadPoemImage(
+          journalId,
+          poemId,
+          file
+        );
+
+
+      const defaultBox = {
+
+        x: 20,
+
+        y: 20,
+
+        w: 220,
+
+        h: 140,
+
+        url,
+
+      };
+
+
+      saveImageWidget(
+        poemId,
+        defaultBox
+      );
+
+    } catch (error) {
+
+      console.error(
+        'Upload failed',
+        error
+      );
+
+
+      alert(
+        'Image upload failed.'
+      );
+
+    }
+
   }
 
-  function reopenFromBack() {
-    if (bookState !== 'closed-back' || isAnimating) return;
-    setPageView({ type: 'back' });
-    setBookState('open');
-  }
-
-  /* =========================================================
-     EXIT TO FRONT COVER
-     Plays the opening animation in reverse and lands back on
-     the closed front cover — bookState flips inside
-     onAnimationComplete, not a timer.
-  ========================================================= */
-  function exitToFront() {
-    if (bookState !== 'open' || isAnimating) return;
-    setBookState('exiting');
-  }
 
   /* =========================================================
      PAGE TURN
-     pageView is NOT updated here. It only updates once the
-     turning sheet's flip animation actually completes
-     (see renderTurningPage's onAnimationComplete), so the
-     next page's content can't render early or late.
   ========================================================= */
-  function turnTo(nextView, direction) {
-    if (!isOpen || isAnimating) return;
-    setPageDirection(direction);
-    setTurningPage({
-      view: pageView,
-      nextView,
-      direction,
-    });
+
+  function finishTurn() {
+
+    turningPaperRef.current =
+      null;
+
+    setIsTurning(false);
+
   }
 
-  function goNext() {
-    if (!isOpen || isAnimating) return;
-    if (pageView.type === 'toc') {
-      if (!poems?.length) return;
-      turnTo({ type: 'poem', index: 0 }, 1);
+
+  function turnForwardOne() {
+
+    if (isTurning) {
       return;
     }
-    if (pageView.type === 'poem') {
-      if (pageView.index < poems.length - 1) {
-        turnTo({ type: 'poem', index: pageView.index + 1 }, 1);
-      } else {
-        turnTo({ type: 'back' }, 1);
+
+
+    const location =
+      locationRef.current;
+
+
+    if (
+      location >= maxLocation
+    ) {
+
+      return;
+
+    }
+
+
+    const paperId =
+      location;
+
+
+    turningPaperRef.current =
+      paperId;
+
+
+    setIsTurning(true);
+
+
+    setFlippedPapers(
+      (prev) => {
+
+        const next =
+          new Set(prev);
+
+        next.add(paperId);
+
+        return next;
+
       }
-      return;
-    }
-  }
-
-  function goPrevious() {
-    if (!isOpen || isAnimating) return;
-    if (pageView.type === 'back') {
-      if (!poems?.length) return;
-      turnTo({ type: 'poem', index: poems.length - 1 }, -1);
-      return;
-    }
-    if (pageView.type === 'poem') {
-      if (pageView.index > 0) {
-        turnTo({ type: 'poem', index: pageView.index - 1 }, -1);
-      } else {
-        turnTo({ type: 'toc' }, -1);
-      }
-      return;
-    }
-  }
-
-  function renderPageContent(view) {
-    if (view.type === 'toc') {
-      return (
-        <TocPage
-          journal={activeJournal}
-          poems={poems}
-          poemsLoading={poemsLoading}
-          isOwner={isOwner}
-          onSelectPoem={(index) => {
-            turnTo({ type: 'poem', index }, 1);
-          }}
-          onExit={exitToFront}
-          onShare={() => setShowShare(true)}
-          onNewPoem={handleNewPoem}
-        />
-      );
-    }
-    if (view.type === 'back') {
-      return <NotebookBackCover journal={activeJournal} />;
-    }
-    const poem = poems?.[view.index];
-    if (!poem) return null;
-    return (
-      <PoemPage
-        poem={poem}
-        journalId={journalId}
-        isOwner={isOwner}
-        onNext={goNext}
-        onPrev={goPrevious}
-        hasNext={view.index < (poems?.length ?? 1) - 1}
-        pageNumber={view.index + 1}
-        totalPages={poems?.length ?? 0}
-      />
     );
+
+
+    const nextLocation =
+      location + 1;
+
+
+    locationRef.current =
+      nextLocation;
+
+
+    setCurrentLocation(
+      nextLocation
+    );
+
+
+    window.setTimeout(
+      finishTurn,
+      TURN_DURATION
+    );
+
   }
+
+
+  function turnBackwardOne() {
+
+    if (isTurning) {
+      return;
+    }
+
+
+    const location =
+      locationRef.current;
+
+
+    if (location <= 1) {
+      return;
+
+    }
+
+
+    const paperId =
+      location - 1;
+
+
+    turningPaperRef.current =
+      paperId;
+
+
+    setIsTurning(true);
+
+
+    setFlippedPapers(
+      (prev) => {
+
+        const next =
+          new Set(prev);
+
+        next.delete(paperId);
+
+        return next;
+
+      }
+    );
+
+
+    const nextLocation =
+      location - 1;
+
+
+    locationRef.current =
+      nextLocation;
+
+
+    setCurrentLocation(
+      nextLocation
+    );
+
+
+    window.setTimeout(
+      finishTurn,
+      TURN_DURATION
+    );
+
+  }
+
+
+  function goNextPage() {
+
+    turnForwardOne();
+
+  }
+
+
+  function goPreviousPage() {
+
+    turnBackwardOne();
+
+  }
+
+
+  /* =========================================================
+     GO TO POEM FROM TOC
+  ========================================================= */
+
+  function goToPoem(
+    poemIndex
+  ) {
+
+    if (isTurning) {
+      return;
+    }
+
+
+    const target =
+      poemIndex + 3;
+
+
+    if (
+      target <=
+      locationRef.current
+    ) {
+
+      return;
+
+    }
+
+
+    const turnNext =
+      () => {
+
+        const location =
+          locationRef.current;
+
+
+        if (
+          location >= target
+        ) {
+
+          return;
+
+        }
+
+
+        const paperId =
+          location;
+
+
+        turningPaperRef.current =
+          paperId;
+
+
+        setIsTurning(true);
+
+
+        setFlippedPapers(
+          (prev) => {
+
+            const next =
+              new Set(prev);
+
+            next.add(paperId);
+
+            return next;
+
+          }
+        );
+
+
+        const nextLocation =
+          location + 1;
+
+
+        locationRef.current =
+          nextLocation;
+
+
+        setCurrentLocation(
+          nextLocation
+        );
+
+
+        window.setTimeout(
+          () => {
+
+            turningPaperRef.current =
+              null;
+
+            setIsTurning(false);
+
+
+            if (
+              locationRef.current <
+              target
+            ) {
+
+              turnNext();
+
+            }
+
+          },
+          TURN_DURATION + 50
+        );
+
+      };
+
+
+    turnNext();
+
+  }
+
+
+  /* =========================================================
+     LEFT MEDIA PAGE
+  ========================================================= */
+
+  function renderLeftPage(
+    poem
+  ) {
+
+    if (!poem) {
+
+      return (
+
+        <div className="book-left-page">
+
+          {insideCover}
+
+        </div>
+
+      );
+
+    }
+
+
+    return (
+
+      <div className="book-left-page">
+
+        <div
+          className="page-back"
+          ref={leftPageRef}
+        >
+
+          <div className="page-back-inner">
+
+            {imageWidgets[
+              poem.id
+            ] ? (
+
+              <DraggableWidget
+                key={`${poem.id}-img`}
+                containerRef={
+                  leftPageRef
+                }
+                editable={
+                  isOwner
+                }
+                initial={
+                  imageWidgets[
+                    poem.id
+                  ]
+                }
+                onSave={(box) => {
+
+                  saveImageWidget(
+                    poem.id,
+                    {
+                      ...box,
+
+                      url:
+                        imageWidgets[
+                          poem.id
+                        ].url,
+                    }
+                  );
+
+                }}
+              >
+
+                <img
+                  src={
+                    imageWidgets[
+                      poem.id
+                    ].url
+                  }
+                  alt="page image"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+
+              </DraggableWidget>
+
+            ) : poem.spotify_url ? (
+
+              <DraggableWidget
+                key={`${poem.id}-spotify`}
+                containerRef={
+                  leftPageRef
+                }
+                editable={
+                  isOwner
+                }
+                initial={
+                  poem.spotify_widget_box ??
+                  undefined
+                }
+                onSave={(box) => {
+
+                  updatePoemWidgetBox(
+                    poem.id,
+                    box
+                  ).catch(
+                    () => {}
+                  );
+
+                }}
+              >
+
+                <SpotifyPlayer
+                  spotifyUrl={
+                    poem.spotify_url
+                  }
+                  active
+                />
+
+              </DraggableWidget>
+
+            ) : (
+
+              <p className="empty-left-page">
+
+                No song, link, or picture
+                added to this page yet.
+
+              </p>
+
+            )}
+
+          </div>
+
+        </div>
+
+      </div>
+
+    );
+
+  }
+
+
+  /* =========================================================
+     LOADING
+  ========================================================= */
 
   if (journalLoading) {
-    return <Loading label="Opening journal" />;
+
+    return (
+      <Loading
+        label="Opening journal"
+      />
+    );
+
   }
+
 
   if (!journal) {
-    return <p className="p-6">Journal not found.</p>;
-  }
 
-  /* =========================================================
-     LEFT PAGE
-     - Table of contents view -> inside cover texture.
-     - Poem view -> shows that poem's extras (Spotify song, as a
-       draggable/resizable widget bounded to the page).
-     - Back cover view -> blank backside.
-  ========================================================= */
-  function renderLeftPage() {
-    if (pageView.type === 'toc') {
-      return (
-        <div className="book-left-page">
-          <InsideCoverPanel
-            coverColor={activeJournal.cover_color}
-            coverMaterial={activeJournal.cover_material}
-          />
-        </div>
-      );
-    }
-    if (pageView.type === 'poem') {
-      const poem = poems?.[pageView.index];
-      return (
-        <div className="book-left-page">
-          <div className="page-back" ref={leftPageRef}>
-            <div className="page-back-inner relative h-full w-full">
-              {poem?.spotify_url ? (
-                <DraggableWidget
-                  key={poem.id}
-                  containerRef={leftPageRef}
-                  editable={isOwner}
-                  initial={poem.spotify_widget_box ?? undefined}
-                  onSave={(box) => {
-                    updatePoemWidgetBox(poem.id, box).catch(() => {});
-                  }}
-                >
-                  <SpotifyPlayer spotifyUrl={poem.spotify_url} active={!turningPage} />
-                </DraggableWidget>
-              ) : (
-                <p className="flex h-full items-center justify-center text-center font-mono text-[10px] uppercase tracking-wide text-ink-soft/50">
-                  No song, link, or picture added to this page yet
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      );
-    }
     return (
-      <div className="book-left-page">
-        <div className="page-back">
-          <div className="page-back-inner" />
-        </div>
-      </div>
+
+      <p className="p-6">
+        Journal not found.
+      </p>
+
     );
+
   }
 
+
   /* =========================================================
-     PAGE TURNING SHEET
-     The front face shows the OLD page throughout the entire
-     flip. The base layers underneath (book-left-page /
-     book-right-page) also still show the OLD pageView. Only
-     once onAnimationComplete fires do we swap pageView to
-     nextView and clear turningPage — so the new content is
-     mounted for the very first time already fully visible.
+     BUILD PAPERS
   ========================================================= */
-  function renderTurningPage() {
-    if (!turningPage) return null;
-    const isForward = turningPage.direction > 0;
-    return (
-      <motion.div
-        className={`page-turn-layer ${isForward ? 'forward' : 'backward'}`}
-        initial={{ rotateY: 0 }}
-        animate={{ rotateY: isForward ? -180 : 180 }}
-        transition={{ duration: TURN_DURATION, ease: TURN_EASE }}
-        onAnimationComplete={() => {
-          setPageView(turningPage.nextView);
-          setTurningPage(null);
+
+  const papers = [];
+
+
+  /* =========================================================
+     PAPER 1
+  ========================================================= */
+
+  papers.push({
+
+    id: 1,
+
+    front: (
+
+      <div
+        className="closed-book"
+        onClick={(e) => {
+
+          e.stopPropagation();
+
+
+          if (
+            isClosedFront &&
+            !isTurning
+          ) {
+
+            goNextPage();
+
+          }
+
+        }}
+        onContextMenu={(e) => {
+
+          e.preventDefault();
+
+
+          if (isOwner) {
+
+            setShowCoverMenu(
+              true
+            );
+
+          }
+
         }}
       >
-        <div className="page-turn-face page-turn-front">
-           {renderPageContent(turningPage.view)}
-        </div>
-        <div className="page-turn-face page-turn-back">
-          {isForward && turningPage.nextView.type === 'poem' ? (
-            // Render a simplified, static backface for forward flips so
-            // widgets (Spotify/Draggable) don't mount early and cause glitches.
-            <div className="book-right-page">
-              <div className="page-content">
-                <div className="page-inner">
-                  <h2>{(poems && poems[turningPage.nextView.index]?.title) || 'Untitled'}</h2>
-                  <p className="page-label">
-                    {(poems && poems[turningPage.nextView.index]?.poem_date) || ''}
-                  </p>
-                  <div className="poem-text">
-                    {(poems && poems[turningPage.nextView.index]?.content) || ''}
-                  </div>
-                </div>
-              </div>
+
+        {coverFront}
+
+
+        {showCoverMenu && (
+
+          <div
+            className="cover-menu"
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+          >
+
+            <button
+              onClick={() => {
+
+                setShowCoverMenu(
+                  false
+                );
+
+                setShowEditModal(
+                  true
+                );
+
+              }}
+            >
+
+              Edit journal
+
+            </button>
+
+
+            <button
+              onClick={() => {
+
+                setShowCoverMenu(
+                  false
+                );
+
+                handleDeleteJournal();
+
+              }}
+            >
+
+              Delete journal
+
+            </button>
+
+          </div>
+
+        )}
+
+      </div>
+
+    ),
+
+
+    back: (
+
+      <div className="book-left-page">
+
+        {insideCover}
+
+      </div>
+
+    ),
+
+  });
+
+
+  /* =========================================================
+     PAPER 2
+  ========================================================= */
+
+  papers.push({
+
+    id: 2,
+
+    front: (
+
+      <div className="book-right-page">
+
+        <TocPage
+          journal={
+            activeJournal
+          }
+          poems={poems}
+          poemsLoading={
+            poemsLoading
+          }
+          isOwner={isOwner}
+          onSelectPoem={
+            goToPoem
+          }
+          onExit={
+            goPreviousPage
+          }
+          onShare={() =>
+            setShowShare(true)
+          }
+          onNewPoem={
+            handleNewPoem
+          }
+        />
+
+      </div>
+
+    ),
+
+
+    back:
+      poems?.length
+        ? renderLeftPage(
+            poems[0]
+          )
+        : (
+
+          <div className="book-left-page">
+
+            {insideCover}
+
+          </div>
+
+        ),
+
+  });
+
+
+  /* =========================================================
+     POEM PAPERS
+  ========================================================= */
+
+  poems?.forEach(
+    (poem, index) => {
+
+      const nextPoem =
+        poems[index + 1];
+
+
+      papers.push({
+
+        id: index + 3,
+
+
+        front: (
+
+          <div className="book-right-page">
+
+            <PoemPage
+              poem={poem}
+              journalId={
+                journalId
+              }
+              isOwner={
+                isOwner
+              }
+              onNext={
+                goNextPage
+              }
+              onPrev={
+                goPreviousPage
+              }
+              hasNext={
+                index <
+                poems.length - 1
+              }
+              pageNumber={
+                index + 1
+              }
+              totalPages={
+                poems.length
+              }
+            />
+
+          </div>
+
+        ),
+
+
+        back: nextPoem
+          ? renderLeftPage(
+              nextPoem
+            )
+          : (
+
+            <div className="book-left-page">
+
+              <div className="blank-paper-page" />
+
             </div>
-          ) : (
-            renderPageContent(turningPage.nextView)
-          )}
-        </div>
-      </motion.div>
-    );
-  }
+
+          ),
+
+      });
+
+    }
+  );
+
+
+  /* =========================================================
+     FINAL PAPER
+  ========================================================= */
+
+  const finalPaperId =
+    papers.length + 1;
+
+
+  papers.push({
+
+    id: finalPaperId,
+
+
+    front: (
+
+      <div className="book-right-page">
+
+        <InsideBackCover
+          journal={
+            activeJournal
+          }
+        />
+
+      </div>
+
+    ),
+
+
+    back: (
+
+      <ClosedBackCover
+        journal={
+          activeJournal
+        }
+      />
+
+    ),
+
+  });
+
+
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
+
     <div
       className="journal-page"
       onClick={() => {
-        if (showCoverMenu) setShowCoverMenu(false);
+
+        if (showCoverMenu) {
+
+          setShowCoverMenu(
+            false
+          );
+
+        }
+
       }}
     >
+
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+
       <div className="journal-header">
-        <h1>Between Us and the Page</h1>
+
+        <h1>
+          Between Us and the Page
+        </h1>
+
+
         <div className="journal-header-links">
-          <span>My Library</span>
-          <span>Sign out</span>
+
+          <span>
+            My Library
+          </span>
+
+
+          <span>
+            Sign out
+          </span>
+
         </div>
+
       </div>
 
+
+      {/* =====================================================
+          DELETE
+      ===================================================== */}
+
       {isOwner && (
+
         <button
           className="delete-journal"
           onClick={(e) => {
+
             e.stopPropagation();
+
             handleDeleteJournal();
+
           }}
         >
+
           DELETE JOURNAL
+
         </button>
+
       )}
+
+
+      {/* =====================================================
+          CONTROLS
+      ===================================================== */}
 
       <div className="book-controls">
+
         <button
-          disabled={!isOpen || isAnimating || pageView.type === 'toc'}
-          onClick={goPrevious}
+          disabled={
+            currentLocation <= 1 ||
+            isTurning
+          }
+          onClick={
+            goPreviousPage
+          }
         >
+
           ← PREVIOUS
+
         </button>
+
+
         <span>
-          {bookState === 'closed-front' && 'Closed'}
-          {bookState === 'opening' && 'Opening…'}
-          {bookState === 'closing' && 'Closing…'}
-          {bookState === 'exiting' && 'Closing…'}
-          {bookState === 'closed-back' && 'Back Cover'}
-          {bookState === 'open' &&
-            (pageView.type === 'toc'
-              ? 'Table of Contents'
-              : pageView.type === 'back'
-              ? 'Back Cover'
-              : `Page ${pageView.index + 1} of ${poems?.length ?? 0}`)}
+
+          {isClosedFront &&
+            'Closed'}
+
+
+          {currentLocation === 2 &&
+            'Table of Contents'}
+
+
+          {currentLocation >= 3 &&
+            currentLocation <
+              maxLocation - 1 &&
+            `Page ${
+              currentLocation - 2
+            } of ${
+              poems?.length ?? 0
+            }`}
+
+
+          {currentLocation ===
+            maxLocation - 1 &&
+            'Inside Back Cover'}
+
+
+          {isClosedBack &&
+            'Back Cover'}
+
         </span>
+
+
         <button
-          disabled={isAnimating || (isOpen && pageView.type === 'back')}
-          onClick={() => {
-            if (bookState === 'closed-front') {
-              openBook();
-              return;
-            }
-            if (bookState === 'closed-back') {
-              reopenFromBack();
-              return;
-            }
-            if (isOpen) {
-              goNext();
-            }
-          }}
+          disabled={
+            currentLocation >=
+              maxLocation ||
+            isTurning
+          }
+          onClick={
+            goNextPage
+          }
         >
-          {bookState === 'closed-front'
+
+          {isClosedFront
             ? 'OPEN →'
-            : bookState === 'closed-back'
-            ? 'OPEN ←'
             : 'NEXT →'}
+
         </button>
-        {isOpen && (
-          <button disabled={isAnimating} onClick={closeBook}>
-            CLOSE
-          </button>
-        )}
+
       </div>
 
-      <div
-        className={`
-          book-wrapper
-          ${bookState === 'opening' ? 'is-opening' : ''}
-          ${bookState === 'closing' ? 'is-closing' : ''}
-          ${bookState === 'exiting' ? 'is-closing' : ''}
-          ${bookState === 'open' ? 'is-open' : ''}
-        `}
-      >
-        {bookState === 'closed-front' && (
-          <div
-            className="closed-book"
-            onClick={openBook}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              if (isOwner) setShowCoverMenu(true);
-            }}
-          >
-            {coverFront}
-            {showCoverMenu && (
-              <div
-                className="cover-menu"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  onClick={() => {
-                    setShowCoverMenu(false);
-                    setShowEditModal(true);
+
+      {/* =====================================================
+          BOOK
+      ===================================================== */}
+
+      <div className="book-stack-wrapper">
+
+        <div
+          className={`
+            bs-book
+            ${
+              isClosedFront
+                ? 'book-closed-front'
+                : ''
+            }
+            ${
+              isClosedBack
+                ? 'book-closed-back'
+                : ''
+            }
+            ${
+              isOpen
+                ? 'book-open'
+                : ''
+            }
+          `}
+        >
+
+          {papers.map(
+            (
+              paper,
+              index
+            ) => {
+
+              const isFlipped =
+                flippedPapers.has(
+                  paper.id
+                );
+
+
+              const total =
+                papers.length;
+
+
+              const isTurningThisPaper =
+                turningPaperRef.current ===
+                paper.id;
+
+
+              let zIndex;
+
+
+              if (
+                isTurningThisPaper
+              ) {
+
+                zIndex =
+                  total + 100;
+
+              } else if (
+                isFlipped
+              ) {
+
+                zIndex =
+                  index + 1;
+
+              } else {
+
+                zIndex =
+                  total - index;
+
+              }
+
+
+              return (
+
+                <div
+                  key={paper.id}
+                  className={`
+                    bs-paper
+                    ${
+                      isFlipped
+                        ? 'flipped'
+                        : ''
+                    }
+                  `}
+                  style={{
+                    zIndex,
                   }}
                 >
-                  Edit journal
-                </button>
-                <button
-                  onClick={() => {
-                    setShowCoverMenu(false);
-                    handleDeleteJournal();
-                  }}
-                >
-                  Delete journal
-                </button>
-              </div>
-            )}
-          </div>
-        )}
 
-        {bookState === 'closed-back' && (
-          <div className="closed-book" onClick={reopenFromBack}>
-            <div
-              className="closed-back-cover"
-              style={{ backgroundColor: activeJournal.cover_color }}
-            >
-              <div className="closed-back-cover-title">
-                {activeJournal.title}
-              </div>
-            </div>
-          </div>
-        )}
+                  <div className="bs-front">
 
-        {(bookState === 'opening' ||
-          bookState === 'open' ||
-          bookState === 'closing' ||
-          bookState === 'exiting') && (
-          <div className="open-book">
-            {/*
-              page-spread fades in/out in sync with the cover flip
-              (TURN_DURATION / TURN_EASE) so the left/right pages
-              never pop into view uncovered — that pop was the
-              "split second" glitch on open/close.
-            */}
-            <motion.div
-              className="page-spread"
-              initial={{ opacity: 0 }}
-              animate={{
-                opacity: bookState === 'open' || bookState === 'opening' ? 1 : 0,
-              }}
-              transition={{
-                duration: TURN_DURATION,
-                ease: TURN_EASE,
-                delay: bookState === 'opening' ? TURN_DURATION * 0.5 : 0,
-              }}
-            >
-              {renderLeftPage()}
-              <div className="book-right-page">{renderPageContent(pageView)}</div>
-            </motion.div>
-            {renderTurningPage()}
-            {bookState === 'opening' && (
-              <motion.div
-                className="animated-cover"
-                initial={{ rotateY: 0 }}
-                animate={{ rotateY: -180 }}
-                transition={{ duration: TURN_DURATION, ease: TURN_EASE }}
-                onAnimationComplete={() => setBookState('open')}
-                style={{ transformOrigin: 'left center', position: 'absolute', left: 180, top: 0, zIndex: 2000 }}
-              >
-                <div className="cover-front-face">{coverFront}</div>
-                <div className="cover-back-face">{insideCover}</div>
-              </motion.div>
-            )}
-            {bookState === 'closing' && (
-              <motion.div
-                className="animated-back-cover"
-                initial={{ rotateY: 0 }}
-                animate={{ rotateY: -180 }}
-                transition={{ duration: TURN_DURATION, ease: TURN_EASE }}
-                onAnimationComplete={() => setBookState('closed-back')}
-                style={{ transformOrigin: 'left center', position: 'absolute', left: 540, top: 0, zIndex: 2000 }}
-              >
-                <div className="back-cover-animation-face back-cover-animation-front">
-                  <NotebookBackCover journal={activeJournal} />
-                </div>
-                <div className="back-cover-animation-face back-cover-animation-back">
-                  <div
-                    className="closed-back-cover"
-                    style={{ backgroundColor: activeJournal.cover_color }}
-                  >
-                    <div className="closed-back-cover-title">
-                      {activeJournal.title}
+                    <div className="bs-front-content">
+
+                      {paper.front}
+
                     </div>
+
                   </div>
+
+
+                  <div className="bs-back">
+
+                    <div className="bs-back-content">
+
+                      {paper.back}
+
+                    </div>
+
+                  </div>
+
                 </div>
-              </motion.div>
-            )}
-            {/* =========================================
-                EXIT ANIMATION — reverse of the opening
-                flip, landing back on the closed front cover
-            ========================================= */}
-            {bookState === 'exiting' && (
-              <motion.div
-                className="animated-cover"
-                initial={{ rotateY: -180 }}
-                animate={{ rotateY: 0 }}
-                transition={{ duration: TURN_DURATION, ease: TURN_EASE }}
-                onAnimationComplete={() => {
-                  setBookState('closed-front');
-                  setPageView({ type: 'toc' });
+
+              );
+
+            }
+          )}
+
+
+          {/* =================================================
+              CLICK NAVIGATION
+
+              Only active while book is open.
+          ================================================= */}
+
+          {isOpen && !isTurning && (
+
+            <>
+
+              <button
+                type="button"
+                aria-label="Previous page"
+                className="book-click-zone book-click-zone-left"
+                onClick={(e) => {
+
+                  e.stopPropagation();
+
+                  goPreviousPage();
+
                 }}
-                style={{ transformOrigin: 'left center', position: 'absolute', left: 180, top: 0, zIndex: 2000 }}
-              >
-                <div className="cover-front-face">{coverFront}</div>
-                <div className="cover-back-face">{insideCover}</div>
-              </motion.div>
-            )}
-          </div>
-        )}
+              />
+
+
+              <button
+                type="button"
+                aria-label="Next page"
+                className="book-click-zone book-click-zone-right"
+                onClick={(e) => {
+
+                  e.stopPropagation();
+
+                  goNextPage();
+
+                }}
+              />
+
+            </>
+
+          )}
+
+        </div>
+
       </div>
+
+
+      {/* =====================================================
+          SHARE
+      ===================================================== */}
 
       {showShare && (
-        <ShareModal journalId={journalId} onClose={() => setShowShare(false)} />
-      )}
-      {showEditModal && (
-        <EditJournalModal
-          journal={activeJournal}
-          onClose={() => setShowEditModal(false)}
-          onSaved={(updated) => setJournalOverride(updated)}
+
+        <ShareModal
+          journalId={
+            journalId
+          }
+          onClose={() =>
+            setShowShare(
+              false
+            )
+          }
         />
+
       )}
+
+
+      {/* =====================================================
+          EDIT
+      ===================================================== */}
+
+      {showEditModal && (
+
+        <EditJournalModal
+          journal={
+            activeJournal
+          }
+          onClose={() =>
+            setShowEditModal(
+              false
+            )
+          }
+          onSaved={(updated) =>
+            setJournalOverride(
+              updated
+            )
+          }
+        />
+
+      )}
+
     </div>
+
   );
+
 }
+
 
 /* =========================================================
    TABLE OF CONTENTS
 ========================================================= */
+
 function TocPage({
   journal,
   poems,
@@ -615,103 +1519,313 @@ function TocPage({
   onShare,
   onNewPoem,
 }) {
+
   return (
+
     <div className="page-inner">
-      <h2>{journal.title}</h2>
-      <p className="page-label">TABLE OF CONTENTS</p>
+
+      <h2>
+        {journal.title}
+      </h2>
+
+
+      <p className="page-label">
+        TABLE OF CONTENTS
+      </p>
+
+
       <div className="toc-list">
+
         {poemsLoading ? (
-          <Loading label="Turning pages" />
+
+          <Loading
+            label="Turning pages"
+          />
+
         ) : poems?.length ? (
-          poems.map((poem, index) => (
-            <button
-              key={poem.id}
-              onClick={() => onSelectPoem(index)}
-              className="toc-item"
-            >
-              <span>
-                {index + 1}. {poem.title || 'Untitled'}
-              </span>
-              <span>{poem.poem_date || ''}</span>
-            </button>
-          ))
+
+          poems.map(
+            (
+              poem,
+              index
+            ) => (
+
+              <button
+                key={poem.id}
+                onClick={() =>
+                  onSelectPoem(
+                    index
+                  )
+                }
+                className="toc-item"
+              >
+
+                <span>
+
+                  {index + 1}.
+                  {' '}
+
+                  {poem.title ||
+                    'Untitled'}
+
+                </span>
+
+
+                <span>
+
+                  {poem.poem_date ||
+                    ''}
+
+                </span>
+
+              </button>
+
+            )
+          )
+
         ) : (
-          <p className="empty-text">No poems in this journal yet.</p>
+
+          <p className="empty-text">
+
+            No poems in this journal yet.
+
+          </p>
+
         )}
+
       </div>
+
+
       <div className="page-footer">
-        <button onClick={onExit} className="text-button">
+
+        <button
+          onClick={
+            onExit
+          }
+          className="text-button"
+        >
+
           ← CLOSE JOURNAL
+
         </button>
+
+
         {isOwner && (
+
           <div className="footer-buttons">
-            <Button variant="secondary" onClick={onShare}>
+
+            <Button
+              variant="secondary"
+              onClick={
+                onShare
+              }
+            >
+
               Share
+
             </Button>
-            <Button onClick={onNewPoem}>New Poem</Button>
+
+
+            <Button
+              onClick={
+                onNewPoem
+              }
+            >
+
+              New Poem
+
+            </Button>
+
           </div>
+
         )}
+
       </div>
+
     </div>
+
   );
+
 }
+
 
 /* =========================================================
    POEM PAGE
 ========================================================= */
+
 function PoemPage({
   poem,
   journalId,
   isOwner,
-  onNext,
-  onPrev,
-  hasNext,
-  pageNumber,
-  totalPages,
 }) {
-  const navigate = useNavigate();
+
+  const navigate =
+    useNavigate();
+
+
   return (
+
     <div className="page-inner poem-page">
-      <div>
-        <h2>{poem.title || 'Untitled'}</h2>
-        {poem.poem_date && <p className="page-label">{poem.poem_date}</p>}
+
+      <div className="poem-page-heading">
+
+        <h2>
+
+          {poem.title ||
+            'Untitled'}
+
+        </h2>
+
+
+        {poem.poem_date && (
+
+          <p className="page-label">
+
+            {poem.poem_date}
+
+          </p>
+
+        )}
+
       </div>
-      <div className="poem-text">{poem.content}</div>
+
+
+      {/* =====================================================
+          EDIT ICON
+      ===================================================== */}
+
       {isOwner && (
+
         <button
-          onClick={() => navigate(`/journal/${journalId}/poem/${poem.id}`)}
-          className="edit-button"
+          type="button"
+          className="poem-edit-icon"
+          title="Edit this page"
+          aria-label="Edit this page"
+          onClick={() =>
+            navigate(
+              `/journal/${journalId}/poem/${poem.id}`
+            )
+          }
         >
-          EDIT THIS PAGE
+
+          ✎
+
         </button>
+
       )}
-      <div className="page-footer">
-        <button onClick={onPrev} className="text-button">
-          ← Previous
-        </button>
-        <span className="page-number">
-          Page {pageNumber} of {totalPages}
-        </span>
-        <button onClick={onNext} disabled={!hasNext} className="text-button">
-          Next →
-        </button>
+
+
+      <div className="poem-text">
+
+        {poem.content}
+
       </div>
+
     </div>
+
   );
+
 }
 
+
 /* =========================================================
-   BACK COVER
+   INSIDE BACK COVER
 ========================================================= */
-function NotebookBackCover({ journal }) {
+
+function InsideBackCover({
+  journal,
+}) {
+
   return (
-    <div className="back-cover-page">
+
+    <div
+      className="inside-back-cover"
+      style={{
+        backgroundColor:
+          journal.cover_color,
+      }}
+    >
+
       <div
-        className="back-cover-design"
-        style={{ backgroundColor: journal.cover_color }}
-      >
-        <div className="back-cover-title">{journal.title}</div>
-      </div>
+        className="inside-back-cover-material"
+        style={{
+          backgroundColor:
+            journal.cover_color,
+        }}
+      />
+
     </div>
+
   );
+
+}
+
+
+/* =========================================================
+   CLOSED BACK COVER
+========================================================= */
+
+function ClosedBackCover({
+  journal,
+}) {
+
+  return (
+
+    <div
+      className="closed-back-cover"
+      style={{
+        backgroundColor:
+          journal.cover_color,
+      }}
+    >
+
+      {/* ===================================================
+          SPINE
+
+          RIGHT SIDE because the back cover is the reverse
+          of the front cover.
+      =================================================== */}
+
+      <div
+        className="back-cover-spine"
+        style={{
+          backgroundColor:
+            journal.cover_color,
+        }}
+      >
+
+        <div className="spine-highlight" />
+
+        <div className="spine-lines">
+
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+
+        </div>
+
+      </div>
+
+
+      {/* ===================================================
+          BACK COVER CONTENT
+      =================================================== */}
+
+      <div className="closed-back-cover-content">
+
+        <div className="closed-back-cover-title">
+
+          {journal.title}
+
+        </div>
+
+      </div>
+
+    </div>
+
+  );
+
 }
