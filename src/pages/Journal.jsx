@@ -1,4 +1,5 @@
 import {
+  useMemo,
   useState,
   useRef,
 } from 'react';
@@ -17,7 +18,6 @@ import {
   createPoem,
   getPoemsForJournal,
   updatePoemWidgetBox,
-  uploadPoemImage,
   updatePoemImageBox,
 } from '../services/poemService';
 
@@ -41,6 +41,496 @@ import EditJournalModal from '../components/EditJournalModal';
 
 const TURN_DURATION = 720;
 
+const TOC_ITEMS_PER_PAGE = 6;
+
+const POEM_FIRST_PAGE_LINES = 10;
+const POEM_CONTINUATION_LINES = 12;
+
+
+/* =========================================================
+   POEM TEXT STYLE STORAGE
+========================================================= */
+
+const POEM_STYLE_STORAGE_KEY =
+  'between-us-poem-text-styles';
+
+
+const DEFAULT_POEM_TEXT_STYLES = {
+
+  title: {
+    fontFamily:
+      'Georgia, "Times New Roman", serif',
+
+    fontSize:
+      24,
+
+    fontWeight:
+      400,
+
+    fontStyle:
+      'normal',
+
+    textAlign:
+      'left',
+
+    letterSpacing:
+      0,
+
+    lineHeight:
+      1.2,
+
+    color:
+      '#2b2a27',
+  },
+
+
+  date: {
+    fontFamily:
+      'monospace',
+
+    fontSize:
+      10,
+
+    fontWeight:
+      400,
+
+    fontStyle:
+      'normal',
+
+    textAlign:
+      'left',
+
+    letterSpacing:
+      1,
+
+    lineHeight:
+      1.4,
+
+    color:
+      '#77736b',
+  },
+
+
+  content: {
+    fontFamily:
+      'Georgia, "Times New Roman", serif',
+
+    fontSize:
+      16,
+
+    fontWeight:
+      400,
+
+    fontStyle:
+      'normal',
+
+    textAlign:
+      'left',
+
+    letterSpacing:
+      0,
+
+    lineHeight:
+      1.5,
+
+    color:
+      '#2b2a27',
+  },
+
+};
+
+
+/* =========================================================
+   STYLE HELPERS
+========================================================= */
+
+function getStoredPoemStyles(poemId) {
+
+  if (
+    typeof window === 'undefined'
+  ) {
+    return DEFAULT_POEM_TEXT_STYLES;
+  }
+
+
+  try {
+
+    const stored =
+      JSON.parse(
+        localStorage.getItem(
+          POEM_STYLE_STORAGE_KEY
+        ) || '{}'
+      );
+
+
+    const poemStyles =
+      stored[poemId];
+
+
+    if (!poemStyles) {
+
+      return DEFAULT_POEM_TEXT_STYLES;
+
+    }
+
+
+    return {
+
+      ...DEFAULT_POEM_TEXT_STYLES,
+
+      ...poemStyles,
+
+      title: {
+        ...DEFAULT_POEM_TEXT_STYLES.title,
+        ...(poemStyles.title || {}),
+      },
+
+      date: {
+        ...DEFAULT_POEM_TEXT_STYLES.date,
+        ...(poemStyles.date || {}),
+      },
+
+      content: {
+        ...DEFAULT_POEM_TEXT_STYLES.content,
+        ...(poemStyles.content || {}),
+      },
+
+    };
+
+  } catch {
+
+    return DEFAULT_POEM_TEXT_STYLES;
+
+  }
+
+}
+
+
+function saveStoredPoemStyles(
+  poemId,
+  styles
+) {
+
+  if (
+    typeof window === 'undefined'
+  ) {
+    return;
+  }
+
+
+  try {
+
+    const stored =
+      JSON.parse(
+        localStorage.getItem(
+          POEM_STYLE_STORAGE_KEY
+        ) || '{}'
+      );
+
+
+    stored[poemId] =
+      styles;
+
+
+    localStorage.setItem(
+      POEM_STYLE_STORAGE_KEY,
+      JSON.stringify(stored)
+    );
+
+  } catch {
+    // Ignore localStorage errors.
+  }
+
+}
+
+
+/* =========================================================
+   POEM TEXT PAGINATION
+========================================================= */
+
+function wrapPoemText(
+  text,
+  style = DEFAULT_POEM_TEXT_STYLES.content
+) {
+
+  const source =
+    String(text ?? '');
+
+
+  const canvas =
+    typeof document !== 'undefined'
+      ? document.createElement('canvas')
+      : null;
+
+
+  const context =
+    canvas?.getContext('2d');
+
+
+  if (context) {
+
+    context.font =
+      `${style.fontStyle || 'normal'} ` +
+      `${style.fontWeight || 400} ` +
+      `${style.fontSize || 16}px ` +
+      `${style.fontFamily || 'Georgia'}`;
+
+  }
+
+
+  const maxWidth = 276;
+
+
+  function measure(value) {
+
+    if (!context) {
+
+      return (
+        value.length *
+        Number(style.fontSize || 16) *
+        0.5
+      );
+
+    }
+
+
+    return context.measureText(
+      value
+    ).width;
+
+  }
+
+
+  const lines = [];
+
+
+  const originalLines =
+    source.split('\n');
+
+
+  originalLines.forEach(
+    (originalLine) => {
+
+      if (
+        originalLine.length === 0
+      ) {
+
+        lines.push('');
+
+        return;
+
+      }
+
+
+      const words =
+        originalLine.split(/\s+/);
+
+
+      let currentLine = '';
+
+
+      words.forEach(
+        (word) => {
+
+          const candidate =
+            currentLine
+              ? `${currentLine} ${word}`
+              : word;
+
+
+          if (
+            measure(candidate) <=
+            maxWidth
+          ) {
+
+            currentLine =
+              candidate;
+
+            return;
+
+          }
+
+
+          if (!currentLine) {
+
+            let partial = '';
+
+
+            for (
+              const character of word
+            ) {
+
+              const candidatePart =
+                partial + character;
+
+
+              if (
+                partial &&
+                measure(candidatePart) >
+                  maxWidth
+              ) {
+
+                lines.push(
+                  partial
+                );
+
+
+                partial =
+                  character;
+
+              } else {
+
+                partial =
+                  candidatePart;
+
+              }
+
+            }
+
+
+            currentLine =
+              partial;
+
+
+            return;
+
+          }
+
+
+          lines.push(
+            currentLine
+          );
+
+
+          currentLine =
+            word;
+
+        }
+      );
+
+
+      if (currentLine) {
+
+        lines.push(
+          currentLine
+        );
+
+      }
+
+    }
+  );
+
+
+  return lines;
+
+}
+
+
+/* =========================================================
+   POEM PAGINATION
+========================================================= */
+
+function paginatePoem(
+  poem,
+  styles
+) {
+
+  const lines =
+    wrapPoemText(
+      poem?.content ?? '',
+      styles?.content ||
+        DEFAULT_POEM_TEXT_STYLES.content
+    );
+
+
+  if (!lines.length) {
+
+    return [''];
+
+  }
+
+
+  const pages = [];
+
+  let position = 0;
+
+  let pageNumber = 0;
+
+
+  while (
+    position < lines.length
+  ) {
+
+    const linesPerPage =
+      pageNumber === 0
+        ? POEM_FIRST_PAGE_LINES
+        : POEM_CONTINUATION_LINES;
+
+
+    pages.push(
+      lines
+        .slice(
+          position,
+          position +
+            linesPerPage
+        )
+        .join('\n')
+    );
+
+
+    position +=
+      linesPerPage;
+
+
+    pageNumber += 1;
+
+  }
+
+
+  return pages;
+
+}
+
+
+/* =========================================================
+   TABLE OF CONTENTS PAGINATION
+========================================================= */
+
+function paginateToc(
+  poems
+) {
+
+  const pages = [];
+
+
+  for (
+    let index = 0;
+    index < poems.length;
+    index += TOC_ITEMS_PER_PAGE
+  ) {
+
+    pages.push(
+      poems.slice(
+        index,
+        index +
+          TOC_ITEMS_PER_PAGE
+      )
+    );
+
+  }
+
+
+  if (!pages.length) {
+
+    pages.push([]);
+
+  }
+
+
+  return pages;
+
+}
+
 
 /* =========================================================
    JOURNAL
@@ -48,53 +538,42 @@ const TURN_DURATION = 720;
 
 export default function Journal() {
 
-  const { journalId } = useParams();
-
-  const navigate = useNavigate();
-
-  const { user } = useAuth();
+  const {
+    journalId,
+  } = useParams();
 
 
-  /*
-    LOCATION
-
-    1 = CLOSED FRONT COVER
-
-    2 = INSIDE COVER | TABLE OF CONTENTS
-
-    3 = POEM 1 MEDIA | POEM 1
-
-    4 = POEM 2 MEDIA | POEM 2
-
-    ...
-
-    poems.length + 3
-      = INSIDE BACK COVER
-
-    poems.length + 4
-      = CLOSED BACK COVER
-  */
-
-  const [currentLocation, setCurrentLocation] =
-    useState(1);
+  const navigate =
+    useNavigate();
 
 
-  /*
-    Stores papers that have already
-    flipped from right → left.
-  */
-
-  const [flippedPapers, setFlippedPapers] =
-    useState(() => new Set());
+  const {
+    user,
+  } = useAuth();
 
 
-  /*
-    Prevent multiple page turns
-    from happening at once.
-  */
+  /* =======================================================
+     BOOK LOCATION
+  ======================================================= */
 
-  const [isTurning, setIsTurning] =
-    useState(false);
+  const [
+    currentLocation,
+    setCurrentLocation,
+  ] = useState(1);
+
+
+  const [
+    flippedPapers,
+    setFlippedPapers,
+  ] = useState(
+    () => new Set()
+  );
+
+
+  const [
+    isTurning,
+    setIsTurning,
+  ] = useState(false);
 
 
   const turningPaperRef =
@@ -105,113 +584,221 @@ export default function Journal() {
     useRef(1);
 
 
-  /* =========================================================
+  /* =======================================================
      MODALS
-  ========================================================= */
+  ======================================================= */
 
-  const [showShare, setShowShare] =
-    useState(false);
-
-  const [showCoverMenu, setShowCoverMenu] =
-    useState(false);
-
-  const [showEditModal, setShowEditModal] =
-    useState(false);
-
-  const [journalOverride, setJournalOverride] =
-    useState(null);
+  const [
+    showShare,
+    setShowShare,
+  ] = useState(false);
 
 
-  /* =========================================================
+  const [
+    showCoverMenu,
+    setShowCoverMenu,
+  ] = useState(false);
+
+
+  const [
+    showEditModal,
+    setShowEditModal,
+  ] = useState(false);
+
+
+  const [
+    journalOverride,
+    setJournalOverride,
+  ] = useState(null);
+
+
+  /* =======================================================
      IMAGE WIDGET STATE
-  =========================================================
+  ======================================================= */
 
-     We keep a local copy for immediate UI updates.
+  const [
+    imageWidgets,
+    setImageWidgets,
+  ] = useState(() => {
 
-     The actual image widget is ALSO saved to Supabase
-     through updatePoemImageBox().
-  ========================================================= */
+    try {
 
-  const [imageWidgets, setImageWidgets] =
-    useState(() => {
+      return JSON.parse(
+        localStorage.getItem(
+          'imageWidgets'
+        ) || '{}'
+      );
 
-      try {
+    } catch {
 
-        return JSON.parse(
-          localStorage.getItem(
-            'imageWidgets'
-          ) || '{}'
-        );
+      return {};
 
-      } catch {
+    }
 
-        return {};
-
-      }
-
-    });
+  });
 
 
-  const leftPageRef =
-    useRef(null);
+  /* =======================================================
+     POEM TEXT STYLE STATE
+  ======================================================= */
+
+  const [
+    poemTextStyles,
+    setPoemTextStyles,
+  ] = useState(() => {
+
+    try {
+
+      return JSON.parse(
+        localStorage.getItem(
+          POEM_STYLE_STORAGE_KEY
+        ) || '{}'
+      );
+
+    } catch {
+
+      return {};
+
+    }
+
+  });
 
 
-  /* =========================================================
-     DATA
-  ========================================================= */
+  /* =======================================================
+     LOAD JOURNAL
+  ======================================================= */
 
   const {
     data: journal,
     loading: journalLoading,
   } = useAsync(
-    () => getJournal(journalId),
+    () =>
+      getJournal(
+        journalId
+      ),
     [journalId]
   );
 
+
+  /* =======================================================
+     LOAD POEMS
+  ======================================================= */
 
   const {
     data: poems,
     loading: poemsLoading,
   } = useAsync(
-    () => getPoemsForJournal(journalId),
+    () =>
+      getPoemsForJournal(
+        journalId
+      ),
     [journalId]
   );
 
 
   const activeJournal =
-    journalOverride ?? journal;
+    journalOverride ??
+    journal;
+
+
+  const safePoems =
+    poems ?? [];
 
 
   const isOwner =
     journal &&
     user &&
-    journal.owner_id === user.id;
+    journal.owner_id ===
+      user.id;
 
 
-  /*
-    Keep location ref synchronized.
-  */
+  /* =======================================================
+     KEEP LOCATION REF SYNCHRONIZED
+  ======================================================= */
 
   locationRef.current =
     currentLocation;
 
 
-  const maxLocation =
-    (poems?.length ?? 0) + 4;
+  /* =======================================================
+     PAGINATE TOC
+  ======================================================= */
+
+  const tocPages =
+    useMemo(
+      () =>
+        paginateToc(
+          safePoems
+        ),
+      [safePoems]
+    );
 
 
-  const isClosedFront =
-    currentLocation === 1;
+  /* =======================================================
+     PAGINATE ALL POEMS
+  ======================================================= */
+
+  const poemPageEntries =
+    useMemo(() => {
+
+      const entries = [];
 
 
-  const isClosedBack =
-    currentLocation === maxLocation;
+      safePoems.forEach(
+        (poem) => {
+
+          const styles =
+            poemTextStyles[poem.id] ||
+            getStoredPoemStyles(
+              poem.id
+            );
 
 
-  const isOpen =
-    !isClosedFront &&
-    !isClosedBack;
+          const pages =
+            paginatePoem(
+              poem,
+              styles
+            );
 
+
+          pages.forEach(
+            (
+              content,
+              pageIndex
+            ) => {
+
+              entries.push({
+
+                poem,
+
+                content,
+
+                pageNumber:
+                  pageIndex + 1,
+
+                totalPages:
+                  pages.length,
+
+              });
+
+            }
+          );
+
+        }
+      );
+
+
+      return entries;
+
+    }, [
+      safePoems,
+      poemTextStyles,
+    ]);
+
+
+  /* =======================================================
+     COVER DATE
+  ======================================================= */
 
   const date =
     activeJournal
@@ -228,60 +815,124 @@ export default function Journal() {
       : '';
 
 
-  /* =========================================================
-     COVER
-  ========================================================= */
+  /* =======================================================
+   BOOK LOCATION LIMIT
+======================================================= */
+
+/*
+   Count the real papers that are actually rendered below.
+
+   The old calculation added an extra paper whenever there were
+   two or more Table of Contents pages. That made maxLocation one
+   step larger than the real back-cover location, so isClosedBack
+   never became true when the notebook was actually closed.
+
+   Rendered papers:
+   - 1 front-cover paper
+   - Table of Contents papers
+   - poemPageEntries.length poem papers
+   - 1 final inside/back-cover paper
+
+   This matches the actual paper structure generated below.
+*/
+
+const estimatedPaperCount =
+  tocPages.length +
+  poemPageEntries.length +
+  2;
+
+
+const maxLocation =
+  estimatedPaperCount + 1;
+
+
+const isClosedFront =
+  currentLocation === 1;
+
+
+const isClosedBack =
+  currentLocation ===
+  maxLocation;
+
+
+const isOpen =
+  !isClosedFront &&
+  !isClosedBack;
+
+
+  /* =======================================================
+     FRONT COVER
+  ======================================================= */
 
   const coverFront =
     activeJournal ? (
 
       <NotebookCover
+
         title={
           activeJournal.title
         }
+
         description={
           activeJournal.description
         }
+
         date={date}
+
         authorName={
           activeJournal.author_name
         }
+
         coverColor={
           activeJournal.cover_color
         }
+
         coverMaterial={
           activeJournal.cover_material
         }
+
         coverImageUrl={
           activeJournal.cover_image_url
         }
+
+        journalId={
+          journalId
+        }
+
+        isOwner={
+          isOwner
+        }
+
       />
 
     ) : null;
 
 
-  /* =========================================================
+  /* =======================================================
      INSIDE FRONT COVER
-  ========================================================= */
+  ======================================================= */
 
   const insideCover =
     activeJournal ? (
 
       <InsideCoverPanel
+
         coverColor={
           activeJournal.cover_color
         }
+
         coverMaterial={
           activeJournal.cover_material
         }
+
       />
 
     ) : null;
 
 
-  /* =========================================================
-     CREATE POEM
-  ========================================================= */
+  /* =======================================================
+     CREATE NEW POEM
+  ======================================================= */
 
   async function handleNewPoem() {
 
@@ -299,7 +950,7 @@ export default function Journal() {
             '',
 
           displayOrder:
-            poems?.length ?? 0,
+            safePoems.length,
 
         });
 
@@ -315,6 +966,7 @@ export default function Journal() {
         error
       );
 
+
       alert(
         'Could not create the poem.'
       );
@@ -324,9 +976,9 @@ export default function Journal() {
   }
 
 
-  /* =========================================================
+  /* =======================================================
      DELETE JOURNAL
-  ========================================================= */
+  ======================================================= */
 
   async function handleDeleteJournal() {
 
@@ -347,6 +999,7 @@ export default function Journal() {
         journalId
       );
 
+
       navigate(
         '/dashboard'
       );
@@ -358,6 +1011,7 @@ export default function Journal() {
         error
       );
 
+
       alert(
         'Could not delete the journal.'
       );
@@ -367,31 +1021,27 @@ export default function Journal() {
   }
 
 
-  /* =========================================================
+  /* =======================================================
      SAVE IMAGE WIDGET
-  ========================================================= */
+  ======================================================= */
 
   function saveImageWidget(
     poemId,
     next
   ) {
 
-    /*
-      Update local React state immediately.
-    */
-
     setImageWidgets(
-      (prev) => {
+      (previous) => {
 
         const nextMap = {
-          ...prev,
-          [poemId]: next,
+
+          ...previous,
+
+          [poemId]:
+            next,
+
         };
 
-
-        /*
-          Keep localStorage as a local cache.
-        */
 
         try {
 
@@ -413,130 +1063,72 @@ export default function Journal() {
     );
 
 
-    /*
-      Save the widget position and image URL
-      to Supabase when the user owns the journal.
-    */
-
     if (isOwner) {
 
       updatePoemImageBox(
         poemId,
         next
-      ).catch((error) => {
+      ).catch(
+        (error) => {
 
-        console.error(
-          'Failed to save image position:',
-          error
-        );
+          console.error(
+            'Failed to save image position:',
+            error
+          );
 
-      });
+        }
+      );
 
     }
 
   }
 
 
-  /* =========================================================
-     UPLOAD IMAGE FOR POEM
-  ========================================================= */
+  /* =======================================================
+     SAVE POEM TEXT STYLE
+  ======================================================= */
 
-  async function addImageForPoem(
+  function savePoemTextStyle(
     poemId,
-    file
+    nextStyles
   ) {
 
-    if (!file) {
-      return;
-    }
+    setPoemTextStyles(
+      (previous) => {
+
+        const nextMap = {
+
+          ...previous,
+
+          [poemId]:
+            nextStyles,
+
+        };
 
 
-    try {
-
-      /*
-        Upload the actual image file
-        to the Supabase Storage bucket.
-      */
-
-      const url =
-        await uploadPoemImage(
-          journalId,
+        saveStoredPoemStyles(
           poemId,
-          file
+          nextStyles
         );
 
 
-      /*
-        Default position for the image.
-
-        The image is placed near the TOP
-        of the left page.
-      */
-
-      const defaultBox = {
-
-        x: 20,
-
-        y: 20,
-
-        w: 220,
-
-        h: 140,
-
-        url,
-
-      };
-
-
-      /*
-        Save the image widget immediately.
-      */
-
-      saveImageWidget(
-        poemId,
-        defaultBox
-      );
-
-
-      /*
-        Also make sure the image widget
-        is stored in Supabase.
-      */
-
-      if (isOwner) {
-
-        await updatePoemImageBox(
-          poemId,
-          defaultBox
-        );
+        return nextMap;
 
       }
-
-    } catch (error) {
-
-      console.error(
-        'Upload failed:',
-        error
-      );
-
-
-      alert(
-        'Image upload failed.'
-      );
-
-    }
+    );
 
   }
 
 
-  /* =========================================================
-     PAGE TURN
-  ========================================================= */
+  /* =======================================================
+     FINISH PAGE TURN
+  ======================================================= */
 
   function finishTurn() {
 
     turningPaperRef.current =
       null;
+
 
     setIsTurning(
       false
@@ -545,9 +1137,9 @@ export default function Journal() {
   }
 
 
-  /* =========================================================
+  /* =======================================================
      TURN FORWARD
-  ========================================================= */
+  ======================================================= */
 
   function turnForwardOne() {
 
@@ -561,7 +1153,8 @@ export default function Journal() {
 
 
     if (
-      location >= maxLocation
+      location >=
+      maxLocation
     ) {
 
       return;
@@ -583,14 +1176,18 @@ export default function Journal() {
 
 
     setFlippedPapers(
-      (prev) => {
+      (previous) => {
 
         const next =
-          new Set(prev);
+          new Set(
+            previous
+          );
+
 
         next.add(
           paperId
         );
+
 
         return next;
 
@@ -619,9 +1216,9 @@ export default function Journal() {
   }
 
 
-  /* =========================================================
+  /* =======================================================
      TURN BACKWARD
-  ========================================================= */
+  ======================================================= */
 
   function turnBackwardOne() {
 
@@ -657,14 +1254,18 @@ export default function Journal() {
 
 
     setFlippedPapers(
-      (prev) => {
+      (previous) => {
 
         const next =
-          new Set(prev);
+          new Set(
+            previous
+          );
+
 
         next.delete(
           paperId
         );
+
 
         return next;
 
@@ -694,22 +1295,673 @@ export default function Journal() {
 
 
   function goNextPage() {
-
     turnForwardOne();
-
   }
 
 
   function goPreviousPage() {
-
     turnBackwardOne();
+  }
+
+
+  /* =======================================================
+     BUILD PAPER LIST
+  ======================================================= */
+
+  const papers = [];
+
+
+  const poemPaperLocations = [];
+
+
+  /* =======================================================
+     PAPER 1
+  ======================================================= */
+
+  papers.push({
+
+    id: 1,
+
+    front: (
+
+      <div
+
+        className="closed-book"
+
+        onClick={(e) => {
+
+          e.stopPropagation();
+
+
+          if (
+            isClosedFront &&
+            !isTurning
+          ) {
+
+            goNextPage();
+
+          }
+
+        }}
+
+
+        onContextMenu={(e) => {
+
+          e.preventDefault();
+
+
+          if (isOwner) {
+
+            setShowCoverMenu(
+              true
+            );
+
+          }
+
+        }}
+
+      >
+
+        {coverFront}
+
+
+        {showCoverMenu && (
+
+          <div
+
+            className="cover-menu"
+
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+
+          >
+
+            <button
+              onClick={() => {
+
+                setShowCoverMenu(
+                  false
+                );
+
+
+                setShowEditModal(
+                  true
+                );
+
+              }}
+            >
+              Edit journal
+            </button>
+
+
+            <button
+              onClick={() => {
+
+                setShowCoverMenu(
+                  false
+                );
+
+
+                handleDeleteJournal();
+
+              }}
+            >
+              Delete journal
+            </button>
+
+          </div>
+
+        )}
+
+      </div>
+
+    ),
+
+
+    back: (
+
+      <div className="book-left-page">
+        {insideCover}
+      </div>
+
+    ),
+
+  });
+
+
+  /* =======================================================
+     TABLE OF CONTENTS PAPERS
+  ======================================================= */
+
+  if (
+    tocPages.length === 1
+  ) {
+
+    papers.push({
+
+      id:
+        papers.length + 1,
+
+
+      front: (
+
+        <div className="book-right-page">
+
+          <TocPage
+
+            journal={
+              activeJournal
+            }
+
+            poems={
+              tocPages[0]
+            }
+
+            globalStartIndex={0}
+
+            poemsLoading={
+              poemsLoading
+            }
+
+            isOwner={
+              isOwner
+            }
+
+            onSelectPoem={
+              goToPoem
+            }
+
+            onShare={() =>
+              setShowShare(
+                true
+              )
+            }
+
+            onNewPoem={
+              handleNewPoem
+            }
+
+          />
+
+        </div>
+
+      ),
+
+
+      back:
+
+        poemPageEntries.length > 0
+          ? (
+
+            <PoemMediaPage
+
+              poem={
+                poemPageEntries[0].poem
+              }
+
+              imageWidgets={
+                imageWidgets
+              }
+
+              isOwner={
+                isOwner
+              }
+
+              onSaveImage={
+                saveImageWidget
+              }
+
+            />
+
+          )
+          : (
+
+            <div className="book-left-page">
+
+              <div className="blank-paper-page" />
+
+            </div>
+
+          ),
+
+    });
+
+  } else {
+
+    papers.push({
+
+      id:
+        papers.length + 1,
+
+
+      front: (
+
+        <div className="book-right-page">
+
+          <TocPage
+
+            journal={
+              activeJournal
+            }
+
+            poems={
+              tocPages[0]
+            }
+
+            globalStartIndex={0}
+
+            poemsLoading={
+              poemsLoading
+            }
+
+            isOwner={
+              isOwner
+            }
+
+            onSelectPoem={
+              goToPoem
+            }
+
+            onShare={() =>
+              setShowShare(
+                true
+              )
+            }
+
+            onNewPoem={
+              handleNewPoem
+            }
+
+          />
+
+        </div>
+
+      ),
+
+
+      back: (
+
+        <div className="book-left-page">
+
+          <TocPage
+
+            journal={
+              activeJournal
+            }
+
+            poems={
+              tocPages[1]
+            }
+
+            globalStartIndex={
+              TOC_ITEMS_PER_PAGE
+            }
+
+            poemsLoading={false}
+
+            isOwner={
+              isOwner
+            }
+
+            onSelectPoem={
+              goToPoem
+            }
+
+            onShare={() =>
+              setShowShare(
+                true
+              )
+            }
+
+            onNewPoem={
+              handleNewPoem
+            }
+
+            isContinuation
+
+          />
+
+        </div>
+
+      ),
+
+    });
+
+
+    for (
+      let tocIndex = 2;
+      tocIndex < tocPages.length;
+      tocIndex += 1
+    ) {
+
+      papers.push({
+
+        id:
+          papers.length + 1,
+
+
+        front: (
+
+          <div className="book-right-page">
+
+            <div className="blank-paper-page" />
+
+          </div>
+
+        ),
+
+
+        back: (
+
+          <div className="book-left-page">
+
+            <TocPage
+
+              journal={
+                activeJournal
+              }
+
+              poems={
+                tocPages[tocIndex]
+              }
+
+              globalStartIndex={
+                tocIndex *
+                TOC_ITEMS_PER_PAGE
+              }
+
+              poemsLoading={false}
+
+              isOwner={
+                isOwner
+              }
+
+              onSelectPoem={
+                goToPoem
+              }
+
+              onShare={() =>
+                setShowShare(
+                  true
+                )
+              }
+
+              onNewPoem={
+                handleNewPoem
+              }
+
+              isContinuation
+
+            />
+
+          </div>
+
+        ),
+
+      });
+
+    }
+
+
+    papers.push({
+
+      id:
+        papers.length + 1,
+
+
+      front: (
+
+        <div className="book-right-page">
+
+          <div className="blank-paper-page" />
+
+        </div>
+
+      ),
+
+
+      back:
+
+        poemPageEntries.length > 0
+          ? (
+
+            <PoemMediaPage
+
+              poem={
+                poemPageEntries[0].poem
+              }
+
+              imageWidgets={
+                imageWidgets
+              }
+
+              isOwner={
+                isOwner
+              }
+
+              onSaveImage={
+                saveImageWidget
+              }
+
+            />
+
+          )
+          : (
+
+            <div className="book-left-page">
+
+              <div className="blank-paper-page" />
+
+            </div>
+
+          ),
+
+    });
 
   }
 
 
-  /* =========================================================
-     GO TO POEM FROM TABLE OF CONTENTS
-  ========================================================= */
+  /* =======================================================
+     POEM PAPERS
+  ======================================================= */
+
+  poemPageEntries.forEach(
+    (
+      entry,
+      entryIndex
+    ) => {
+
+      const nextEntry =
+        poemPageEntries[
+          entryIndex + 1
+        ];
+
+
+      const paperId =
+        papers.length + 1;
+
+
+      if (
+        entry.pageNumber === 1
+      ) {
+
+        poemPaperLocations.push({
+
+          poemId:
+            entry.poem.id,
+
+          poemIndex:
+            safePoems.findIndex(
+              (item) =>
+                item.id ===
+                entry.poem.id
+            ),
+
+          paperLocation:
+            paperId + 1,
+
+        });
+
+      }
+
+
+      papers.push({
+
+        id:
+          paperId,
+
+
+        front: (
+
+          <div className="book-right-page">
+
+            <PoemPage
+
+              poem={
+                entry.poem
+              }
+
+              content={
+                entry.content
+              }
+
+              journalId={
+                journalId
+              }
+
+              isOwner={
+                isOwner
+              }
+
+              pageNumber={
+                entry.pageNumber
+              }
+
+              totalPages={
+                entry.totalPages
+              }
+
+              isFirstPage={
+                entry.pageNumber === 1
+              }
+
+              textStyles={
+                poemTextStyles[
+                  entry.poem.id
+                ] ||
+                getStoredPoemStyles(
+                  entry.poem.id
+                )
+              }
+
+              onSaveTextStyle={
+                savePoemTextStyle
+              }
+
+            />
+
+          </div>
+
+        ),
+
+
+        back:
+
+          nextEntry
+            ? (
+
+              <PoemMediaPage
+
+                poem={
+                  nextEntry.poem
+                }
+
+                imageWidgets={
+                  imageWidgets
+                }
+
+                isOwner={
+                  isOwner
+                }
+
+                onSaveImage={
+                  saveImageWidget
+                }
+
+              />
+
+            )
+            : (
+
+              <div className="book-left-page">
+
+                <div className="blank-paper-page" />
+
+              </div>
+
+            ),
+
+      });
+
+    }
+  );
+
+
+  /* =======================================================
+     FINAL PAPER
+  ======================================================= */
+
+  const finalPaperId =
+    papers.length + 1;
+
+
+  papers.push({
+
+    id:
+      finalPaperId,
+
+
+    front: (
+
+      <div className="book-right-page">
+
+        <InsideBackCover
+          journal={
+            activeJournal
+          }
+        />
+
+      </div>
+
+    ),
+
+
+    back: (
+
+      <ClosedBackCover
+        journal={
+          activeJournal
+        }
+
+      />
+
+    ),
+
+  });
+
+
+  const realMaxLocation =
+    papers.length + 1;
+
+
+  const safeMaxLocation =
+    realMaxLocation;
+
+
+  /* =======================================================
+     GO TO POEM FROM TOC
+  ======================================================= */
 
   function goToPoem(
     poemIndex
@@ -720,8 +1972,21 @@ export default function Journal() {
     }
 
 
+    const targetInfo =
+      poemPaperLocations.find(
+        (item) =>
+          item.poemIndex ===
+          poemIndex
+      );
+
+
+    if (!targetInfo) {
+      return;
+    }
+
+
     const target =
-      poemIndex + 3;
+      targetInfo.paperLocation;
 
 
     if (
@@ -742,7 +2007,8 @@ export default function Journal() {
 
 
         if (
-          location >= target
+          location >=
+          target
         ) {
 
           return;
@@ -764,14 +2030,18 @@ export default function Journal() {
 
 
         setFlippedPapers(
-          (prev) => {
+          (previous) => {
 
             const next =
-              new Set(prev);
+              new Set(
+                previous
+              );
+
 
             next.add(
               paperId
             );
+
 
             return next;
 
@@ -825,573 +2095,9 @@ export default function Journal() {
   }
 
 
-  /* =========================================================
-     LEFT MEDIA PAGE
-  =========================================================
-
-     IMPORTANT:
-
-     The old version used:
-
-       IMAGE ? image : SPOTIFY
-
-     which meant only ONE widget could appear.
-
-     This version renders BOTH independently.
-  ========================================================= */
-
-  function renderLeftPage(
-    poem
-  ) {
-
-    if (!poem) {
-
-      return (
-
-        <div className="book-left-page">
-
-          {insideCover}
-
-        </div>
-
-      );
-
-    }
-
-
-    /*
-      Get the image widget.
-
-      First try local state.
-
-      If it isn't there, use the value
-      stored in the poem from Supabase.
-    */
-
-    const imageWidget =
-      imageWidgets[poem.id] ??
-      poem.image_widget_box ??
-      null;
-
-
-    /*
-      Determine whether an image exists.
-    */
-
-    const hasImage =
-      Boolean(
-        imageWidget?.url
-      );
-
-
-    /*
-      Determine whether Spotify exists.
-    */
-
-    const hasSpotify =
-      Boolean(
-        poem.spotify_url
-      );
-
-
-    return (
-
-      <div className="book-left-page">
-
-        <div
-          className="page-back"
-          ref={leftPageRef}
-        >
-
-          <div
-            className="page-back-inner"
-            style={{
-              position: 'relative',
-            }}
-          >
-
-            {/* =================================================
-                IMAGE WIDGET
-            ================================================= */}
-
-            {hasImage && (
-
-              <DraggableWidget
-                key={`${poem.id}-image`}
-                containerRef={
-                  leftPageRef
-                }
-                editable={
-                  isOwner
-                }
-                initial={
-                  imageWidget
-                }
-                onSave={(box) => {
-
-                  saveImageWidget(
-                    poem.id,
-                    {
-                      ...box,
-                      url:
-                        imageWidget.url,
-                    }
-                  );
-
-                }}
-              >
-
-                <img
-                  src={
-                    imageWidget.url
-                  }
-                  alt="Poem page"
-                  draggable="false"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    display: 'block',
-                  }}
-                />
-
-              </DraggableWidget>
-
-            )}
-
-
-            {/* =================================================
-                SPOTIFY WIDGET
-            ================================================= */}
-
-            {hasSpotify && (
-
-              <DraggableWidget
-                key={`${poem.id}-spotify`}
-                containerRef={
-                  leftPageRef
-                }
-                editable={
-                  isOwner
-                }
-
-                /*
-                  If Spotify already has a saved
-                  position, use it.
-
-                  Otherwise place it BELOW the image
-                  so the two widgets don't overlap.
-                */
-
-                initial={
-                  poem.spotify_widget_box ??
-                  {
-                    x: 20,
-                    y: hasImage
-                      ? 300
-                      : 20,
-                    w: 320,
-                    h: 150,
-                  }
-                }
-
-                onSave={(box) => {
-
-                  updatePoemWidgetBox(
-                    poem.id,
-                    box
-                  ).catch(
-                    (error) => {
-
-                      console.error(
-                        'Failed to save Spotify position:',
-                        error
-                      );
-
-                    }
-                  );
-
-                }}
-              >
-
-                <SpotifyPlayer
-                  spotifyUrl={
-                    poem.spotify_url
-                  }
-                  active
-                />
-
-              </DraggableWidget>
-
-            )}
-
-
-            {/* =================================================
-                EMPTY MEDIA PAGE
-            ================================================= */}
-
-            {!hasImage &&
-              !hasSpotify && (
-
-                <p className="empty-left-page">
-
-                  No song, link, or picture
-                  added to this page yet.
-
-                </p>
-
-              )}
-
-          </div>
-
-        </div>
-
-      </div>
-
-    );
-
-  }
-
-
-  /* =========================================================
-     LOADING
-  ========================================================= */
-
-  if (journalLoading) {
-
-    return (
-
-      <Loading
-        label="Opening journal"
-      />
-
-    );
-
-  }
-
-
-  if (!journal) {
-
-    return (
-
-      <p className="p-6">
-
-        Journal not found.
-
-      </p>
-
-    );
-
-  }
-
-
-  /* =========================================================
-     BUILD PAPERS
-  ========================================================= */
-
-  const papers = [];
-
-
-  /* =========================================================
-     PAPER 1
-
-     FRONT = FRONT COVER
-     BACK  = INSIDE FRONT COVER
-  ========================================================= */
-
-  papers.push({
-
-    id: 1,
-
-    front: (
-
-      <div
-        className="closed-book"
-        onClick={(e) => {
-
-          e.stopPropagation();
-
-
-          if (
-            isClosedFront &&
-            !isTurning
-          ) {
-
-            goNextPage();
-
-          }
-
-        }}
-        onContextMenu={(e) => {
-
-          e.preventDefault();
-
-
-          if (isOwner) {
-
-            setShowCoverMenu(
-              true
-            );
-
-          }
-
-        }}
-      >
-
-        {coverFront}
-
-
-        {showCoverMenu && (
-
-          <div
-            className="cover-menu"
-            onClick={(e) =>
-              e.stopPropagation()
-            }
-          >
-
-            <button
-              onClick={() => {
-
-                setShowCoverMenu(
-                  false
-                );
-
-                setShowEditModal(
-                  true
-                );
-
-              }}
-            >
-
-              Edit journal
-
-            </button>
-
-
-            <button
-              onClick={() => {
-
-                setShowCoverMenu(
-                  false
-                );
-
-                handleDeleteJournal();
-
-              }}
-            >
-
-              Delete journal
-
-            </button>
-
-          </div>
-
-        )}
-
-      </div>
-
-    ),
-
-    back: (
-
-      <div className="book-left-page">
-
-        {insideCover}
-
-      </div>
-
-    ),
-
-  });
-
-
-  /* =========================================================
-     PAPER 2
-
-     FRONT = TABLE OF CONTENTS
-     BACK  = POEM 1 MEDIA
-  ========================================================= */
-
-  papers.push({
-
-    id: 2,
-
-    front: (
-
-      <div className="book-right-page">
-
-        <TocPage
-          journal={
-            activeJournal
-          }
-          poems={
-            poems
-          }
-          poemsLoading={
-            poemsLoading
-          }
-          isOwner={
-            isOwner
-          }
-          onSelectPoem={
-            goToPoem
-          }
-          onShare={() =>
-            setShowShare(
-              true
-            )
-          }
-          onNewPoem={
-            handleNewPoem
-          }
-        />
-
-      </div>
-
-    ),
-
-    back:
-      poems?.length
-        ? renderLeftPage(
-            poems[0]
-          )
-        : (
-
-          <div className="book-left-page">
-
-            {insideCover}
-
-          </div>
-
-        ),
-
-  });
-
-
-  /* =========================================================
-     POEM PAPERS
-  ========================================================= */
-
-  poems?.forEach(
-    (
-      poem,
-      index
-    ) => {
-
-      const nextPoem =
-        poems[index + 1];
-
-
-      papers.push({
-
-        id:
-          index + 3,
-
-
-        front: (
-
-          <div className="book-right-page">
-
-            <PoemPage
-              poem={
-                poem
-              }
-              journalId={
-                journalId
-              }
-              isOwner={
-                isOwner
-              }
-              pageNumber={
-                index + 1
-              }
-              totalPages={
-                poems.length
-              }
-              onAddImage={
-                (file) =>
-                  addImageForPoem(
-                    poem.id,
-                    file
-                  )
-              }
-            />
-
-          </div>
-
-        ),
-
-
-        back:
-          nextPoem
-            ? renderLeftPage(
-                nextPoem
-              )
-            : (
-
-              <div className="book-left-page">
-
-                <div className="blank-paper-page" />
-
-              </div>
-
-            ),
-
-      });
-
-    }
-  );
-
-
-  /* =========================================================
-     FINAL PAPER
-
-     FRONT = INSIDE BACK COVER
-     BACK  = CLOSED BACK COVER
-  ========================================================= */
-
-  const finalPaperId =
-    papers.length + 1;
-
-
-  papers.push({
-
-    id:
-      finalPaperId,
-
-
-    front: (
-
-      <div className="book-right-page">
-
-        <InsideBackCover
-          journal={
-            activeJournal
-          }
-        />
-
-      </div>
-
-    ),
-
-
-    back: (
-
-      <ClosedBackCover
-        journal={
-          activeJournal
-        }
-      />
-
-    ),
-
-  });
-
-
-  /* =========================================================
-     BOOK AREA CLICK HANDLER
-  ========================================================= */
+  /* =======================================================
+     BOOK CLICK HANDLER
+  ======================================================= */
 
   function handleBookAreaClick(e) {
 
@@ -1405,18 +2111,15 @@ export default function Journal() {
     }
 
 
-    /*
-      Don't turn pages when clicking
-      interactive elements.
-    */
-
     const interactiveElement =
       e.target.closest(
         'button, a, input, textarea, select, [role="button"], iframe'
       );
 
 
-    if (interactiveElement) {
+    if (
+      interactiveElement
+    ) {
 
       return;
 
@@ -1431,11 +2134,6 @@ export default function Journal() {
       e.clientX -
       rect.left;
 
-
-    /*
-      LEFT = previous
-      RIGHT = next
-    */
 
     if (
       x <= 65
@@ -1460,14 +2158,135 @@ export default function Journal() {
   }
 
 
-  /* =========================================================
+  /* =======================================================
+     LOADING
+  ======================================================= */
+
+  if (journalLoading) {
+
+    return (
+      <Loading
+        label="Opening journal"
+      />
+    );
+
+  }
+
+
+  if (!journal) {
+
+    return (
+      <p className="p-6">
+        Journal not found.
+      </p>
+    );
+
+  }
+
+
+  /* =======================================================
+     CURRENT LOCATION LABEL
+  ======================================================= */
+
+  function getLocationLabel() {
+
+    if (isClosedFront) {
+      return 'Closed';
+    }
+
+
+    if (isClosedBack) {
+      return 'Back Cover';
+    }
+
+
+    const currentPaper =
+      papers[
+        currentLocation - 1
+      ];
+
+
+    if (
+      currentPaper?.front?.props
+        ?.children
+    ) {
+      // No action needed here.
+    }
+
+
+    if (
+      currentLocation === 2
+    ) {
+
+      return 'Table of Contents';
+
+    }
+
+
+    const paperIndex =
+      currentLocation - 1;
+
+
+    const poemEntryIndex =
+      paperIndex -
+      (
+        1 +
+        tocPages.length +
+        (tocPages.length >= 2
+          ? 1
+          : 0)
+      );
+
+
+    if (
+      poemEntryIndex >= 0 &&
+      poemEntryIndex <
+        poemPageEntries.length
+    ) {
+
+      const entry =
+        poemPageEntries[
+          poemEntryIndex
+        ];
+
+
+      if (entry) {
+
+        return (
+          `Page ${entry.pageNumber} ` +
+          `of ${entry.totalPages}`
+        );
+
+      }
+
+    }
+
+
+    if (
+      currentLocation ===
+      safeMaxLocation - 1
+    ) {
+
+      return 'Inside Back Cover';
+
+    }
+
+
+    return 'Page';
+
+  }
+
+
+  /* =======================================================
      RENDER
-  ========================================================= */
+  ======================================================= */
 
   return (
 
     <div
+
       className="journal-page"
+
       onClick={() => {
 
         if (showCoverMenu) {
@@ -1479,43 +2298,19 @@ export default function Journal() {
         }
 
       }}
+
     >
 
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
-
-      <div className="journal-header">
-
-        <h1>
-          Between Us and the Page
-        </h1>
-
-
-        <div className="journal-header-links">
-
-          <span>
-            My Library
-          </span>
-
-
-          <span>
-            Sign out
-          </span>
-
-        </div>
-
-      </div>
-
-
-      {/* =====================================================
+      {/* ===================================================
           DELETE JOURNAL
-      ===================================================== */}
+      =================================================== */}
 
       {isOwner && (
 
         <button
+
           className="delete-journal"
+
           onClick={(e) => {
 
             e.stopPropagation();
@@ -1523,6 +2318,7 @@ export default function Journal() {
             handleDeleteJournal();
 
           }}
+
         >
 
           DELETE JOURNAL
@@ -1532,20 +2328,23 @@ export default function Journal() {
       )}
 
 
-      {/* =====================================================
+      {/* ===================================================
           CONTROLS
-      ===================================================== */}
+      =================================================== */}
 
       <div className="book-controls">
 
         <button
+
           disabled={
             currentLocation <= 1 ||
             isTurning
           }
+
           onClick={
             goPreviousPage
           }
+
         >
 
           ← PREVIOUS
@@ -1555,86 +2354,63 @@ export default function Journal() {
 
         <span>
 
-          {isClosedFront &&
-            'Closed'}
-
-
-          {currentLocation === 2 &&
-            'Table of Contents'}
-
-
-          {currentLocation >= 3 &&
-            currentLocation <
-              maxLocation - 1 &&
-            `Page ${
-              currentLocation - 2
-            } of ${
-              poems?.length ?? 0
-            }`}
-
-
-          {currentLocation ===
-            maxLocation - 1 &&
-            'Inside Back Cover'}
-
-
-          {isClosedBack &&
-            'Back Cover'}
+          {getLocationLabel()}
 
         </span>
 
 
         <button
+
           disabled={
             currentLocation >=
-              maxLocation ||
+              safeMaxLocation ||
             isTurning
           }
+
           onClick={
             goNextPage
           }
+
         >
 
-          {isClosedFront
-            ? 'OPEN →'
-            : 'NEXT →'}
+          {
+            isClosedFront
+              ? 'OPEN →'
+              : 'NEXT →'
+          }
 
         </button>
 
       </div>
 
 
-      {/* =====================================================
+      {/* ===================================================
           BOOK
-      ===================================================== */}
+      =================================================== */}
 
       <div
-        className="book-stack-wrapper"
-        onClick={
-          handleBookAreaClick
-        }
-      >
 
-        <div
-          className={`
-            bs-book
-            ${
-              isClosedFront
-                ? 'book-closed-front'
-                : ''
-            }
-            ${
-              isClosedBack
-                ? 'book-closed-back'
-                : ''
-            }
-            ${
-              isOpen
-                ? 'book-open'
-                : ''
-            }
-          `}
-        >
+        className={`
+        book-stack-wrapper
+        ${isClosedFront ? 'book-wrapper-closed-front' : ''}
+        ${isClosedBack ? 'book-wrapper-closed-back' : ''}
+        ${isOpen ? 'book-wrapper-open' : ''}
+      `}
+
+      onClick={
+        handleBookAreaClick
+      }
+
+    >
+
+      <div
+        className={`
+          bs-book
+          ${isClosedFront ? 'book-closed-front' : ''}
+          ${isClosedBack ? 'book-closed-back' : ''}
+          ${isOpen ? 'book-open' : ''}
+        `}
+      >
 
           {papers.map(
             (
@@ -1685,9 +2461,11 @@ export default function Journal() {
               return (
 
                 <div
+
                   key={
                     paper.id
                   }
+
                   className={`
                     bs-paper
                     ${
@@ -1696,14 +2474,14 @@ export default function Journal() {
                         : ''
                     }
                   `}
+
                   style={{
                     zIndex,
                   }}
+
                 >
 
-                  {/* =========================================
-                      FRONT FACE
-                  ========================================= */}
+                  {/* FRONT */}
 
                   <div className="bs-front">
 
@@ -1716,9 +2494,7 @@ export default function Journal() {
                   </div>
 
 
-                  {/* =========================================
-                      BACK FACE
-                  ========================================= */}
+                  {/* BACK */}
 
                   <div className="bs-back">
 
@@ -1739,89 +2515,285 @@ export default function Journal() {
 
         </div>
 
-
-        {/* ===================================================
-            PAGE TURN ZONES
-
-            pointerEvents = none
-
-            This allows buttons and widgets underneath
-            to receive clicks.
-        =================================================== */}
-
-        {isOpen && (
-
-          <>
-
-            <div
-              className="page-turn-zone page-turn-zone-left"
-              aria-hidden="true"
-              style={{
-                pointerEvents:
-                  'none',
-              }}
-            />
-
-
-            <div
-              className="page-turn-zone page-turn-zone-right"
-              aria-hidden="true"
-              style={{
-                pointerEvents:
-                  'none',
-              }}
-            />
-
-          </>
-
-        )}
-
       </div>
 
 
-      {/* =====================================================
+      {/* ===================================================
           SHARE MODAL
-      ===================================================== */}
+      =================================================== */}
 
       {showShare && (
 
         <ShareModal
+
           journalId={
             journalId
           }
+
           onClose={() =>
             setShowShare(
               false
             )
           }
+
         />
 
       )}
 
 
-      {/* =====================================================
+      {/* ===================================================
           EDIT JOURNAL MODAL
-      ===================================================== */}
+      =================================================== */}
 
       {showEditModal && (
 
         <EditJournalModal
+
           journal={
             activeJournal
           }
+
           onClose={() =>
             setShowEditModal(
               false
             )
           }
+
           onSaved={(updated) =>
             setJournalOverride(
               updated
             )
           }
+
         />
 
       )}
+
+    </div>
+
+  );
+
+}
+
+
+/* =========================================================
+   POEM MEDIA PAGE
+========================================================= */
+
+function PoemMediaPage({
+  poem,
+  imageWidgets,
+  isOwner,
+  onSaveImage,
+}) {
+
+  const containerRef =
+    useRef(null);
+
+
+  const imageWidget =
+    imageWidgets[
+      poem.id
+    ] ??
+    poem.image_widget_box ??
+    null;
+
+
+  const hasImage =
+    Boolean(
+      imageWidget?.url
+    );
+
+
+  const hasSpotify =
+    Boolean(
+      poem.spotify_url
+    );
+
+
+  return (
+
+    <div className="book-left-page">
+
+      <div
+
+        className="page-back"
+
+        ref={
+          containerRef
+        }
+
+      >
+
+        <div
+
+          className="page-back-inner"
+
+          style={{
+            position:
+              'relative',
+          }}
+
+        >
+
+          {/* IMAGE */}
+
+          {hasImage && (
+
+            <DraggableWidget
+
+              key={
+                `${poem.id}-image`
+              }
+
+              containerRef={
+                containerRef
+              }
+
+              editable={
+                isOwner
+              }
+
+              initial={
+                imageWidget
+              }
+
+              onSave={(box) => {
+
+                onSaveImage(
+                  poem.id,
+                  {
+                    ...box,
+
+                    url:
+                      imageWidget.url,
+                  }
+                );
+
+              }}
+
+            >
+
+              <img
+
+                src={
+                  imageWidget.url
+                }
+
+                alt="Poem page"
+
+                draggable="false"
+
+                style={{
+
+                  width:
+                    '100%',
+
+                  height:
+                    '100%',
+
+                  objectFit:
+                    'cover',
+
+                  display:
+                    'block',
+
+                }}
+
+              />
+
+            </DraggableWidget>
+
+          )}
+
+
+          {/* SPOTIFY */}
+
+          {hasSpotify && (
+
+            <DraggableWidget
+
+              key={
+                `${poem.id}-spotify`
+              }
+
+              containerRef={
+                containerRef
+              }
+
+              editable={
+                isOwner
+              }
+
+              initial={
+                poem.spotify_widget_box ??
+                {
+                  x: 20,
+
+                  y:
+                    hasImage
+                      ? 300
+                      : 20,
+
+                  w: 320,
+
+                  h: 150,
+
+                }
+              }
+
+              onSave={(box) => {
+
+                updatePoemWidgetBox(
+                  poem.id,
+                  box
+                ).catch(
+                  (error) => {
+
+                    console.error(
+                      'Failed to save Spotify position:',
+                      error
+                    );
+
+                  }
+                );
+
+              }}
+
+            >
+
+              <SpotifyPlayer
+
+                spotifyUrl={
+                  poem.spotify_url
+                }
+
+                active
+
+              />
+
+            </DraggableWidget>
+
+          )}
+
+
+          {/* EMPTY MEDIA PAGE */}
+
+          {!hasImage &&
+            !hasSpotify && (
+
+              <p className="empty-left-page">
+
+                No song, link, or picture
+                added to this page yet.
+
+              </p>
+
+            )}
+
+        </div>
+
+      </div>
 
     </div>
 
@@ -1837,27 +2809,29 @@ export default function Journal() {
 function TocPage({
   journal,
   poems,
+  globalStartIndex,
   poemsLoading,
   isOwner,
   onSelectPoem,
   onShare,
   onNewPoem,
+  isContinuation = false,
 }) {
 
   return (
 
     <div className="page-inner">
 
-      {/* ===================================================
-          HEADER
-      =================================================== */}
+      {/* HEADER */}
 
       <div className="toc-header">
 
         <div>
 
           <h2>
+
             {journal.title}
+
           </h2>
 
 
@@ -1870,109 +2844,123 @@ function TocPage({
         </div>
 
 
-        {isOwner && (
+        {isOwner &&
+          !isContinuation && (
 
-          <div className="toc-actions">
+            <div className="toc-actions">
 
-            {/* SHARE */}
+              {/* SHARE */}
 
-            <button
-              type="button"
-              className="toc-icon-button"
-              onClick={
-                onShare
-              }
-              aria-label="Share journal"
-              title="Share journal"
-            >
+              <button
 
-              <svg
-                viewBox="0 0 24 24"
-                aria-hidden="true"
+                type="button"
+
+                className="toc-icon-button"
+
+                onClick={
+                  onShare
+                }
+
+                aria-label="Share journal"
+
+                title="Share journal"
+
               >
 
-                <circle
-                  cx="18"
-                  cy="5"
-                  r="2"
-                />
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
 
-                <circle
-                  cx="6"
-                  cy="12"
-                  r="2"
-                />
+                  <circle
+                    cx="18"
+                    cy="5"
+                    r="2"
+                  />
 
-                <circle
-                  cx="18"
-                  cy="19"
-                  r="2"
-                />
+                  <circle
+                    cx="6"
+                    cy="12"
+                    r="2"
+                  />
 
-                <line
-                  x1="8"
-                  y1="11"
-                  x2="16"
-                  y2="6"
-                />
+                  <circle
+                    cx="18"
+                    cy="19"
+                    r="2"
+                  />
 
-                <line
-                  x1="8"
-                  y1="13"
-                  x2="16"
-                  y2="18"
-                />
+                  <line
+                    x1="8"
+                    y1="11"
+                    x2="16"
+                    y2="6"
+                  />
 
-              </svg>
+                  <line
+                    x1="8"
+                    y1="13"
+                    x2="16"
+                    y2="18"
+                  />
 
-            </button>
+                </svg>
+
+              </button>
 
 
-            {/* NEW POEM */}
+              {/* NEW POEM */}
 
-            <button
-              type="button"
-              className="toc-icon-button toc-plus-button"
-              onClick={
-                onNewPoem
-              }
-              aria-label="New poem"
-              title="New poem"
-            >
+              <button
 
-              <svg
-                viewBox="0 0 24 24"
-                aria-hidden="true"
+                type="button"
+
+                className="
+                  toc-icon-button
+                  toc-plus-button
+                "
+
+                onClick={
+                  onNewPoem
+                }
+
+                aria-label="New poem"
+
+                title="New poem"
+
               >
 
-                <line
-                  x1="12"
-                  y1="5"
-                  x2="12"
-                  y2="19"
-                />
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
 
-                <line
-                  x1="5"
-                  y1="12"
-                  x2="19"
-                  y2="12"
-                />
+                  <line
+                    x1="12"
+                    y1="5"
+                    x2="12"
+                    y2="19"
+                  />
 
-              </svg>
+                  <line
+                    x1="5"
+                    y1="12"
+                    x2="19"
+                    y2="12"
+                  />
 
-            </button>
+                </svg>
 
-          </div>
+              </button>
 
-        )}
+            </div>
+
+          )}
 
       </div>
 
 
-      {/* ===================================================
-          POEM LIST
-      =================================================== */}
+      {/* POEM LIST */}
 
       <div className="toc-list">
 
@@ -1991,38 +2979,53 @@ function TocPage({
             ) => (
 
               <button
+
                 key={
                   poem.id
                 }
+
                 onClick={() =>
                   onSelectPoem(
+                    globalStartIndex +
                     index
                   )
                 }
+
                 className="toc-item"
+
               >
 
                 <span>
 
-                  {index + 1}.
+                  {
+                    globalStartIndex +
+                    index +
+                    1
+                  }
+
                   {' '}
 
-                  {poem.title ||
-                    'Untitled'}
+                  {
+                    poem.title ||
+                    'Untitled'
+                  }
 
                 </span>
 
 
                 <span>
 
-                  {poem.poem_date ||
-                    ''}
+                  {
+                    poem.poem_date ||
+                    ''
+                  }
 
                 </span>
 
               </button>
 
             )
+
           )
 
         ) : (
@@ -2050,92 +3053,1385 @@ function TocPage({
 
 function PoemPage({
   poem,
+  content,
   journalId,
   isOwner,
+  pageNumber,
+  totalPages,
+  isFirstPage,
+  textStyles,
+  onSaveTextStyle,
 }) {
 
   const navigate =
     useNavigate();
 
 
+  const [
+    showTextStyles,
+    setShowTextStyles,
+  ] = useState(false);
+
+
+  const styles =
+    textStyles ||
+    DEFAULT_POEM_TEXT_STYLES;
+
+
+  function updateStyle(
+    section,
+    property,
+    value
+  ) {
+
+    const nextStyles = {
+
+      ...styles,
+
+      [section]: {
+
+        ...styles[section],
+
+        [property]:
+          value,
+
+      },
+
+    };
+
+
+    onSaveTextStyle(
+      poem.id,
+      nextStyles
+    );
+
+  }
+
+
+  function resetStyles() {
+
+    const nextStyles = {
+
+      title: {
+        ...DEFAULT_POEM_TEXT_STYLES.title,
+      },
+
+      date: {
+        ...DEFAULT_POEM_TEXT_STYLES.date,
+      },
+
+      content: {
+        ...DEFAULT_POEM_TEXT_STYLES.content,
+      },
+
+    };
+
+
+    onSaveTextStyle(
+      poem.id,
+      nextStyles
+    );
+
+  }
+
+
+  const toolButtonStyle = {
+
+    width:
+      '34px',
+
+    height:
+      '34px',
+
+    border:
+      '1px solid rgba(43, 42, 39, 0.18)',
+
+    borderRadius:
+      '50%',
+
+    background:
+      'rgba(255, 255, 255, 0.78)',
+
+    color:
+      '#2b2a27',
+
+    display:
+      'flex',
+
+    alignItems:
+      'center',
+
+    justifyContent:
+      'center',
+
+    padding:
+      0,
+
+    cursor:
+      'pointer',
+
+    boxShadow:
+      '0 2px 8px rgba(0,0,0,0.08)',
+
+  };
+
+
+  const panelStyle = {
+
+    position:
+      'absolute',
+
+    right:
+      '18px',
+
+    bottom:
+      '18px',
+
+    width:
+      '300px',
+
+    maxWidth:
+      'calc(100% - 36px)',
+
+    maxHeight:
+      'calc(100% - 36px)',
+
+    overflowY:
+      'auto',
+
+    overflowX:
+      'hidden',
+
+    boxSizing:
+      'border-box',
+
+    padding:
+      '16px',
+
+    background:
+      'rgba(250, 247, 238, 0.98)',
+
+    border:
+      '1px solid rgba(43, 42, 39, 0.16)',
+
+    borderRadius:
+      '12px',
+
+    boxShadow:
+      '0 10px 30px rgba(0, 0, 0, 0.16)',
+
+    zIndex:
+      100,
+
+    color:
+      '#2b2a27',
+
+    fontFamily:
+      'Arial, Helvetica, sans-serif',
+
+  };
+
+
   return (
 
-    <div className="page-inner poem-page">
+    <div
 
-      <div>
+      className="
+        page-inner
+        poem-page
+      "
 
-        <h2>
+      style={{
+        position:
+          'relative',
+      }}
 
-          {poem.title ||
-            'Untitled'}
+    >
 
-        </h2>
+      {/* =================================================
+          POEM HEADER
+      ================================================= */}
+
+      {isFirstPage ? (
+
+        <div>
+
+          <h2
+
+            style={{
+
+              fontFamily:
+                styles.title.fontFamily,
+
+              fontSize:
+                `${styles.title.fontSize}px`,
+
+              fontWeight:
+                styles.title.fontWeight,
+
+              fontStyle:
+                styles.title.fontStyle,
+
+              textAlign:
+                styles.title.textAlign,
+
+              letterSpacing:
+                `${styles.title.letterSpacing}px`,
+
+              lineHeight:
+                styles.title.lineHeight,
+
+              color:
+                styles.title.color,
+
+            }}
+
+          >
+
+            {
+              poem.title ||
+              'Untitled'
+            }
+
+          </h2>
 
 
-        {poem.poem_date && (
+          {poem.poem_date && (
+
+            <p
+
+              className="page-label"
+
+              style={{
+
+                fontFamily:
+                  styles.date.fontFamily,
+
+                fontSize:
+                  `${styles.date.fontSize}px`,
+
+                fontWeight:
+                  styles.date.fontWeight,
+
+                fontStyle:
+                  styles.date.fontStyle,
+
+                textAlign:
+                  styles.date.textAlign,
+
+                letterSpacing:
+                  `${styles.date.letterSpacing}px`,
+
+                lineHeight:
+                  styles.date.lineHeight,
+
+                color:
+                  styles.date.color,
+
+              }}
+
+            >
+
+              {
+                poem.poem_date
+              }
+
+            </p>
+
+          )}
+
+        </div>
+
+      ) : (
+
+        <div>
 
           <p className="page-label">
 
-            {poem.poem_date}
+            {
+              poem.title ||
+              'Untitled'
+            }
+
+            {' · '}
+
+            Page {pageNumber}
+
+            {' / '}
+
+            {totalPages}
 
           </p>
 
-        )}
-
-      </div>
-
-
-      <div className="poem-text">
-
-        {poem.content}
-
-      </div>
-
-
-      {isOwner && (
-
-        <button
-          onClick={(e) => {
-
-            /*
-              Stop this click from reaching
-              the book page handler.
-            */
-
-            e.stopPropagation();
-
-
-            navigate(
-              `/journal/${journalId}/poem/${poem.id}`
-            );
-
-          }}
-          className="edit-button"
-          aria-label="Edit this page"
-          title="Edit this page"
-        >
-
-          <svg
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-
-            <path
-              d="
-                M12 20h9
-                M16.5 3.5
-                a2.121 2.121 0 0 1 3 3
-                L8 18
-                l-4 1
-                1-4Z
-              "
-            />
-
-          </svg>
-
-        </button>
+        </div>
 
       )}
+
+
+      {/* =================================================
+          POEM TEXT
+      ================================================= */}
+
+      <div
+
+        className="
+          poem-text
+          poem-text-continuation
+        "
+
+        style={{
+
+          fontFamily:
+            styles.content.fontFamily,
+
+          fontSize:
+            `${styles.content.fontSize}px`,
+
+          fontWeight:
+            styles.content.fontWeight,
+
+          fontStyle:
+            styles.content.fontStyle,
+
+          textAlign:
+            styles.content.textAlign,
+
+          letterSpacing:
+            `${styles.content.letterSpacing}px`,
+
+          lineHeight:
+            styles.content.lineHeight,
+
+          color:
+            styles.content.color,
+
+          whiteSpace:
+            'pre-wrap',
+
+        }}
+
+      >
+
+        {content}
+
+      </div>
+
+
+      {/* =================================================
+          OWNER TOOLS
+      ================================================= */}
+
+      {isOwner &&
+        isFirstPage && (
+
+          <div
+
+            className="poem-page-tools"
+
+            style={{
+
+              position:
+                'absolute',
+
+              right:
+                '18px',
+
+              bottom:
+                '18px',
+
+              display:
+                'flex',
+
+              alignItems:
+                'center',
+
+              gap:
+                '8px',
+
+              zIndex:
+                110,
+
+            }}
+
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+
+          >
+
+            {/* TEXT STYLE ICON */}
+
+            <button
+
+              type="button"
+
+              onClick={(e) => {
+
+                e.stopPropagation();
+
+                setShowTextStyles(
+                  (previous) =>
+                    !previous
+                );
+
+              }}
+
+              aria-label="Text style"
+
+              title="Text style"
+
+              style={toolButtonStyle}
+
+            >
+
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+
+                <path
+                  d="M4 5h16"
+                />
+
+                <path
+                  d="M12 5v14"
+                />
+
+                <path
+                  d="M8 19h8"
+                />
+
+              </svg>
+
+            </button>
+
+
+            {/* PENCIL ICON */}
+
+            <button
+
+              type="button"
+
+              onClick={(e) => {
+
+                e.stopPropagation();
+
+                navigate(
+                  `/journal/${journalId}/poem/${poem.id}`
+                );
+
+              }}
+
+              aria-label="Edit poem"
+
+              title="Edit poem"
+
+              style={toolButtonStyle}
+
+            >
+
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                width="17"
+                height="17"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+
+                <path
+                  d="
+                    M12 20h9
+                    M16.5 3.5
+                    a2.121 2.121 0 0 1 3 3
+                    L8 18
+                    l-4 1
+                    1-4Z
+                  "
+                />
+
+              </svg>
+
+            </button>
+
+          </div>
+
+        )}
+
+
+      {/* =================================================
+          TEXT STYLE PANEL
+      ================================================= */}
+
+      {showTextStyles &&
+        isOwner &&
+        isFirstPage && (
+
+          <div
+
+            className="poem-text-style-panel"
+
+            style={
+              panelStyle
+            }
+
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+
+          >
+
+            {/* PANEL HEADER */}
+
+            <div
+
+              className="poem-style-header"
+
+              style={{
+
+                display:
+                  'flex',
+
+                alignItems:
+                  'center',
+
+                justifyContent:
+                  'space-between',
+
+                marginBottom:
+                  '12px',
+
+                paddingBottom:
+                  '10px',
+
+                borderBottom:
+                  '1px solid rgba(43, 42, 39, 0.12)',
+
+                fontSize:
+                  '14px',
+
+                fontWeight:
+                  600,
+
+              }}
+
+            >
+
+              <span>
+                Text Style
+              </span>
+
+
+              <button
+
+                type="button"
+
+                onClick={() =>
+                  setShowTextStyles(
+                    false
+                  )
+                }
+
+                aria-label="Close text styles"
+
+                style={{
+
+                  border:
+                    'none',
+
+                  background:
+                    'transparent',
+
+                  fontSize:
+                    '22px',
+
+                  lineHeight:
+                    1,
+
+                  color:
+                    '#77736b',
+
+                  cursor:
+                    'pointer',
+
+                  padding:
+                    '2px 5px',
+
+                }}
+
+              >
+
+                ×
+
+              </button>
+
+            </div>
+
+
+            {/* TITLE */}
+
+            <TextStyleSection
+
+              label="Title"
+
+              style={
+                styles.title
+              }
+
+              onChange={(
+                property,
+                value
+              ) =>
+                updateStyle(
+                  'title',
+                  property,
+                  value
+                )
+              }
+
+            />
+
+
+            {/* DATE */}
+
+            <TextStyleSection
+
+              label="Date"
+
+              style={
+                styles.date
+              }
+
+              onChange={(
+                property,
+                value
+              ) =>
+                updateStyle(
+                  'date',
+                  property,
+                  value
+                )
+              }
+
+            />
+
+
+            {/* POEM */}
+
+            <TextStyleSection
+
+              label="Poem"
+
+              style={
+                styles.content
+              }
+
+              onChange={(
+                property,
+                value
+              ) =>
+                updateStyle(
+                  'content',
+                  property,
+                  value
+                )
+              }
+
+            />
+
+
+            {/* RESET */}
+
+            <button
+
+              type="button"
+
+              className="poem-style-reset"
+
+              onClick={
+                resetStyles
+              }
+
+              style={{
+
+                width:
+                  '100%',
+
+                marginTop:
+                  '4px',
+
+                padding:
+                  '9px 12px',
+
+                border:
+                  '1px solid rgba(43, 42, 39, 0.16)',
+
+                borderRadius:
+                  '7px',
+
+                background:
+                  'rgba(43, 42, 39, 0.05)',
+
+                color:
+                  '#2b2a27',
+
+                cursor:
+                  'pointer',
+
+                fontSize:
+                  '12px',
+
+              }}
+
+            >
+
+              Reset styles
+
+            </button>
+
+          </div>
+
+        )}
+
+    </div>
+
+  );
+
+}
+
+
+/* =========================================================
+   TEXT STYLE SECTION
+========================================================= */
+
+function TextStyleSection({
+  label,
+  style,
+  onChange,
+}) {
+
+  const fieldLabelStyle = {
+
+    display:
+      'flex',
+
+    flexDirection:
+      'column',
+
+    gap:
+      '4px',
+
+    fontSize:
+      '11px',
+
+    color:
+      '#5f5b53',
+
+    minWidth:
+      0,
+
+  };
+
+
+  const inputStyle = {
+
+    width:
+      '100%',
+
+    boxSizing:
+      'border-box',
+
+    minHeight:
+      '30px',
+
+    padding:
+      '5px 7px',
+
+    border:
+      '1px solid rgba(43, 42, 39, 0.18)',
+
+    borderRadius:
+      '5px',
+
+    background:
+      '#fffdf8',
+
+    color:
+      '#2b2a27',
+
+    fontSize:
+      '12px',
+
+  };
+
+
+  return (
+
+    <div
+
+      className="poem-style-section"
+
+      style={{
+
+        marginBottom:
+          '14px',
+
+      }}
+
+    >
+
+      {/* SECTION TITLE */}
+
+      <div
+
+        className="poem-style-section-title"
+
+        style={{
+
+          fontSize:
+            '12px',
+
+          fontWeight:
+            600,
+
+          color:
+            '#2b2a27',
+
+          marginBottom:
+            '7px',
+
+        }}
+
+      >
+
+        {label}
+
+      </div>
+
+
+      {/* FONT */}
+
+      <label
+        style={{
+          ...fieldLabelStyle,
+          marginBottom:
+            '7px',
+        }}
+      >
+
+        <span>
+          Font
+        </span>
+
+
+        <select
+
+          value={
+            style.fontFamily
+          }
+
+          onChange={(e) =>
+            onChange(
+              'fontFamily',
+              e.target.value
+            )
+          }
+
+          style={
+            inputStyle
+          }
+
+        >
+
+          <option value='Georgia, "Times New Roman", serif'>
+            Georgia
+          </option>
+
+          <option value='Arial, Helvetica, sans-serif'>
+            Arial
+          </option>
+
+          <option value='Verdana, sans-serif'>
+            Verdana
+          </option>
+
+          <option value='"Trebuchet MS", sans-serif'>
+            Trebuchet
+          </option>
+
+          <option value='"Courier New", monospace'>
+            Courier
+          </option>
+
+          <option value='monospace'>
+            Monospace
+          </option>
+
+          <option value='serif'>
+            Serif
+          </option>
+
+          <option value='sans-serif'>
+            Sans Serif
+          </option>
+
+        </select>
+
+      </label>
+
+
+      {/* SIZE + WEIGHT */}
+
+      <div
+
+        className="poem-style-two-column"
+
+        style={{
+
+          display:
+            'grid',
+
+          gridTemplateColumns:
+            '1fr 1fr',
+
+          gap:
+            '8px',
+
+          marginBottom:
+            '7px',
+
+        }}
+
+      >
+
+        {/* SIZE */}
+
+        <label
+          style={
+            fieldLabelStyle
+          }
+        >
+
+          <span>
+            Size
+          </span>
+
+
+          <input
+
+            type="number"
+
+            min="8"
+
+            max="72"
+
+            value={
+              style.fontSize
+            }
+
+            onChange={(e) =>
+              onChange(
+                'fontSize',
+                Number(
+                  e.target.value
+                )
+              )
+            }
+
+            style={
+              inputStyle
+            }
+
+          />
+
+        </label>
+
+
+        {/* WEIGHT */}
+
+        <label
+          style={
+            fieldLabelStyle
+          }
+        >
+
+          <span>
+            Weight
+          </span>
+
+
+          <select
+
+            value={
+              style.fontWeight
+            }
+
+            onChange={(e) =>
+              onChange(
+                'fontWeight',
+                Number(
+                  e.target.value
+                )
+              )
+            }
+
+            style={
+              inputStyle
+            }
+
+          >
+
+            <option value="300">
+              Light
+            </option>
+
+            <option value="400">
+              Regular
+            </option>
+
+            <option value="500">
+              Medium
+            </option>
+
+            <option value="600">
+              Semi Bold
+            </option>
+
+            <option value="700">
+              Bold
+            </option>
+
+          </select>
+
+        </label>
+
+      </div>
+
+
+      {/* ALIGNMENT + COLOR */}
+
+      <div
+
+        className="poem-style-two-column"
+
+        style={{
+
+          display:
+            'grid',
+
+          gridTemplateColumns:
+            '1fr 1fr',
+
+          gap:
+            '8px',
+
+          marginBottom:
+            '7px',
+
+        }}
+
+      >
+
+        {/* ALIGNMENT */}
+
+        <label
+          style={
+            fieldLabelStyle
+          }
+        >
+
+          <span>
+            Align
+          </span>
+
+
+          <select
+
+            value={
+              style.textAlign
+            }
+
+            onChange={(e) =>
+              onChange(
+                'textAlign',
+                e.target.value
+              )
+            }
+
+            style={
+              inputStyle
+            }
+
+          >
+
+            <option value="left">
+              Left
+            </option>
+
+            <option value="center">
+              Center
+            </option>
+
+            <option value="right">
+              Right
+            </option>
+
+            <option value="justify">
+              Justify
+            </option>
+
+          </select>
+
+        </label>
+
+
+        {/* COLOR */}
+
+        <label
+          style={
+            fieldLabelStyle
+          }
+        >
+
+          <span>
+            Color
+          </span>
+
+
+          <input
+
+            type="color"
+
+            value={
+              style.color
+            }
+
+            onChange={(e) =>
+              onChange(
+                'color',
+                e.target.value
+              )
+            }
+
+            style={{
+
+              width:
+                '100%',
+
+              height:
+                '30px',
+
+              padding:
+                '2px',
+
+              border:
+                '1px solid rgba(43, 42, 39, 0.18)',
+
+              borderRadius:
+                '5px',
+
+              background:
+                '#fffdf8',
+
+              cursor:
+                'pointer',
+
+              boxSizing:
+                'border-box',
+
+            }}
+
+          />
+
+        </label>
+
+      </div>
+
+
+      {/* SPACING + LINE HEIGHT */}
+
+      <div
+
+        className="poem-style-two-column"
+
+        style={{
+
+          display:
+            'grid',
+
+          gridTemplateColumns:
+            '1fr 1fr',
+
+          gap:
+            '8px',
+
+          marginBottom:
+            '7px',
+
+        }}
+
+      >
+
+        {/* LETTER SPACING */}
+
+        <label
+          style={
+            fieldLabelStyle
+          }
+        >
+
+          <span>
+            Spacing
+          </span>
+
+
+          <input
+
+            type="number"
+
+            min="-3"
+
+            max="10"
+
+            step="0.5"
+
+            value={
+              style.letterSpacing
+            }
+
+            onChange={(e) =>
+              onChange(
+                'letterSpacing',
+                Number(
+                  e.target.value
+                )
+              )
+            }
+
+            style={
+              inputStyle
+            }
+
+          />
+
+        </label>
+
+
+        {/* LINE HEIGHT */}
+
+        <label
+          style={
+            fieldLabelStyle
+          }
+        >
+
+          <span>
+            Line Height
+          </span>
+
+
+          <input
+
+            type="number"
+
+            min="0.8"
+
+            max="3"
+
+            step="0.1"
+
+            value={
+              style.lineHeight
+            }
+
+            onChange={(e) =>
+              onChange(
+                'lineHeight',
+                Number(
+                  e.target.value
+                )
+              )
+            }
+
+            style={
+              inputStyle
+            }
+
+          />
+
+        </label>
+
+      </div>
+
+
+      {/* ITALIC */}
+
+      <label
+
+        className="poem-style-checkbox"
+
+        style={{
+
+          display:
+            'flex',
+
+          alignItems:
+            'center',
+
+          gap:
+            '7px',
+
+          fontSize:
+            '12px',
+
+          color:
+            '#4f4b44',
+
+          cursor:
+            'pointer',
+
+          marginTop:
+            '5px',
+
+        }}
+
+      >
+
+        <input
+
+          type="checkbox"
+
+          checked={
+            style.fontStyle ===
+            'italic'
+          }
+
+          onChange={(e) =>
+            onChange(
+              'fontStyle',
+              e.target.checked
+                ? 'italic'
+                : 'normal'
+            )
+          }
+
+        />
+
+        <span>
+          Italic
+        </span>
+
+      </label>
 
     </div>
 
@@ -2174,8 +4470,11 @@ function InsideBackCover({
   return (
 
     <div
+
       className="inside-back-cover"
+
       style={{
+
         backgroundColor:
           journal.cover_color,
 
@@ -2184,7 +4483,9 @@ function InsideBackCover({
             material
           ] ||
           materialTextures.kraft,
+
       }}
+
     />
 
   );
@@ -2243,8 +4544,11 @@ function ClosedBackCover({
   return (
 
     <div
+
       className="closed-back-cover"
+
       style={{
+
         backgroundColor:
           journal.cover_color,
 
@@ -2256,31 +4560,30 @@ function ClosedBackCover({
 
         boxShadow:
           '0 8px 18px rgba(0,0,0,0.20)',
-      }}
-    >
 
-      {/* ===================================================
-          BACK COVER CONTENT
-      =================================================== */}
+      }}
+
+    >
 
       <div className="closed-back-cover-content">
 
         <div className="closed-back-cover-title">
 
-          {journal.title}
+          {
+            journal.title
+          }
 
         </div>
 
       </div>
 
 
-      {/* ===================================================
-          BACK COVER SPINE
-      =================================================== */}
-
       <div
+
         className="back-cover-spine"
+
         style={{
+
           background:
             `linear-gradient(
               to left,
@@ -2288,7 +4591,9 @@ function ClosedBackCover({
               ${spineColor}dd 70%,
               transparent
             )`,
+
         }}
+
       >
 
         <div className="spine-highlight" />

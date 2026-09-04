@@ -11,10 +11,14 @@
 
   html {
     scroll-behavior: smooth;
+    width: 100%;
+    min-height: 100%;
   }
 
   body {
     margin: 0;
+    width: 100%;
+    min-height: 100%;
 
     background-color: #f5f0e4;
 
@@ -26,6 +30,17 @@
       );
 
     background-size: 18px 18px;
+
+    overflow-x: hidden;
+
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
   }
 
   ::selection {
@@ -35,6 +50,13 @@
   :focus-visible {
     outline: 2px solid #B23A2E;
     outline-offset: 2px;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
   }
 
 }
@@ -70,11 +92,12 @@
 
 .journal-page {
 
+  width: 100%;
   min-height: 100vh;
 
   padding:
     22px
-    40px
+    clamp(16px, 4vw, 40px)
     80px;
 
   position: relative;
@@ -83,6 +106,8 @@
     Georgia,
     "Times New Roman",
     serif;
+
+  overflow-x: hidden;
 
 }
 
@@ -96,7 +121,7 @@
   width:
     min(
       1100px,
-      calc(100vw - 80px)
+      100%
     );
 
   margin:
@@ -110,6 +135,8 @@
 
   align-items:
     center;
+
+  gap: 20px;
 
   padding-bottom:
     24px;
@@ -132,7 +159,14 @@
     0;
 
   font-size:
-    18px;
+    clamp(
+      15px,
+      1.8vw,
+      18px
+    );
+
+  line-height:
+    1.3;
 
   font-style:
     italic;
@@ -149,13 +183,24 @@
     flex;
 
   gap:
-    22px;
+    clamp(
+      14px,
+      2vw,
+      22px
+    );
+
+  flex-shrink:
+    0;
 
   font-family:
     monospace;
 
   font-size:
-    12px;
+    clamp(
+      9px,
+      1vw,
+      12px
+    );
 
   color:
     #403e39;
@@ -173,10 +218,18 @@
     absolute;
 
   right:
-    40px;
+    clamp(
+      16px,
+      4vw,
+      40px
+    );
 
   top:
-    90px;
+    clamp(
+      78px,
+      9vw,
+      90px
+    );
 
   border:
     0;
@@ -199,6 +252,9 @@
   cursor:
     pointer;
 
+  white-space:
+    nowrap;
+
 }
 
 
@@ -207,6 +263,8 @@
 ========================================================= */
 
 .book-controls {
+
+  width: 100%;
 
   display:
     flex;
@@ -218,19 +276,51 @@
     center;
 
   gap:
-    28px;
+    clamp(
+      12px,
+      3vw,
+      28px
+    );
 
   margin-top:
-    60px;
+    clamp(
+      34px,
+      6vw,
+      60px
+    );
 
   margin-bottom:
     18px;
+
+  padding:
+    0 8px;
 
   font-family:
     monospace;
 
   font-size:
-    11px;
+    clamp(
+      9px,
+      1.2vw,
+      11px
+    );
+
+  text-align:
+    center;
+
+}
+
+
+.book-controls span {
+
+  min-width:
+    110px;
+
+  text-align:
+    center;
+
+  white-space:
+    nowrap;
 
 }
 
@@ -238,7 +328,12 @@
 .book-controls button {
 
   padding:
-    8px 14px;
+    8px
+    clamp(
+      10px,
+      1.5vw,
+      14px
+    );
 
   border:
     1px solid
@@ -264,23 +359,22 @@
     monospace;
 
   font-size:
-    10px;
+    clamp(
+      8px,
+      1vw,
+      10px
+    );
 
   cursor:
     pointer;
 
   transition:
-    background
-    0.2s
-    ease,
+    background 0.2s ease,
+    opacity 0.2s ease,
+    transform 0.2s ease;
 
-    opacity
-    0.2s
-    ease,
-
-    transform
-    0.2s
-    ease;
+  white-space:
+    nowrap;
 
 }
 
@@ -315,23 +409,39 @@
 /* =========================================================
    BOOK STACK WRAPPER
 
-   OPEN BOOK =
-   720 x 480
+   ORIGINAL BOOK SIZE:
+   720 × 480
 
-   Each page =
-   360 x 480
+   The wrapper reserves responsive space while the actual
+   book keeps its original 720 × 480 coordinate system.
 ========================================================= */
 
 .book-stack-wrapper {
+
+  --book-width: 720px;
+  --book-height: 480px;
+
+  --book-scale:
+    clamp(
+      0.42,
+      calc((100vw - 32px) / 720px),
+      1
+    );
 
   position:
     relative;
 
   width:
-    720px;
+    calc(
+      var(--book-width) *
+      var(--book-scale)
+    );
 
   height:
-    480px;
+    calc(
+      var(--book-height) *
+      var(--book-scale)
+    );
 
   margin:
     0 auto;
@@ -347,6 +457,13 @@
 
 /* =========================================================
    BOOK
+
+   IMPORTANT:
+   Translation and scaling are kept inside the SAME
+   transform declaration.
+
+   This prevents the responsive scale from interfering
+   with the closed-cover positioning.
 ========================================================= */
 
 .bs-book {
@@ -376,20 +493,33 @@
       1
     );
 
+  will-change:
+    transform;
+
 }
 
 
 /* =========================================================
    CLOSED FRONT
 
-   A single 360px page centered
-   inside the 720px book.
+   The visible front cover is the RIGHT half of the book.
+
+   Translation is scaled together with the book so the
+   cover remains centered on smaller screens.
 ========================================================= */
 
 .bs-book.book-closed-front {
 
   transform:
-    translateX(-180px);
+    translateX(
+      calc(
+        -180px *
+        var(--book-scale)
+      )
+    )
+    scale(
+      var(--book-scale)
+    );
 
 }
 
@@ -401,7 +531,10 @@
 .bs-book.book-open {
 
   transform:
-    translateX(0);
+    translateX(0)
+    scale(
+      var(--book-scale)
+    );
 
 }
 
@@ -409,22 +542,29 @@
 /* =========================================================
    CLOSED BACK
 
+   The flipped back cover occupies the LEFT half of the
+   720px book.
+
+   Moving the book +180px centers that 360px cover.
+
    IMPORTANT:
-
-   The flipped back cover occupies
-   the LEFT half of the 720px book.
-
-   We move it +180px so the single
-   360px cover is centered.
-
-   This also places its RIGHT EDGE
-   at the center of the book.
+   The +180px translation is scaled together with the
+   book. This keeps the back cover centered on every
+   screen size.
 ========================================================= */
 
 .bs-book.book-closed-back {
 
   transform:
-    translateX(180px);
+    translateX(
+      calc(
+        180px *
+        var(--book-scale)
+      )
+    )
+    scale(
+      var(--book-scale)
+    );
 
 }
 
@@ -537,10 +677,7 @@
     #f8f4e9;
 
   border-radius:
-    0
-    14px
-    14px
-    0;
+    0 14px 14px 0;
 
   box-shadow:
     inset
@@ -559,8 +696,6 @@
 
 /* =========================================================
    BACK FACE
-
-   Flipped page becomes LEFT page.
 ========================================================= */
 
 .bs-back {
@@ -575,10 +710,7 @@
     rotateY(180deg);
 
   border-radius:
-    14px
-    0
-    0
-    14px;
+    14px 0 0 14px;
 
   box-shadow:
     inset
@@ -642,10 +774,7 @@
     #eee9dc;
 
   border-radius:
-    14px
-    0
-    0
-    14px;
+    14px 0 0 14px;
 
   box-shadow:
     inset
@@ -668,10 +797,7 @@
     #f8f4e9;
 
   border-radius:
-    0
-    14px
-    14px
-    0;
+    0 14px 14px 0;
 
   box-shadow:
     inset
@@ -710,10 +836,7 @@
     hidden;
 
   border-radius:
-    0
-    14px
-    14px
-    0;
+    0 14px 14px 0;
 
   filter:
     drop-shadow(
@@ -758,7 +881,11 @@
     border-box;
 
   padding:
-    42px;
+    clamp(
+      26px,
+      3vw,
+      42px
+    );
 
   display:
     flex;
@@ -772,12 +899,14 @@
 .page-inner h2 {
 
   margin:
-    0
-    0
-    4px;
+    0 0 4px;
 
   font-size:
-    25px;
+    clamp(
+      20px,
+      3vw,
+      25px
+    );
 
   line-height:
     1.2;
@@ -881,6 +1010,9 @@
   justify-content:
     center;
 
+  flex-shrink:
+    0;
+
   border:
     1px solid
     rgba(
@@ -906,15 +1038,12 @@
     background
     0.2s
     ease,
-
     color
     0.2s
     ease,
-
     border-color
     0.2s
     ease,
-
     transform
     0.2s
     ease;
@@ -1010,9 +1139,7 @@
 
 
 /* =========================================================
-   PAGE BACK
-
-   LEFT MEDIA PAGE
+   PAGE BACK LEFT MEDIA PAGE
 ========================================================= */
 
 .page-back {
@@ -1047,7 +1174,11 @@
     relative;
 
   padding:
-    42px;
+    clamp(
+      26px,
+      3vw,
+      42px
+    );
 
   box-sizing:
     border-box;
@@ -1125,6 +1256,9 @@
   font-size:
     10px;
 
+  line-height:
+    1.6;
+
   text-transform:
     uppercase;
 
@@ -1157,6 +1291,9 @@
   scrollbar-width:
     thin;
 
+  min-height:
+    0;
+
 }
 
 
@@ -1174,9 +1311,11 @@
   align-items:
     center;
 
+  gap:
+    12px;
+
   padding:
-    14px
-    0;
+    14px 0;
 
   border:
     0;
@@ -1215,7 +1354,27 @@
 }
 
 
+.toc-item span:first-child {
+
+  min-width:
+    0;
+
+  overflow:
+    hidden;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+
+}
+
+
 .toc-item span:last-child {
+
+  flex-shrink:
+    0;
 
   font-family:
     monospace;
@@ -1252,6 +1411,9 @@
   overflow-y:
     auto;
 
+  overflow-x:
+    hidden;
+
   white-space:
     pre-line;
 
@@ -1261,13 +1423,20 @@
     serif;
 
   font-size:
-    16px;
+    clamp(
+      13px,
+      2vw,
+      16px
+    );
 
   line-height:
     1.9;
 
   color:
     #302e2a;
+
+  overflow-wrap:
+    break-word;
 
 }
 
@@ -1343,15 +1512,12 @@
     opacity
     0.2s
     ease,
-
     background
     0.2s
     ease,
-
     color
     0.2s
     ease,
-
     transform
     0.2s
     ease;
@@ -1409,12 +1575,6 @@
 
 /* =========================================================
    PAGE TURN CLICK ZONES
-
-   These are intentionally narrow so the user can
-   still interact with the page normally.
-
-   LEFT EDGE  = PREVIOUS
-   RIGHT EDGE = NEXT
 ========================================================= */
 
 .page-turn-zone {
@@ -1529,10 +1689,7 @@
     hidden;
 
   border-radius:
-    0
-    14px
-    14px
-    0;
+    0 14px 14px 0;
 
   box-shadow:
     inset
@@ -1551,12 +1708,6 @@
 
 /* =========================================================
    CLOSED BACK COVER
-
-   LEFT CORNERS = ROUNDED
-
-   RIGHT EDGE = SHARP
-
-   RIGHT EDGE = SPINE
 ========================================================= */
 
 .closed-back-cover {
@@ -1583,10 +1734,7 @@
     center;
 
   border-radius:
-    14px
-    0
-    0
-    14px;
+    14px 0 0 14px;
 
   border:
     1px solid
@@ -1649,10 +1797,6 @@
 
 /* =========================================================
    BACK COVER SPINE
-
-   RIGHT EDGE = CENTER OF BOOK
-
-   Matches the front-cover spine design.
 ========================================================= */
 
 .back-cover-spine {
@@ -1756,8 +1900,7 @@
     space-evenly;
 
   padding:
-    16px
-    0;
+    16px 0;
 
   box-sizing:
     border-box;
@@ -1846,8 +1989,7 @@
     transparent;
 
   padding:
-    8px
-    12px;
+    8px 12px;
 
   font-family:
     monospace;
@@ -1878,7 +2020,7 @@
 
 
 /* =========================================================
-   MOBILE
+   RESPONSIVE TABLET
 ========================================================= */
 
 @media (max-width: 800px) {
@@ -1886,18 +2028,17 @@
   .journal-page {
 
     padding:
-      20px;
-
-    overflow-x:
-      hidden;
+      20px
+      16px
+      60px;
 
   }
 
 
   .journal-header {
 
-    width:
-      100%;
+    padding-bottom:
+      18px;
 
   }
 
@@ -1910,16 +2051,16 @@
   }
 
 
-  .book-stack-wrapper {
+  .delete-journal {
 
-    transform:
-      scale(0.8);
+    top:
+      72px;
 
-    transform-origin:
-      top center;
+    right:
+      16px;
 
-    margin-bottom:
-      -90px;
+    font-size:
+      9px;
 
   }
 
@@ -1927,18 +2068,353 @@
   .book-controls {
 
     margin-top:
-      30px;
+      34px;
+
+  }
+
+
+  .book-stack-wrapper {
+
+    --book-scale:
+      clamp(
+        0.72,
+        calc((100vw - 32px) / 720px),
+        1
+      );
+
+  }
+
+}
+
+
+/* =========================================================
+   RESPONSIVE PHONES
+========================================================= */
+
+@media (max-width: 600px) {
+
+  .journal-page {
+
+    padding:
+      16px
+      12px
+      50px;
+
+  }
+
+
+  .journal-header h1 {
+
+    font-size:
+      15px;
+
+  }
+
+
+  .delete-journal {
+
+    position:
+      static;
+
+    display:
+      block;
+
+    margin:
+      14px
+      0
+      0
+      auto;
+
+  }
+
+
+  .book-controls {
+
+    margin-top:
+      26px;
 
     gap:
+      8px;
+
+  }
+
+
+  .book-controls span {
+
+    min-width:
+      82px;
+
+    font-size:
+      8px;
+
+  }
+
+
+  .book-controls button {
+
+    padding:
+      7px 9px;
+
+    font-size:
+      8px;
+
+  }
+
+
+  .book-stack-wrapper {
+
+    --book-scale:
+      clamp(
+        0.58,
+        calc((100vw - 24px) / 720px),
+        0.85
+      );
+
+  }
+
+}
+
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
+
+@media (max-width: 420px) {
+
+  .journal-page {
+
+    padding:
+      14px
+      8px
+      40px;
+
+  }
+
+
+  .journal-header h1 {
+
+    font-size:
+      14px;
+
+  }
+
+
+  .book-controls {
+
+    gap:
+      5px;
+
+    padding:
+      0;
+
+  }
+
+
+  .book-controls span {
+
+    min-width:
+      68px;
+
+    font-size:
+      7px;
+
+  }
+
+
+  .book-controls button {
+
+    padding:
+      6px 7px;
+
+    font-size:
+      7px;
+
+  }
+
+
+  .book-stack-wrapper {
+
+    --book-scale:
+      clamp(
+        0.48,
+        calc((100vw - 16px) / 720px),
+        0.70
+      );
+
+  }
+
+}
+
+
+/* =========================================================
+   VERY SMALL PHONES
+========================================================= */
+
+@media (max-width: 350px) {
+
+  .journal-page {
+
+    padding-left:
+      5px;
+
+    padding-right:
+      5px;
+
+  }
+
+
+  .journal-header h1 {
+
+    font-size:
+      13px;
+
+  }
+
+
+  .book-controls {
+
+    gap:
+      3px;
+
+  }
+
+
+  .book-controls span {
+
+    min-width:
+      58px;
+
+  }
+
+
+  .book-controls button {
+
+    padding:
+      6px 5px;
+
+  }
+
+
+  .book-stack-wrapper {
+
+    --book-scale:
+      0.46;
+
+  }
+
+}
+
+
+/* =========================================================
+   LANDSCAPE PHONES
+========================================================= */
+
+@media (max-width: 800px) and (orientation: landscape) {
+
+  .journal-page {
+
+    padding-top:
+      12px;
+
+    padding-bottom:
+      30px;
+
+  }
+
+
+  .journal-header {
+
+    padding-bottom:
       12px;
 
   }
 
 
+  .book-controls {
+
+    margin-top:
+      18px;
+
+    margin-bottom:
+      10px;
+
+  }
+
+
+  .book-stack-wrapper {
+
+    --book-scale:
+      min(
+        0.85,
+        calc((100vw - 24px) / 720px)
+      );
+
+  }
+
+}
+
+
+/* =========================================================
+   SHORT SCREENS
+========================================================= */
+
+@media (max-height: 700px) {
+
+  .journal-page {
+
+    padding-bottom:
+      40px;
+
+  }
+
+
+  .book-controls {
+
+    margin-top:
+      25px;
+
+    margin-bottom:
+      12px;
+
+  }
+
+}
+
+
+/* =========================================================
+   TOUCH DEVICES
+========================================================= */
+
+@media (hover: none) and (pointer: coarse) {
+
   .page-turn-zone {
 
     width:
-      80px;
+      75px;
+
+  }
+
+
+  .book-controls button:hover:not(:disabled) {
+
+    transform:
+      none;
+
+  }
+
+
+  .edit-button:hover {
+
+    transform:
+      none;
+
+  }
+
+
+  .toc-icon-button:hover {
+
+    transform:
+      none;
 
   }
 
@@ -1949,21 +2425,24 @@
    REDUCED MOTION
 ========================================================= */
 
-@media (
-  prefers-reduced-motion:
-  reduce
-) {
+@media (prefers-reduced-motion: reduce) {
 
-  * ,
+  *,
   *::before,
   *::after {
 
     animation-duration:
       0.01ms !important;
 
+    animation-iteration-count:
+      1 !important;
+
     transition-duration:
       0.01ms !important;
 
+    scroll-behavior:
+      auto !important;
+
   }
 
-}
+}  

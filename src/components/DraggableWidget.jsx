@@ -11,6 +11,7 @@ export default function DraggableWidget({
   editable = true,
   onSave,
 }) {
+
   const [box, setBox] = useState(
     initial ?? {
       x: 20,
@@ -19,6 +20,19 @@ export default function DraggableWidget({
       h: 120,
     }
   );
+
+
+  /*
+    Controls are hidden normally.
+
+    They appear when:
+    - the mouse is hovering over the widget
+    - the widget has been clicked/selected
+  */
+  const [
+    isSelected,
+    setIsSelected,
+  ] = useState(false);
 
 
   const dragState =
@@ -36,10 +50,56 @@ export default function DraggableWidget({
   ========================================================= */
 
   useEffect(() => {
+
     if (initial) {
+
       setBox(initial);
+
     }
+
   }, [initial]);
+
+
+  /* =========================================================
+     CLEANUP
+  ========================================================= */
+
+  useEffect(() => {
+
+    return () => {
+
+      if (saveTimeout.current) {
+
+        clearTimeout(
+          saveTimeout.current
+        );
+
+      }
+
+
+      window.removeEventListener(
+        'pointermove',
+        onDragMove
+      );
+
+      window.removeEventListener(
+        'pointerup',
+        onDragEnd
+      );
+
+      window.removeEventListener(
+        'pointermove',
+        onResizeMove
+      );
+
+      window.removeEventListener(
+        'pointerup',
+        onResizeEnd
+      );
+
+    };
+
+  }, []);
 
 
   /* =========================================================
@@ -47,6 +107,7 @@ export default function DraggableWidget({
   ========================================================= */
 
   function clamp(box, container) {
+
     const maxX =
       container.width - box.w;
 
@@ -55,6 +116,7 @@ export default function DraggableWidget({
 
 
     return {
+
       ...box,
 
       x: Math.min(
@@ -76,7 +138,9 @@ export default function DraggableWidget({
         box.h,
         container.height
       ),
+
     };
+
   }
 
 
@@ -85,20 +149,28 @@ export default function DraggableWidget({
   ========================================================= */
 
   function scheduleSave(nextBox) {
-    if (!onSave) return;
+
+    if (!onSave) {
+      return;
+    }
 
 
     if (saveTimeout.current) {
+
       clearTimeout(
         saveTimeout.current
       );
+
     }
 
 
     saveTimeout.current =
       setTimeout(() => {
+
         onSave(nextBox);
+
       }, 400);
+
   }
 
 
@@ -107,31 +179,66 @@ export default function DraggableWidget({
   ========================================================= */
 
   function onDragStart(e) {
-    if (!editable) return;
+
+    if (!editable) {
+      return;
+    }
 
 
     /*
-     * Don't drag when clicking interactive elements.
-     */
+      Clicking the resize handle should NOT
+      start dragging.
+    */
+
+    if (
+      e.target.closest(
+        '[data-resize-handle]'
+      )
+    ) {
+
+      return;
+
+    }
+
+
+    /*
+      Don't drag when clicking interactive
+      elements inside the widget.
+    */
 
     if (
       e.target.closest(
         'button, input, textarea, select, a'
       )
     ) {
+
+      setIsSelected(true);
+
       return;
+
     }
 
 
     e.preventDefault();
 
 
-    dragState.current = {
-      startX: e.clientX,
-      startY: e.clientY,
+    setIsSelected(true);
 
-      origX: box.x,
-      origY: box.y,
+
+    dragState.current = {
+
+      startX:
+        e.clientX,
+
+      startY:
+        e.clientY,
+
+      origX:
+        box.x,
+
+      origY:
+        box.y,
+
     };
 
 
@@ -144,6 +251,7 @@ export default function DraggableWidget({
       'pointerup',
       onDragEnd
     );
+
   }
 
 
@@ -152,11 +260,14 @@ export default function DraggableWidget({
   ========================================================= */
 
   function onDragMove(e) {
+
     if (
       !dragState.current ||
       !containerRef?.current
     ) {
+
       return;
+
     }
 
 
@@ -168,34 +279,48 @@ export default function DraggableWidget({
       e.clientX -
       dragState.current.startX;
 
+
     const dy =
       e.clientY -
       dragState.current.startY;
 
 
     setBox((prev) => {
-      const next = clamp(
-        {
-          ...prev,
 
-          x:
-            dragState.current.origX +
-            dx,
+      const next =
+        clamp(
 
-          y:
-            dragState.current.origY +
-            dy,
-        },
+          {
 
-        {
-          width: rect.width,
-          height: rect.height,
-        }
-      );
+            ...prev,
+
+            x:
+              dragState.current.origX +
+              dx,
+
+            y:
+              dragState.current.origY +
+              dy,
+
+          },
+
+          {
+
+            width:
+              rect.width,
+
+            height:
+              rect.height,
+
+          }
+
+        );
 
 
       return next;
+
     });
+
   }
 
 
@@ -204,13 +329,16 @@ export default function DraggableWidget({
   ========================================================= */
 
   function onDragEnd() {
-    dragState.current = null;
+
+    dragState.current =
+      null;
 
 
     window.removeEventListener(
       'pointermove',
       onDragMove
     );
+
 
     window.removeEventListener(
       'pointerup',
@@ -219,10 +347,16 @@ export default function DraggableWidget({
 
 
     setBox((current) => {
-      scheduleSave(current);
+
+      scheduleSave(
+        current
+      );
+
 
       return current;
+
     });
+
   }
 
 
@@ -231,7 +365,10 @@ export default function DraggableWidget({
   ========================================================= */
 
   function onResizeStart(e) {
-    if (!editable) return;
+
+    if (!editable) {
+      return;
+    }
 
 
     e.preventDefault();
@@ -239,12 +376,23 @@ export default function DraggableWidget({
     e.stopPropagation();
 
 
-    resizeState.current = {
-      startX: e.clientX,
-      startY: e.clientY,
+    setIsSelected(true);
 
-      origW: box.w,
-      origH: box.h,
+
+    resizeState.current = {
+
+      startX:
+        e.clientX,
+
+      startY:
+        e.clientY,
+
+      origW:
+        box.w,
+
+      origH:
+        box.h,
+
     };
 
 
@@ -257,6 +405,7 @@ export default function DraggableWidget({
       'pointerup',
       onResizeEnd
     );
+
   }
 
 
@@ -265,11 +414,14 @@ export default function DraggableWidget({
   ========================================================= */
 
   function onResizeMove(e) {
+
     if (
       !resizeState.current ||
       !containerRef?.current
     ) {
+
       return;
+
     }
 
 
@@ -281,15 +433,19 @@ export default function DraggableWidget({
       e.clientX -
       resizeState.current.startX;
 
+
     const dy =
       e.clientY -
       resizeState.current.startY;
 
 
     setBox((prev) => {
+
       const next =
         clamp(
+
           {
+
             ...prev,
 
             w: Math.max(
@@ -303,17 +459,26 @@ export default function DraggableWidget({
               resizeState.current.origH +
                 dy
             ),
+
           },
 
           {
-            width: rect.width,
-            height: rect.height,
+
+            width:
+              rect.width,
+
+            height:
+              rect.height,
+
           }
+
         );
 
 
       return next;
+
     });
+
   }
 
 
@@ -322,13 +487,16 @@ export default function DraggableWidget({
   ========================================================= */
 
   function onResizeEnd() {
-    resizeState.current = null;
+
+    resizeState.current =
+      null;
 
 
     window.removeEventListener(
       'pointermove',
       onResizeMove
     );
+
 
     window.removeEventListener(
       'pointerup',
@@ -337,10 +505,16 @@ export default function DraggableWidget({
 
 
     setBox((current) => {
-      scheduleSave(current);
+
+      scheduleSave(
+        current
+      );
+
 
       return current;
+
     });
+
   }
 
 
@@ -349,65 +523,215 @@ export default function DraggableWidget({
   ========================================================= */
 
   return (
+
     <div
+
       style={{
-        position: 'absolute',
 
-        left: box.x,
-        top: box.y,
+        position:
+          'absolute',
 
-        width: box.w,
-        height: box.h,
+        left:
+          box.x,
+
+        top:
+          box.y,
+
+        width:
+          box.w,
+
+        height:
+          box.h,
+
       }}
 
-      className={`group ${
-        editable
-          ? 'cursor-move'
-          : ''
-      }`}
+      className={`
+        group
+        ${editable ? 'cursor-move' : ''}
+      `}
 
       onPointerDown={
         onDragStart
       }
+
+      onClick={(e) => {
+
+        if (!editable) {
+          return;
+        }
+
+
+        /*
+          Clicking anywhere on the widget
+          selects it so the controls remain visible.
+        */
+
+        e.stopPropagation();
+
+        setIsSelected(true);
+
+      }}
+
     >
 
-      {/* CONTENT */}
+      {/* =====================================================
+          CONTENT
+
+          No border here.
+
+          This keeps the actual media clean.
+      ===================================================== */}
 
       <div
-        className={`h-full w-full overflow-hidden rounded-md ${
-          editable
-            ? 'border-2 border-dashed border-margin/50 group-hover:border-margin'
-            : ''
-        }`}
+        className="
+          h-full
+          w-full
+          overflow-hidden
+          rounded-md
+        "
       >
+
         {children}
+
       </div>
 
 
-      {/* RESIZE HANDLE */}
+      {/* =====================================================
+          EDITOR CONTROLS
+
+          Only rendered for owners.
+
+          They are invisible until the widget is
+          hovered or selected.
+      ===================================================== */}
 
       {editable && (
-        <div
-          onPointerDown={
-            onResizeStart
-          }
 
-          className="
-            absolute
-            bottom-0
-            right-0
-            h-4
-            w-4
-            cursor-se-resize
-            rounded-tl-md
-            border-b-2
-            border-r-2
-            border-margin/70
-            bg-paper/80
-          "
-        />
+        <>
+
+          {/* ===============================================
+              MOVE INDICATOR
+          =============================================== */}
+
+          <div
+
+            className={`
+              pointer-events-none
+              absolute
+              left-1/2
+              top-1
+              -translate-x-1/2
+              rounded-md
+              bg-black/55
+              px-2
+              py-1
+              text-white
+              shadow-sm
+              transition-opacity
+              duration-150
+              ${
+                isSelected
+                  ? 'opacity-100'
+                  : 'opacity-0 group-hover:opacity-100'
+              }
+            `}
+
+          >
+
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+
+              <path d="M12 2v20" />
+
+              <path d="m8 6 4-4 4 4" />
+
+              <path d="m8 18 4 4 4-4" />
+
+              <path d="M2 12h20" />
+
+              <path d="m6 8-4 4 4 4" />
+
+              <path d="m18 8 4 4-4 4" />
+
+            </svg>
+
+          </div>
+
+
+          {/* ===============================================
+              RESIZE HANDLE
+          =============================================== */}
+
+          <div
+
+            data-resize-handle
+
+            onPointerDown={
+              onResizeStart
+            }
+
+            className={`
+              absolute
+              bottom-0
+              right-0
+              h-5
+              w-5
+              cursor-se-resize
+              rounded-tl-md
+              bg-black/55
+              shadow-sm
+              transition-opacity
+              duration-150
+              ${
+                isSelected
+                  ? 'opacity-100'
+                  : 'opacity-0 group-hover:opacity-100'
+              }
+            `}
+
+          >
+
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="white"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              aria-hidden="true"
+              className="
+                absolute
+                bottom-1
+                right-1
+              "
+            >
+
+              <path d="M3 9h6" />
+
+              <path d="M6 6h3" />
+
+              <path d="M9 3v6" />
+
+            </svg>
+
+          </div>
+
+        </>
+
       )}
 
     </div>
+
   );
+
 }
