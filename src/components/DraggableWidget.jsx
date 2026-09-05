@@ -51,13 +51,38 @@ export default function DraggableWidget({
 
   useEffect(() => {
 
-    if (initial) {
-
-      setBox(initial);
-
+    if (!initial) {
+      return;
     }
 
-  }, [initial]);
+    // Only update local state when the actual saved box values changed.
+    // The parent creates a new object on every render; blindly calling
+    // setBox(initial) here would cause an infinite render loop after a
+    // widget is dragged or resized.
+    setBox((current) => {
+
+      const same =
+        current.x === (initial.x ?? current.x) &&
+        current.y === (initial.y ?? current.y) &&
+        current.w === (initial.w ?? current.w) &&
+        current.h === (initial.h ?? current.h);
+
+      return same
+        ? current
+        : {
+            ...current,
+            ...initial,
+          };
+
+    });
+
+  }, [
+    initial?.x,
+    initial?.y,
+    initial?.w,
+    initial?.h,
+    initial?.url,
+  ]);
 
 
   /* =========================================================
@@ -375,6 +400,12 @@ export default function DraggableWidget({
 
     e.stopPropagation();
 
+    try {
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    } catch {
+      // Ignore browsers that do not support pointer capture.
+    }
+
 
     setIsSelected(true);
 
@@ -543,6 +574,9 @@ export default function DraggableWidget({
         height:
           box.h,
 
+        touchAction:
+          'none',
+
       }}
 
       className={`
@@ -595,6 +629,21 @@ export default function DraggableWidget({
 
       </div>
 
+      {/*
+        Iframes (especially Spotify) live in their own document, so
+        pointer events inside them cannot bubble to this wrapper.
+        While editing, this transparent surface lets the widget still
+        be dragged from anywhere without changing the public viewer.
+      */}
+      {editable && (
+        <div
+          aria-hidden="true"
+          onPointerDown={onDragStart}
+          className="absolute inset-0 z-10 cursor-move"
+          style={{ touchAction: 'none' }}
+        />
+      )}
+
 
       {/* =====================================================
           EDITOR CONTROLS
@@ -616,7 +665,7 @@ export default function DraggableWidget({
           <div
 
             className={`
-              pointer-events-none
+              pointer-events-auto
               absolute
               left-1/2
               top-1
@@ -635,6 +684,8 @@ export default function DraggableWidget({
                   : 'opacity-0 group-hover:opacity-100'
               }
             `}
+
+            onPointerDown={onDragStart}
 
           >
 
@@ -683,6 +734,7 @@ export default function DraggableWidget({
               absolute
               bottom-0
               right-0
+              z-20
               h-5
               w-5
               cursor-se-resize

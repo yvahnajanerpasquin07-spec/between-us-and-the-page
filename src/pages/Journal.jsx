@@ -2508,7 +2508,7 @@ function PoemMediaPage({
     useRef(null);
 
 
-  const imageWidget =
+  const savedImageWidget =
     imageWidgets[
       poem.id
     ] ??
@@ -2516,9 +2516,33 @@ function PoemMediaPage({
     null;
 
 
+  // Always give the image widget usable dimensions. Older saved
+  // image positions may contain only x/y/url, which would otherwise
+  // make width/height undefined and break resizing.
+  const imageWidget =
+    savedImageWidget
+      ? {
+          x: savedImageWidget.x ?? 20,
+          y: savedImageWidget.y ?? 20,
+          w: savedImageWidget.w ?? 220,
+          h: savedImageWidget.h ?? 220,
+          url: savedImageWidget.url,
+        }
+      : null;
+
+
+  // The image URL is stored on the poem itself.
+  // Keep the saved widget position separate from the image URL
+  // so an older/local widget position cannot hide the picture.
+  const imageUrl =
+    imageWidget?.url ||
+    poem.image_url ||
+    '';
+
+
   const hasImage =
     Boolean(
-      imageWidget?.url
+      imageUrl
     );
 
 
@@ -2572,7 +2596,12 @@ function PoemMediaPage({
               }
 
               initial={
-                imageWidget
+                {
+                  ...(imageWidget ?? {}),
+
+                  url:
+                    imageUrl,
+                }
               }
 
               onSave={(box) => {
@@ -2583,7 +2612,7 @@ function PoemMediaPage({
                     ...box,
 
                     url:
-                      imageWidget.url,
+                      imageUrl,
                   }
                 );
 
@@ -2594,7 +2623,7 @@ function PoemMediaPage({
               <img
 
                 src={
-                  imageWidget.url
+                  imageUrl
                 }
 
                 alt="Poem page"
