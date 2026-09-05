@@ -73,7 +73,7 @@ export default function Dashboard() {
               Cover material
             </label>
             <div className="flex gap-2">
-              {materialOptions().map((m) => (
+              {materialOptions.map((m) => (
                 <button
                   type="button"
                   key={m.value}
