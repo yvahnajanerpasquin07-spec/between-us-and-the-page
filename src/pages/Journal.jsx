@@ -1745,7 +1745,7 @@ const isOpen =
             ),
 
           paperLocation:
-            paperId + 1,
+            paperId,
 
         });
 
