@@ -122,7 +122,7 @@ export default function ShareModal({
 
 
       const link =
-        `${window.location.origin}/#/shared/${token}`;
+        `${window.location.origin}${import.meta.env.BASE_URL}#/shared/${token}`;
 
 
       setPublicLink(
