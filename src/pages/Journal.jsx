@@ -12,6 +12,8 @@ import {
 import {
   deleteJournal,
   getJournal,
+  getPublicJournal,
+  getPublicPoems,
 } from '../services/journalService';
 
 import {
@@ -540,7 +542,12 @@ export default function Journal() {
 
   const {
     journalId,
+    shareToken,
   } = useParams();
+
+
+  const isPublicView =
+    Boolean(shareToken);
 
 
   const navigate =
@@ -667,10 +674,14 @@ export default function Journal() {
     loading: journalLoading,
   } = useAsync(
     () =>
-      getJournal(
-        journalId
-      ),
-    [journalId]
+      isPublicView
+        ? getPublicJournal(
+            shareToken
+          )
+        : getJournal(
+            journalId
+          ),
+    [journalId, shareToken, isPublicView]
   );
 
 
@@ -683,10 +694,14 @@ export default function Journal() {
     loading: poemsLoading,
   } = useAsync(
     () =>
-      getPoemsForJournal(
-        journalId
-      ),
-    [journalId]
+      isPublicView
+        ? getPublicPoems(
+            shareToken
+          )
+        : getPoemsForJournal(
+            journalId
+          ),
+    [journalId, shareToken, isPublicView]
   );
 
 
@@ -700,6 +715,7 @@ export default function Journal() {
 
 
   const isOwner =
+    !isPublicView &&
     journal &&
     user &&
     journal.owner_id ===

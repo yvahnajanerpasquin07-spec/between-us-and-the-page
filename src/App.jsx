@@ -8,6 +8,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Journal from './pages/Journal';
 import Poem from './pages/Poem';
+import PublicShareLanding from './pages/PublicShareLanding';
 
 export default function App() {
   return (
@@ -42,6 +43,18 @@ export default function App() {
                   <Poem />
                 </ProtectedRoute>
               }
+            />
+
+            {/* Public share landing page */}
+            <Route
+              path="/shared/:shareToken"
+              element={<PublicShareLanding />}
+            />
+
+            {/* Public view-only journal */}
+            <Route
+              path="/shared/:shareToken/book"
+              element={<Journal />}
             />
           </Routes>
         </LayoutGroup>

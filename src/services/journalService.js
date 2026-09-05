@@ -6,7 +6,6 @@ import { supabase } from './supabase';
 ========================================================= */
 
 export async function getMyJournals() {
-
   const {
     data,
     error,
@@ -20,14 +19,11 @@ export async function getMyJournals() {
       }
     );
 
-
   if (error) {
     throw error;
   }
 
-
   return data;
-
 }
 
 
@@ -36,7 +32,6 @@ export async function getMyJournals() {
 ========================================================= */
 
 export async function getSharedJournals() {
-
   const {
     data,
     error,
@@ -50,14 +45,11 @@ export async function getSharedJournals() {
       }
     );
 
-
   if (error) {
     throw error;
   }
 
-
   return data;
-
 }
 
 
@@ -68,7 +60,6 @@ export async function getSharedJournals() {
 export async function getJournal(
   journalId
 ) {
-
   const {
     data,
     error,
@@ -81,14 +72,11 @@ export async function getJournal(
     )
     .single();
 
-
   if (error) {
     throw error;
   }
 
-
   return data;
-
 }
 
 
@@ -97,34 +85,23 @@ export async function getJournal(
 ========================================================= */
 
 export async function createJournal({
-
   title,
-
   description,
-
   authorName,
-
   journalDate,
-
   coverColor,
-
   coverMaterial,
-
   spineColor,
-
 }) {
-
   const {
     data: userData,
     error: userError,
   } =
     await supabase.auth.getUser();
 
-
   if (userError) {
     throw userError;
   }
-
 
   const {
     data,
@@ -216,14 +193,11 @@ export async function createJournal({
     .select()
     .single();
 
-
   if (error) {
     throw error;
   }
 
-
   return data;
-
 }
 
 
@@ -235,7 +209,6 @@ export async function updateJournal(
   journalId,
   updates
 ) {
-
   const {
     data,
     error,
@@ -249,14 +222,11 @@ export async function updateJournal(
     .select()
     .single();
 
-
   if (error) {
     throw error;
   }
 
-
   return data;
-
 }
 
 
@@ -267,7 +237,6 @@ export async function updateJournal(
 export async function deleteJournal(
   journalId
 ) {
-
   const {
     error,
   } = await supabase
@@ -278,11 +247,9 @@ export async function deleteJournal(
       journalId
     );
 
-
   if (error) {
     throw error;
   }
-
 }
 
 
@@ -299,15 +266,11 @@ export async function uploadJournalCover(
   file,
   side = 'front'
 ) {
-
   if (!file) {
-
     throw new Error(
       'No cover image selected.'
     );
-
   }
-
 
   const bucket =
     'journal-covers';
@@ -349,7 +312,6 @@ export async function uploadJournalCover(
         }
       );
 
-
   if (error) {
     throw error;
   }
@@ -368,18 +330,13 @@ export async function uploadJournalCover(
         path
       );
 
-
   if (!data?.publicUrl) {
-
     throw new Error(
       'Could not generate public cover image URL.'
     );
-
   }
 
-
   return data.publicUrl;
-
 }
 
 
@@ -388,42 +345,27 @@ export async function uploadJournalCover(
 ========================================================= */
 
 export async function updateJournalCoverImages(
-
   journalId,
-
   frontImageUrl,
-
   backImageUrl
-
 ) {
-
   const updates = {};
 
-
   if (frontImageUrl) {
-
     updates.cover_image_url =
       frontImageUrl;
-
   }
-
 
   if (backImageUrl) {
-
     updates.cover_back_image_url =
       backImageUrl;
-
   }
-
 
   if (
     !Object.keys(updates).length
   ) {
-
     return null;
-
   }
-
 
   const {
     data,
@@ -439,14 +381,11 @@ export async function updateJournalCoverImages(
       .select()
       .single();
 
-
   if (error) {
     throw error;
   }
 
-
   return data;
-
 }
 
 
@@ -457,21 +396,72 @@ export async function updateJournalCoverImages(
 ========================================================= */
 
 export async function updateJournalCoverImage(
-
   journalId,
-
   imageUrl
-
 ) {
-
   return updateJournalCoverImages(
-
     journalId,
-
     imageUrl,
-
     null
+  );
+}
 
+
+/* =========================================================
+   GET PUBLIC JOURNAL BY SHARE TOKEN
+   ---------------------------------------------------------
+   Used by the view-only public sharing link.
+========================================================= */
+
+export async function getPublicJournal(
+  shareToken
+) {
+  const {
+    data,
+    error,
+  } = await supabase.rpc(
+    'get_public_journal',
+    {
+      p_share_token:
+        shareToken,
+    }
   );
 
+  if (error) {
+    throw error;
+  }
+
+  if (!data?.journal) {
+    return null;
+  }
+
+  return data.journal;
+}
+
+
+/* =========================================================
+   GET PUBLIC POEMS BY SHARE TOKEN
+   ---------------------------------------------------------
+   Used by the view-only public sharing link.
+========================================================= */
+
+export async function getPublicPoems(
+  shareToken
+) {
+  const {
+    data,
+    error,
+  } = await supabase.rpc(
+    'get_public_journal',
+    {
+      p_share_token:
+        shareToken,
+    }
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data?.poems ?? [];
 }
