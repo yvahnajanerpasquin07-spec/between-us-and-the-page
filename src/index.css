@@ -244,125 +244,6 @@
    DELETE
 ========================================================= */
 
-.delete-journal {
-  position:
-    absolute;
-
-  right:
-    clamp(
-      16px,
-      4vw,
-      40px
-    );
-
-  top:
-    clamp(
-      78px,
-      9vw,
-      90px
-    );
-
-  width:
-    30px;
-
-  height:
-    30px;
-
-  padding:
-    0;
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  justify-content:
-    center;
-
-  border:
-    1px solid
-    rgba(
-      178,
-      58,
-      46,
-      0.22
-    );
-
-  border-radius:
-    50%;
-
-  background:
-    rgba(
-      248,
-      244,
-      233,
-      0.55
-    );
-
-  color:
-    #b23a2e;
-
-  cursor:
-    pointer;
-
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s ease;
-}
-
-
-.delete-journal svg {
-  width:
-    15px;
-
-  height:
-    15px;
-
-  fill:
-    none;
-
-  stroke:
-    currentColor;
-
-  stroke-width:
-    1.5;
-
-  stroke-linecap:
-    round;
-
-  stroke-linejoin:
-    round;
-}
-
-
-.delete-journal:hover {
-  background:
-    rgba(
-      178,
-      58,
-      46,
-      0.08
-    );
-
-  border-color:
-    rgba(
-      178,
-      58,
-      46,
-      0.45
-    );
-
-  color:
-    #a52f25;
-
-  transform:
-    translateY(-1px);
-}
-
-
 /* =========================================================
    CONTROLS
 ========================================================= */
@@ -499,6 +380,153 @@
 
   cursor:
     default;
+}
+
+
+/* =========================================================
+   JOURNAL ACTION ICONS
+   ---------------------------------------------------------
+   Edit and delete are available on both PC and mobile.
+========================================================= */
+
+.poem-page-tools .journal-action-button {
+  width:
+    30px;
+
+  height:
+    30px;
+
+  min-width:
+    30px;
+
+  padding:
+    0;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  flex-shrink:
+    0;
+
+  border:
+    1px solid
+    rgba(
+      43,
+      42,
+      40,
+      0.16
+    );
+
+  border-radius:
+    50%;
+
+  background:
+    transparent;
+
+  color:
+    #403e39;
+
+  cursor:
+    pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+
+}
+
+
+.poem-page-tools .journal-action-button svg {
+  width:
+    15px;
+
+  height:
+    15px;
+
+  fill:
+    none;
+
+  stroke:
+    currentColor;
+
+  stroke-width:
+    1.5;
+
+  stroke-linecap:
+    round;
+
+  stroke-linejoin:
+    round;
+
+}
+
+
+.poem-page-tools .journal-action-button:hover {
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.65
+    );
+
+  border-color:
+    rgba(
+      43,
+      42,
+      40,
+      0.30
+    );
+
+  transform:
+    translateY(-1px);
+
+}
+
+
+.poem-page-tools .journal-delete-action {
+  color:
+    #b23a2e;
+
+  border-color:
+    rgba(
+      178,
+      58,
+      46,
+      0.22
+    );
+
+}
+
+
+.poem-page-tools .journal-delete-action:hover {
+  background:
+    rgba(
+      178,
+      58,
+      46,
+      0.08
+    );
+
+  border-color:
+    rgba(
+      178,
+      58,
+      46,
+      0.45
+    );
+
+  color:
+    #a52f25;
+
 }
 
 
@@ -2000,21 +2028,6 @@
   }
 
 
-  .delete-journal {
-    top:
-      72px;
-
-    right:
-      16px;
-
-    width:
-      30px;
-
-    height:
-      30px;
-  }
-
-
   .book-controls {
     margin-top:
       34px;
@@ -2188,27 +2201,6 @@
 
     text-align:
       center;
-  }
-
-
-  .delete-journal {
-    position:
-      static;
-
-    display:
-      flex;
-
-    margin:
-      14px
-      0
-      0
-      auto;
-
-    width:
-      30px;
-
-    height:
-      30px;
   }
 
 

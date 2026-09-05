@@ -595,12 +595,6 @@ export default function Journal() {
 
 
   const [
-    showCoverMenu,
-    setShowCoverMenu,
-  ] = useState(false);
-
-
-  const [
     showEditModal,
     setShowEditModal,
   ] = useState(false);
@@ -800,19 +794,7 @@ export default function Journal() {
      COVER DATE
   ======================================================= */
 
-  const date =
-    activeJournal
-      ? new Date(
-          activeJournal.created_at
-        ).toLocaleDateString(
-          undefined,
-          {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-          }
-        )
-      : '';
+  const date = '';
 
 
   /* =======================================================
@@ -891,6 +873,10 @@ const isOpen =
           activeJournal.cover_material
         }
 
+        spineColor={
+          activeJournal.spine_color
+        }
+
         coverImageUrl={
           activeJournal.cover_image_url
         }
@@ -901,6 +887,14 @@ const isOpen =
 
         isOwner={
           isOwner
+        }
+
+        onEditJournal={() =>
+          setShowEditModal(true)
+        }
+
+        onDeleteJournal={
+          handleDeleteJournal
         }
 
       />
@@ -1345,74 +1339,10 @@ const isOpen =
         }}
 
 
-        onContextMenu={(e) => {
-
-          e.preventDefault();
-
-
-          if (isOwner) {
-
-            setShowCoverMenu(
-              true
-            );
-
-          }
-
-        }}
-
       >
 
         {coverFront}
 
-
-        {showCoverMenu && (
-
-          <div
-
-            className="cover-menu"
-
-            onClick={(e) =>
-              e.stopPropagation()
-            }
-
-          >
-
-            <button
-              onClick={() => {
-
-                setShowCoverMenu(
-                  false
-                );
-
-
-                setShowEditModal(
-                  true
-                );
-
-              }}
-            >
-              Edit journal
-            </button>
-
-
-            <button
-              onClick={() => {
-
-                setShowCoverMenu(
-                  false
-                );
-
-
-                handleDeleteJournal();
-
-              }}
-            >
-              Delete journal
-            </button>
-
-          </div>
-
-        )}
 
       </div>
 
@@ -1832,6 +1762,16 @@ const isOpen =
 
               isOwner={
                 isOwner
+              }
+
+              onEditJournal={() =>
+                setShowEditModal(
+                  true
+                )
+              }
+
+              onDeleteJournal={
+                handleDeleteJournal
               }
 
               pageNumber={
@@ -2287,67 +2227,7 @@ const isOpen =
 
       className="journal-page"
 
-      onClick={() => {
-
-        if (showCoverMenu) {
-
-          setShowCoverMenu(
-            false
-          );
-
-        }
-
-      }}
-
     >
-
-      {/* ===================================================
-          DELETE JOURNAL
-      =================================================== */}
-
-      {isOwner && (
-
-        <button
-
-          type="button"
-
-          className="delete-journal"
-
-          onClick={(e) => {
-
-            e.stopPropagation();
-
-            handleDeleteJournal();
-
-          }}
-
-          aria-label="Delete journal"
-
-          title="Delete journal"
-
-        >
-
-          <svg
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-
-            <path d="M4 7h16" />
-
-            <path d="M10 11v6" />
-
-            <path d="M14 11v6" />
-
-            <path d="M6 7l1 14h10l1-14" />
-
-            <path d="M9 7V4h6v3" />
-
-          </svg>
-
-        </button>
-
-      )}
-
 
       {/* ===================================================
           CONTROLS
@@ -3077,6 +2957,8 @@ function PoemPage({
   content,
   journalId,
   isOwner,
+  onEditJournal,
+  onDeleteJournal,
   pageNumber,
   totalPages,
   isFirstPage,
@@ -3532,6 +3414,9 @@ function PoemPage({
               </svg>
 
             </button>
+
+
+
 
 
             {/* PENCIL ICON */}
@@ -4542,6 +4427,7 @@ function ClosedBackCover({
 
 
   const spineColor =
+    journal.spine_color ||
     spineColors[
       material
     ] ||
@@ -4586,7 +4472,41 @@ function ClosedBackCover({
 
     >
 
-      <div className="closed-back-cover-content">
+      {journal.cover_back_image_url ? (
+
+        <img
+          src={journal.cover_back_image_url}
+          alt="Back cover"
+          className="
+            absolute
+            inset-0
+            z-0
+            h-full
+            w-full
+            object-cover
+          "
+          draggable="false"
+        />
+
+      ) : null}
+
+
+      {journal.cover_back_image_url ? (
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            inset-0
+            z-[1]
+            bg-black/10
+          "
+        />
+
+      ) : null}
+
+
+      <div className="closed-back-cover-content relative z-10">
 
         <div className="closed-back-cover-title">
 

@@ -263,9 +263,12 @@ export default function NotebookCover({
   coverColor,
   coverMaterial = 'kraft',
   coverImageUrl,
+  spineColor,
   readOnly,
   journalId,
   isOwner,
+  onEditJournal,
+  onDeleteJournal,
 }) {
 
   const material =
@@ -276,6 +279,11 @@ export default function NotebookCover({
   const bg =
     coverColor ||
     material.base;
+
+
+  const effectiveSpineColor =
+    spineColor ||
+    material.spineColor;
 
 
   const hasCoverImage =
@@ -417,6 +425,9 @@ export default function NotebookCover({
       color:
         style.color,
 
+      textShadow:
+        '0 1px 3px rgba(0,0,0,0.85), 0 2px 8px rgba(0,0,0,0.55)',
+
     };
 
   }
@@ -442,10 +453,6 @@ export default function NotebookCover({
         backgroundImage:
           hasCoverImage
             ? `
-              linear-gradient(
-                rgba(0,0,0,0.35),
-                rgba(0,0,0,0.45)
-              ),
               url("${coverImageUrl}"),
               ${material.texture}
             `
@@ -453,12 +460,12 @@ export default function NotebookCover({
 
         backgroundSize:
           hasCoverImage
-            ? 'cover, cover, auto'
+            ? 'cover, auto'
             : 'auto',
 
         backgroundPosition:
           hasCoverImage
-            ? 'center, center, center'
+            ? 'center, center'
             : 'center',
 
         backgroundRepeat:
@@ -633,34 +640,19 @@ export default function NotebookCover({
 
 
       {/* =================================================
-          TEXT STYLE BUTTON
+          COVER TOOLS
           -------------------------------------------------
-          Icon only — no text.
+          Text customization, edit, and delete controls
+          stay together in the bottom-right corner.
       ================================================= */}
 
       {isOwner && (
 
-        <button
-
-          type="button"
-
-          onClick={(e) => {
-
-            e.stopPropagation();
-
-            setShowTextStyles(
-              (previous) =>
-                !previous
-            );
-
-          }}
-
-          aria-label="Cover text style"
-
-          title="Cover text style"
-
+        <div
+          onClick={(e) =>
+            e.stopPropagation()
+          }
           style={{
-
             position:
               'absolute',
 
@@ -673,78 +665,233 @@ export default function NotebookCover({
             zIndex:
               100,
 
-            width:
-              '30px',
-
-            height:
-              '30px',
-
-            padding:
-              0,
-
             display:
               'flex',
 
             alignItems:
               'center',
 
-            justifyContent:
-              'center',
-
-            border:
-              '1px solid rgba(255,255,255,0.35)',
-
-            borderRadius:
-              '50%',
-
-            background:
-              'rgba(0,0,0,0.18)',
-
-            color:
-              '#ffffff',
-
-            cursor:
-              'pointer',
-
-            backdropFilter:
-              'blur(3px)',
-
+            gap:
+              '6px',
           }}
-
         >
 
-          <svg
+          {/* TEXT STYLE BUTTON */}
 
-            viewBox="0 0 24 24"
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
 
-            width="15"
+              setShowTextStyles(
+                (previous) =>
+                  !previous
+              );
+            }}
+            aria-label="Cover text style"
+            title="Cover text style"
+            style={{
+              width:
+                '30px',
 
-            height="15"
+              height:
+                '30px',
 
-            fill="none"
+              padding:
+                0,
 
-            stroke="currentColor"
+              display:
+                'flex',
 
-            strokeWidth="1.5"
+              alignItems:
+                'center',
 
-            strokeLinecap="round"
+              justifyContent:
+                'center',
 
-            strokeLinejoin="round"
+              border:
+                '1px solid rgba(255,255,255,0.35)',
 
+              borderRadius:
+                '50%',
+
+              background:
+                'rgba(0,0,0,0.18)',
+
+              color:
+                '#ffffff',
+
+              cursor:
+                'pointer',
+
+              backdropFilter:
+                'blur(3px)',
+            }}
           >
 
-            <path d="M4 5h16" />
+            <svg
+              viewBox="0 0 24 24"
+              width="15"
+              height="15"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M4 5h16" />
+              <path d="M12 5v14" />
+              <path d="M8 19h8" />
+            </svg>
 
-            <path d="M12 5v14" />
+          </button>
 
-            <path d="M8 19h8" />
 
-          </svg>
+          {/* EDIT JOURNAL BUTTON */}
 
-        </button>
+          {onEditJournal && (
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditJournal();
+              }}
+              aria-label="Edit journal"
+              title="Edit journal"
+              style={{
+                width:
+                  '30px',
+
+                height:
+                  '30px',
+
+                padding:
+                  0,
+
+                display:
+                  'flex',
+
+                alignItems:
+                  'center',
+
+                justifyContent:
+                  'center',
+
+                border:
+                  '1px solid rgba(255,255,255,0.35)',
+
+                borderRadius:
+                  '50%',
+
+                background:
+                  'rgba(0,0,0,0.18)',
+
+                color:
+                  '#ffffff',
+
+                cursor:
+                  'pointer',
+
+                backdropFilter:
+                  'blur(3px)',
+              }}
+            >
+
+              <svg
+                viewBox="0 0 24 24"
+                width="15"
+                height="15"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+              </svg>
+
+            </button>
+
+          )}
+
+
+          {/* DELETE JOURNAL BUTTON */}
+
+          {onDeleteJournal && (
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteJournal();
+              }}
+              aria-label="Delete journal"
+              title="Delete journal"
+              style={{
+                width:
+                  '30px',
+
+                height:
+                  '30px',
+
+                padding:
+                  0,
+
+                display:
+                  'flex',
+
+                alignItems:
+                  'center',
+
+                justifyContent:
+                  'center',
+
+                border:
+                  '1px solid rgba(255,255,255,0.35)',
+
+                borderRadius:
+                  '50%',
+
+                background:
+                  'rgba(0,0,0,0.18)',
+
+                color:
+                  '#ffffff',
+
+                cursor:
+                  'pointer',
+
+                backdropFilter:
+                  'blur(3px)',
+              }}
+            >
+
+              <svg
+                viewBox="0 0 24 24"
+                width="15"
+                height="15"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 7h16" />
+                <path d="M10 11v6" />
+                <path d="M14 11v6" />
+                <path d="M6 7l1 14h10l1-14" />
+                <path d="M9 7V4h6v3" />
+              </svg>
+
+            </button>
+
+          )}
+
+        </div>
 
       )}
-
 
       {/* =================================================
           COVER TEXT STYLE PANEL
@@ -1057,8 +1204,8 @@ export default function NotebookCover({
           background:
             `linear-gradient(
               to right,
-              ${material.spineColor},
-              ${material.spineColor}dd 70%,
+              ${effectiveSpineColor},
+              ${effectiveSpineColor}dd 70%,
               transparent
             )`,
 
