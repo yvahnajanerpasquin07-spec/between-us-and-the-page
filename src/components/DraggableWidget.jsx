@@ -59,6 +59,15 @@ export default function DraggableWidget({
   const saveTimeout =
     useRef(null);
 
+  /*
+    Keep the active pointer handlers attached to window.
+
+    This makes desktop mouse dragging/resizing reliable even
+    when the pointer leaves the 44x44 control.
+  */
+  const interactionHandlers =
+    useRef(null);
+
 
   /*
     Remember the page's original scrolling styles.
@@ -407,6 +416,26 @@ export default function DraggableWidget({
 
       unlockPageScroll();
 
+      if (interactionHandlers.current) {
+        window.removeEventListener(
+          'pointermove',
+          interactionHandlers.current.move
+        );
+
+        window.removeEventListener(
+          'pointerup',
+          interactionHandlers.current.end
+        );
+
+        window.removeEventListener(
+          'pointercancel',
+          interactionHandlers.current.end
+        );
+
+        interactionHandlers.current =
+          null;
+      }
+
     };
 
   }, []);
@@ -587,6 +616,34 @@ export default function DraggableWidget({
       // Ignore pointer capture errors.
     }
 
+    /*
+      Also listen on window.
+
+      Pointer capture is normally enough, but the window
+      listeners make desktop mouse interaction continue
+      smoothly even if the pointer moves outside the handle.
+    */
+
+    interactionHandlers.current = {
+      move: onDragMove,
+      end: onDragEnd,
+    };
+
+    window.addEventListener(
+      'pointermove',
+      onDragMove
+    );
+
+    window.addEventListener(
+      'pointerup',
+      onDragEnd
+    );
+
+    window.addEventListener(
+      'pointercancel',
+      onDragEnd
+    );
+
   }
 
 
@@ -748,6 +805,26 @@ export default function DraggableWidget({
       boxRef.current
     );
 
+    if (interactionHandlers.current) {
+      window.removeEventListener(
+        'pointermove',
+        interactionHandlers.current.move
+      );
+
+      window.removeEventListener(
+        'pointerup',
+        interactionHandlers.current.end
+      );
+
+      window.removeEventListener(
+        'pointercancel',
+        interactionHandlers.current.end
+      );
+
+      interactionHandlers.current =
+        null;
+    }
+
 
     /*
       Page becomes scrollable again ONLY
@@ -833,6 +910,26 @@ export default function DraggableWidget({
     } catch {
       // Ignore pointer capture errors.
     }
+
+    interactionHandlers.current = {
+      move: onResizeMove,
+      end: onResizeEnd,
+    };
+
+    window.addEventListener(
+      'pointermove',
+      onResizeMove
+    );
+
+    window.addEventListener(
+      'pointerup',
+      onResizeEnd
+    );
+
+    window.addEventListener(
+      'pointercancel',
+      onResizeEnd
+    );
 
   }
 
