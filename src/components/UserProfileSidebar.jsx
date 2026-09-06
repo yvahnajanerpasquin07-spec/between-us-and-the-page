@@ -262,7 +262,7 @@ export default function UserProfileSidebar({
         className={`
           fixed
           inset-0
-          z-[90]
+          z-[9998]
           bg-black/20
           backdrop-blur-[1px]
           transition-opacity
@@ -287,7 +287,7 @@ export default function UserProfileSidebar({
           fixed
           right-0
           top-0
-          z-[100]
+          z-[9999]
           flex
           h-dvh
           w-[min(360px,88vw)]

@@ -34,7 +34,9 @@ export default function Navbar() {
 
         <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
 
-          {/* SITE TITLE */}
+          {/* =================================================
+              SITE TITLE
+          ================================================= */}
 
           <Link
             to="/"
@@ -44,11 +46,13 @@ export default function Navbar() {
           </Link>
 
 
-          {/* NAVIGATION */}
+          {/* =================================================
+              NAVIGATION
+          ================================================= */}
 
           <div className="flex items-center gap-3">
 
-            {user ? (
+            {user && (
 
               <>
 
@@ -177,26 +181,6 @@ export default function Navbar() {
                   </svg>
 
                 </button>
-
-              </>
-
-            ) : (
-
-              <>
-
-                <Link
-                  to="/login"
-                  className="font-mono text-sm hover:text-margin"
-                >
-                  Log in
-                </Link>
-
-                <Link
-                  to="/register"
-                  className="font-mono text-sm hover:text-margin"
-                >
-                  Register
-                </Link>
 
               </>
 
