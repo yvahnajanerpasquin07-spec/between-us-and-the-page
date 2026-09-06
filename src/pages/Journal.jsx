@@ -2104,22 +2104,51 @@ const isOpen =
     }
 
 
-    const currentPaper =
-      papers[
-        currentLocation - 1
-      ];
+    /*
+       Every physical Table of Contents spread should show
+       "Table of Contents".
+
+       TOC pages are paired two-at-a-time:
+
+         TOC 1 | TOC 2
+         TOC 3 | TOC 4
+         TOC 5 | TOC 6
+
+       When there is an even number of TOC pages, an extra
+       blank paper is inserted before the first poem media page.
+    */
+    const tocPaperCount =
+      Math.ceil(
+        tocPages.length / 2
+      );
+
+
+    const extraBlankPaperAfterToc =
+      tocPages.length > 0 &&
+      tocPages.length % 2 === 0
+        ? 1
+        : 0;
+
+
+    const firstPoemPaperIndex =
+      1 +
+      tocPaperCount +
+      extraBlankPaperAfterToc;
+
+
+    const firstPoemLocation =
+      firstPoemPaperIndex + 1;
+
+
+    const lastTocLocation =
+      1 +
+      tocPaperCount;
 
 
     if (
-      currentPaper?.front?.props
-        ?.children
-    ) {
-      // No action needed here.
-    }
-
-
-    if (
-      currentLocation === 2
+      tocPages.length > 0 &&
+      currentLocation >= 2 &&
+      currentLocation <= lastTocLocation
     ) {
 
       return 'Table of Contents';
@@ -2127,19 +2156,30 @@ const isOpen =
     }
 
 
+    /*
+       Determine which poem page/spread is currently visible.
+
+       The first poem page starts the numbered section at Page 2.
+       Page 1 is represented by the Table of Contents section,
+       but all TOC locations remain labeled "Table of Contents".
+
+       Each poem entry represents one numbered book page/spread,
+       so the numbering advances one at a time:
+
+         Page 2 of X
+         Page 3 of X
+         Page 4 of X
+         ...
+
+       Covers and the End page are not counted.
+    */
     const paperIndex =
       currentLocation - 1;
 
 
     const poemEntryIndex =
       paperIndex -
-      (
-        1 +
-        tocPages.length +
-        (tocPages.length >= 2
-          ? 1
-          : 0)
-      );
+      firstPoemPaperIndex;
 
 
     if (
@@ -2156,9 +2196,17 @@ const isOpen =
 
       if (entry) {
 
+        const totalBookPages =
+          poemPageEntries.length + 1;
+
+
+        const bookPageNumber =
+          poemEntryIndex + 2;
+
+
         return (
-          `Page ${entry.pageNumber} ` +
-          `of ${entry.totalPages}`
+          `Page ${bookPageNumber} ` +
+          `of ${totalBookPages}`
         );
 
       }
@@ -2171,7 +2219,7 @@ const isOpen =
       safeMaxLocation - 1
     ) {
 
-      return 'Inside Back Cover';
+      return 'End';
 
     }
 
@@ -2179,6 +2227,7 @@ const isOpen =
     return 'Page';
 
   }
+
 
 
   /* =======================================================

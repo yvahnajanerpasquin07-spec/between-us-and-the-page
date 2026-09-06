@@ -60,6 +60,17 @@ export default function DraggableWidget({
     useRef(null);
 
 
+  /*
+    Remember the page's original scrolling styles.
+
+    These are restored after the user releases
+    the drag or resize handle.
+  */
+
+  const pageScrollLock =
+    useRef(null);
+
+
   /* =========================================================
      KEEP BOX REF IN SYNC
   ========================================================= */
@@ -123,6 +134,261 @@ export default function DraggableWidget({
 
 
   /* =========================================================
+     MOBILE CHECK
+  ========================================================= */
+
+  function isMobileDevice() {
+
+    if (
+      typeof window === 'undefined'
+    ) {
+
+      return false;
+
+    }
+
+
+    return window.matchMedia(
+      '(max-width: 800px) and (hover: none) and (pointer: coarse)'
+    ).matches;
+
+  }
+
+
+  /* =========================================================
+     GET CONTAINER DIMENSIONS
+  ========================================================= */
+
+  function getContainerDimensions() {
+
+    if (
+      !containerRef?.current
+    ) {
+
+      return {
+        width: 360,
+        height: 480,
+        scale: 1,
+      };
+
+    }
+
+
+    const element =
+      containerRef.current;
+
+
+    /*
+      IMPORTANT FOR MOBILE:
+
+      The book itself is visually scaled using CSS.
+
+      getBoundingClientRect() returns the VISUAL
+      scaled size.
+
+      offsetWidth / offsetHeight return the
+      ORIGINAL 360x480 page size.
+
+      We use the original dimensions for widget
+      positioning and calculate the scale separately.
+    */
+
+    const logicalWidth =
+      element.offsetWidth ||
+      360;
+
+    const logicalHeight =
+      element.offsetHeight ||
+      480;
+
+
+    const visualRect =
+      element.getBoundingClientRect();
+
+
+    const scale =
+      logicalWidth > 0
+        ? visualRect.width /
+          logicalWidth
+        : 1;
+
+
+    return {
+
+      width:
+        logicalWidth,
+
+      height:
+        logicalHeight,
+
+      scale:
+        isMobileDevice()
+          ? scale || 1
+          : 1,
+
+    };
+
+  }
+
+
+  /* =========================================================
+     LOCK PAGE SCROLL
+  ========================================================= */
+
+  function lockPageScroll() {
+
+    if (
+      typeof document === 'undefined' ||
+      pageScrollLock.current
+    ) {
+
+      return;
+
+    }
+
+
+    const body =
+      document.body;
+
+    const html =
+      document.documentElement;
+
+
+    pageScrollLock.current = {
+
+      bodyOverflow:
+        body.style.overflow,
+
+      bodyTouchAction:
+        body.style.touchAction,
+
+      htmlOverflow:
+        html.style.overflow,
+
+      htmlTouchAction:
+        html.style.touchAction,
+
+    };
+
+
+    /*
+      Stop the page from scrolling while the user
+      is actively dragging or resizing a widget.
+    */
+
+    body.style.overflow =
+      'hidden';
+
+    body.style.touchAction =
+      'none';
+
+    html.style.overflow =
+      'hidden';
+
+    html.style.touchAction =
+      'none';
+
+
+    /*
+      Some mobile browsers can still try to process
+      touch scrolling during pointer movement.
+
+      Prevent it while an active widget interaction
+      is happening.
+    */
+
+    document.addEventListener(
+      'touchmove',
+      preventPageTouchMove,
+      {
+        passive: false,
+      }
+    );
+
+  }
+
+
+  /* =========================================================
+     PREVENT PAGE TOUCH SCROLL
+  ========================================================= */
+
+  function preventPageTouchMove(e) {
+
+    if (
+      dragState.current ||
+      resizeState.current
+    ) {
+
+      if (
+        e.cancelable
+      ) {
+
+        e.preventDefault();
+
+      }
+
+    }
+
+  }
+
+
+  /* =========================================================
+     UNLOCK PAGE SCROLL
+  ========================================================= */
+
+  function unlockPageScroll() {
+
+    if (
+      typeof document === 'undefined'
+    ) {
+
+      return;
+
+    }
+
+
+    const saved =
+      pageScrollLock.current;
+
+
+    if (!saved) {
+      return;
+    }
+
+
+    const body =
+      document.body;
+
+    const html =
+      document.documentElement;
+
+
+    body.style.overflow =
+      saved.bodyOverflow;
+
+    body.style.touchAction =
+      saved.bodyTouchAction;
+
+    html.style.overflow =
+      saved.htmlOverflow;
+
+    html.style.touchAction =
+      saved.htmlTouchAction;
+
+
+    document.removeEventListener(
+      'touchmove',
+      preventPageTouchMove
+    );
+
+
+    pageScrollLock.current =
+      null;
+
+  }
+
+
+  /* =========================================================
      CLEANUP
   ========================================================= */
 
@@ -137,6 +403,9 @@ export default function DraggableWidget({
         );
 
       }
+
+
+      unlockPageScroll();
 
     };
 
@@ -254,16 +523,17 @@ export default function DraggableWidget({
     }
 
 
-    /*
-      Only the move handle starts dragging.
-
-      Do not allow this event to become a normal
-      browser touch/scroll gesture.
-    */
-
     e.preventDefault();
 
     e.stopPropagation();
+
+
+    /*
+      Freeze the page immediately when the
+      user touches the drag button.
+    */
+
+    lockPageScroll();
 
 
     setIsSelected(
@@ -273,6 +543,10 @@ export default function DraggableWidget({
 
     const currentBox =
       boxRef.current;
+
+
+    const dimensions =
+      getContainerDimensions();
 
 
     dragState.current = {
@@ -292,16 +566,16 @@ export default function DraggableWidget({
       origY:
         currentBox.y,
 
+      /*
+        Mobile uses the inverse scale so the
+        widget follows the finger correctly.
+      */
+
+      scale:
+        dimensions.scale,
+
     };
 
-
-    /*
-      Pointer capture is important on mobile.
-
-      Once the finger starts moving, the handle
-      continues receiving the pointer events even
-      if the finger moves outside the icon.
-    */
 
     try {
 
@@ -338,11 +612,6 @@ export default function DraggableWidget({
     }
 
 
-    /*
-      Prevent normal scrolling while the
-      move handle is actively being dragged.
-    */
-
     if (
       e.cancelable
     ) {
@@ -352,19 +621,46 @@ export default function DraggableWidget({
     }
 
 
-    const rect =
-      containerRef.current
-        .getBoundingClientRect();
+    const dimensions =
+      getContainerDimensions();
 
+
+    /*
+      Desktop:
+
+        1 screen pixel = 1 page pixel
+
+      Mobile:
+
+        Because the book is scaled,
+        convert screen movement back into
+        the page's 360x480 coordinate system.
+    */
 
     const dx =
-      e.clientX -
-      drag.startX;
+      isMobileDevice()
+        ? (
+            e.clientX -
+            drag.startX
+          ) /
+          drag.scale
+        : (
+            e.clientX -
+            drag.startX
+          );
 
 
     const dy =
-      e.clientY -
-      drag.startY;
+      isMobileDevice()
+        ? (
+            e.clientY -
+            drag.startY
+          ) /
+          drag.scale
+        : (
+            e.clientY -
+            drag.startY
+          );
 
 
     const currentBox =
@@ -391,10 +687,10 @@ export default function DraggableWidget({
         {
 
           width:
-            rect.width,
+            dimensions.width,
 
           height:
-            rect.height,
+            dimensions.height,
 
         }
 
@@ -437,10 +733,6 @@ export default function DraggableWidget({
       null;
 
 
-    /*
-      Release pointer capture.
-    */
-
     try {
 
       e.currentTarget.releasePointerCapture(
@@ -452,13 +744,17 @@ export default function DraggableWidget({
     }
 
 
-    /*
-      Save the actual latest position.
-    */
-
     scheduleSave(
       boxRef.current
     );
+
+
+    /*
+      Page becomes scrollable again ONLY
+      after the finger is released.
+    */
+
+    unlockPageScroll();
 
   }
 
@@ -479,6 +775,14 @@ export default function DraggableWidget({
     e.stopPropagation();
 
 
+    /*
+      Freeze the page immediately when the
+      user touches the resize button.
+    */
+
+    lockPageScroll();
+
+
     setIsSelected(
       true
     );
@@ -486,6 +790,10 @@ export default function DraggableWidget({
 
     const currentBox =
       boxRef.current;
+
+
+    const dimensions =
+      getContainerDimensions();
 
 
     resizeState.current = {
@@ -505,13 +813,16 @@ export default function DraggableWidget({
       origH:
         currentBox.h,
 
+      /*
+        Mobile resize also needs to compensate
+        for the CSS book scale.
+      */
+
+      scale:
+        dimensions.scale,
+
     };
 
-
-    /*
-      Keep receiving pointer events even when
-      the finger moves outside the resize handle.
-    */
 
     try {
 
@@ -548,11 +859,6 @@ export default function DraggableWidget({
     }
 
 
-    /*
-      Prevent normal scrolling while
-      the resize handle is active.
-    */
-
     if (
       e.cancelable
     ) {
@@ -562,19 +868,43 @@ export default function DraggableWidget({
     }
 
 
-    const rect =
-      containerRef.current
-        .getBoundingClientRect();
+    const dimensions =
+      getContainerDimensions();
 
+
+    /*
+      Convert the finger movement from
+      visual/scaled pixels into the actual
+      page coordinate system.
+
+      This allows the widget to resize naturally
+      on small phones.
+    */
 
     const dx =
-      e.clientX -
-      resize.startX;
+      isMobileDevice()
+        ? (
+            e.clientX -
+            resize.startX
+          ) /
+          resize.scale
+        : (
+            e.clientX -
+            resize.startX
+          );
 
 
     const dy =
-      e.clientY -
-      resize.startY;
+      isMobileDevice()
+        ? (
+            e.clientY -
+            resize.startY
+          ) /
+          resize.scale
+        : (
+            e.clientY -
+            resize.startY
+          );
 
 
     const currentBox =
@@ -605,10 +935,10 @@ export default function DraggableWidget({
         {
 
           width:
-            rect.width,
+            dimensions.width,
 
           height:
-            rect.height,
+            dimensions.height,
 
         }
 
@@ -651,10 +981,6 @@ export default function DraggableWidget({
       null;
 
 
-    /*
-      Release pointer capture.
-    */
-
     try {
 
       e.currentTarget.releasePointerCapture(
@@ -666,13 +992,17 @@ export default function DraggableWidget({
     }
 
 
-    /*
-      Save the actual latest size.
-    */
-
     scheduleSave(
       boxRef.current
     );
+
+
+    /*
+      Page becomes scrollable again ONLY
+      after the finger is released.
+    */
+
+    unlockPageScroll();
 
   }
 
@@ -715,11 +1045,6 @@ export default function DraggableWidget({
         }
 
 
-        /*
-          Clicking the widget selects it,
-          but does NOT start dragging.
-        */
-
         e.stopPropagation();
 
 
@@ -733,11 +1058,6 @@ export default function DraggableWidget({
 
       {/* =====================================================
           CONTENT
-
-          Nothing covers the content.
-
-          Spotify, images, links, buttons, etc.
-          remain interactive.
       ===================================================== */}
 
       <div
@@ -767,12 +1087,8 @@ export default function DraggableWidget({
 
               44x44px touch target.
 
-              touchAction: none is applied ONLY here.
-
-              This means:
-              - dragging this handle = widget moves
-              - page does not scroll
-              - touching the rest of the page = normal scroll
+              On mobile, the drag calculations account
+              for the scaled-down book.
           =============================================== */}
 
           <div
@@ -870,7 +1186,8 @@ export default function DraggableWidget({
 
               44x44px touch target.
 
-              touchAction: none is applied ONLY here.
+              Mobile resize also compensates for the
+              scaled-down book.
           =============================================== */}
 
           <div

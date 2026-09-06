@@ -573,6 +573,72 @@
 
   perspective-origin:
     center center;
+
+}
+
+/* Shadow follows the book itself so it stays aligned on desktop and mobile */
+.bs-book::after {
+  content:
+    "";
+
+  position:
+    absolute;
+
+  inset:
+    0;
+
+  z-index:
+    -1;
+
+  /* Match the journal's rounded outer corners */
+  border-radius:
+    14px;
+
+  pointer-events:
+    none;
+
+  box-shadow:
+    0
+    22px
+    30px
+    -18px
+    rgba(
+      0,
+      0,
+      0,
+      0
+    );
+
+  opacity:
+    0;
+
+  transition:
+    opacity
+    0.2s
+    ease;
+}
+
+.bs-book.book-open::after {
+  box-shadow:
+    0
+    22px
+    75px
+    10px
+    rgba(
+      0,
+      0,
+      0,
+      0.28
+    );
+
+  opacity:
+    1;
+
+  transition:
+    opacity
+    0.35s
+    ease
+    0.25s;
 }
 
 
