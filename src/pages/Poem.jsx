@@ -256,7 +256,13 @@ export default function Poem() {
       */
 
       navigate(
-        `/journal/${journalId}`
+        `/journal/${journalId}`,
+        {
+          state: {
+            returnToPoemId:
+              poemId,
+          },
+        }
       );
 
     } catch (error) {
@@ -880,17 +886,6 @@ export default function Poem() {
                       : 'spotify'
                   )
                 }
-              />
-
-
-              {/* =========================================
-                  LINK
-              ========================================= */}
-
-              <SidebarButton
-                label="Link"
-                disabled
-                title="Coming soon"
               />
 
 

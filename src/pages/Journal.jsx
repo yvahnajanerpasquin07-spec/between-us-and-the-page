@@ -2,11 +2,13 @@ import {
   useMemo,
   useState,
   useRef,
+  useEffect,
 } from 'react';
 
 import {
   useParams,
   useNavigate,
+  useLocation,
 } from 'react-router-dom';
 
 import {
@@ -554,6 +556,10 @@ export default function Journal() {
     useNavigate();
 
 
+  const location =
+    useLocation();
+
+
   const {
     user,
   } = useAuth();
@@ -804,6 +810,92 @@ export default function Journal() {
       safePoems,
       poemTextStyles,
     ]);
+
+
+  /* =======================================================
+     RETURN TO EDITED POEM
+  ======================================================= */
+
+  useEffect(() => {
+
+    const returnToPoemId =
+      location.state?.returnToPoemId;
+
+
+    if (!returnToPoemId || !poemPageEntries.length) {
+      return;
+    }
+
+
+    const poemEntryIndex =
+      poemPageEntries.findIndex(
+        (entry) =>
+          entry.poem.id ===
+            returnToPoemId &&
+          entry.pageNumber === 1
+      );
+
+
+    if (poemEntryIndex < 0) {
+      return;
+    }
+
+
+    const tocPaperCount =
+      Math.ceil(
+        tocPages.length / 2
+      ) +
+      (
+        tocPages.length % 2 === 0
+          ? 1
+          : 0
+      );
+
+
+    const targetLocation =
+      2 +
+      tocPaperCount +
+      poemEntryIndex;
+
+
+    locationRef.current =
+      targetLocation;
+
+
+    setCurrentLocation(
+      targetLocation
+    );
+
+
+    setFlippedPapers(
+      new Set(
+        Array.from(
+          {
+            length:
+              targetLocation - 1,
+          },
+          (_, index) =>
+            index + 1
+        )
+      )
+    );
+
+
+    navigate(
+      location.pathname,
+      {
+        replace: true,
+        state: null,
+      }
+    );
+
+  }, [
+    location.pathname,
+    location.state,
+    navigate,
+    poemPageEntries,
+    tocPages.length,
+  ]);
 
 
   /* =======================================================
