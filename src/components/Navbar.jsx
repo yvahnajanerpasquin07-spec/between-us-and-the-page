@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import UserProfileSidebar from './UserProfileSidebar';
+import ExploreSidebar from './ExploreSidebar';
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
@@ -10,6 +11,11 @@ export default function Navbar() {
   const [
     profileOpen,
     setProfileOpen,
+  ] = useState(false);
+
+  const [
+    exploreOpen,
+    setExploreOpen,
   ] = useState(false);
 
 
@@ -51,6 +57,44 @@ export default function Navbar() {
           ================================================= */}
 
           <div className="flex items-center gap-3">
+
+            {!user && (
+
+              <button
+                type="button"
+                onClick={() => setExploreOpen(true)}
+                className="
+                  flex
+                  h-9
+                  w-9
+                  items-center
+                  justify-center
+                  rounded-full
+                  border
+                  border-ink/20
+                  text-ink
+                  transition
+                  hover:bg-ink
+                  hover:text-paper
+                "
+                aria-label="Explore"
+                title="Explore"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-[18px] w-[18px]"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 3.5l1.15 5.35L18.5 10l-5.35 1.15L12 16.5l-1.15-5.35L5.5 10l5.35-1.15L12 3.5Z" />
+                  <path d="M18.5 15.5l.55 2.45 2.45.55-2.45.55-.55 2.45-.55-2.45-2.45-.55 2.45-.55.55-2.45Z" />
+                </svg>
+              </button>
+
+            )}
 
             {user && (
 
@@ -191,6 +235,20 @@ export default function Navbar() {
         </nav>
 
       </header>
+
+
+      {/* =====================================================
+          EXPLORE SIDEBAR
+      ===================================================== */}
+
+      {!user && (
+
+        <ExploreSidebar
+          open={exploreOpen}
+          onClose={() => setExploreOpen(false)}
+        />
+
+      )}
 
 
       {/* =====================================================

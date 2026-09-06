@@ -2,10 +2,19 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import NotebookCover from './NotebookCover';
 
+
 export default function JournalCard({
   journal,
   readOnly = false,
   compactMobile = false,
+
+  /*
+    OPTION A:
+    Sample journals use their public share token
+    so clicking them opens the view-only journal.
+  */
+
+  publicShareToken = null,
 }) {
 
   const navigate =
@@ -38,10 +47,11 @@ export default function JournalCard({
 
       layout
 
-
       onClick={() =>
         navigate(
-          `/journal/${journal.id}`
+          publicShareToken
+            ? `/shared/${publicShareToken}/book`
+            : `/journal/${journal.id}`
         )
       }
 

@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Journal from './pages/Journal';
 import Poem from './pages/Poem';
 import PublicShareLanding from './pages/PublicShareLanding';
+import Explore from './pages/Explore';
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
         <LayoutGroup>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/explore" element={<Explore />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route

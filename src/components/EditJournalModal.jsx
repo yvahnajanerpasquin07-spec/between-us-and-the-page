@@ -9,6 +9,10 @@ import {
   uploadJournalCover,
 } from '../services/journalService';
 
+import {
+  getOrCreatePublicShareToken,
+} from '../services/shareService';
+
 import Button from './Button';
 import Input from './Input';
 import CoverImageEditor, {
@@ -60,6 +64,14 @@ export default function EditJournalModal({
     setJournalDate,
   ] = useState(
     journal.journal_date ?? ''
+  );
+
+
+  const [
+    isSample,
+    setIsSample,
+  ] = useState(
+    Boolean(journal.is_sample)
   );
 
 
@@ -487,6 +499,18 @@ export default function EditJournalModal({
       setUploading(false);
 
 
+      /*
+        Sample journals need a public view-only token so
+        visitors can open the real journal from Explore.
+      */
+
+      if (isSample) {
+        await getOrCreatePublicShareToken(
+          journal.id
+        );
+      }
+
+
       const updated =
         await updateJournal(
           journal.id,
@@ -522,6 +546,9 @@ export default function EditJournalModal({
 
             spine_color:
               spineColor,
+
+            is_sample:
+              isSample,
 
           }
         );
@@ -700,6 +727,67 @@ export default function EditJournalModal({
           }
 
         />
+
+
+        {/* =================================================
+            SAMPLE JOURNAL
+        ================================================= */}
+
+        <label
+          htmlFor="edit-sample-journal"
+          className="
+            flex
+            cursor-pointer
+            items-start
+            gap-3
+            rounded-lg
+            border
+            border-ink/10
+            bg-ink/[0.02]
+            p-4
+            transition
+            hover:border-ink/20
+          "
+        >
+          <input
+            id="edit-sample-journal"
+            type="checkbox"
+            checked={isSample}
+            onChange={(e) =>
+              setIsSample(e.target.checked)
+            }
+            className="mt-1 h-4 w-4 accent-ink"
+          />
+
+          <span>
+            <span
+              className="
+                block
+                font-mono
+                text-xs
+                uppercase
+                tracking-wide
+                text-ink
+              "
+            >
+              Feature as a sample journal
+            </span>
+
+            <span
+              className="
+                mt-1
+                block
+                font-body
+                text-xs
+                leading-5
+                text-ink-soft
+              "
+            >
+              This journal will appear in Explore as a
+              public, view-only sample work.
+            </span>
+          </span>
+        </label>
 
 
         {/* =================================================

@@ -75,6 +75,16 @@ export default function Dashboard() {
   ] = useState('');
 
 
+  /* =======================================================
+     OPTION A — FEATURE AS SAMPLE JOURNAL
+  ======================================================= */
+
+  const [
+    isSample,
+    setIsSample,
+  ] = useState(false);
+
+
   const [
     creating,
     setCreating,
@@ -213,6 +223,9 @@ export default function Dashboard() {
     setDescription('');
     setAuthorName('');
     setJournalDate('');
+
+    /* OPTION A */
+    setIsSample(false);
 
     setFrontImageUrl('');
     setBackImageUrl('');
@@ -355,6 +368,9 @@ export default function Dashboard() {
           coverColor,
 
           spineColor,
+
+          /* OPTION A */
+          isSample,
 
         });
 
@@ -500,7 +516,6 @@ export default function Dashboard() {
 
         {/* =================================================
             ORIGINAL NEW JOURNAL BUTTON
-            DO NOT CHANGE THIS UI
         ================================================= */}
 
         <Button
@@ -582,13 +597,91 @@ export default function Dashboard() {
 
 
           {/* =================================================
-              FRONT COVER UPLOAD
+              OPTION A — FEATURE AS SAMPLE JOURNAL
           ================================================= */}
 
-          <div className="flex flex-col gap-1">
+          <label
+            htmlFor="sample-journal"
+            className="
+              flex
+              cursor-pointer
+              items-start
+              gap-3
+              rounded-lg
+              border
+              border-ink/10
+              bg-ink/[0.02]
+              p-4
+              transition
+              hover:border-ink/20
+            "
+          >
+
+            <input
+              id="sample-journal"
+              type="checkbox"
+              checked={isSample}
+              onChange={(e) =>
+                setIsSample(
+                  e.target.checked
+                )
+              }
+              className="
+                mt-1
+                h-4
+                w-4
+                accent-ink
+              "
+            />
+
+            <span>
+
+              <span
+                className="
+                  block
+                  font-mono
+                  text-xs
+                  uppercase
+                  tracking-wide
+                  text-ink
+                "
+              >
+                Feature as a sample journal
+              </span>
+
+              <span
+                className="
+                  mt-1
+                  block
+                  font-body
+                  text-xs
+                  leading-5
+                  text-ink-soft
+                "
+              >
+                This journal will appear in Explore as a
+                public, view-only sample work.
+              </span>
+
+            </span>
+
+          </label>
+
+
+          {/* =================================================
+              FRONT COVER IMAGE
+          ================================================= */}
+
+          <div
+            className="
+              flex
+              flex-col
+              gap-2
+            "
+          >
 
             <label
-              htmlFor="front-cover-image"
+              htmlFor="front-cover"
               className="
                 font-mono
                 text-xs
@@ -597,31 +690,39 @@ export default function Dashboard() {
                 text-ink-soft
               "
             >
-              Front cover image (optional)
+              Front cover image
             </label>
 
 
             <input
-              id="front-cover-image"
+              id="front-cover"
               type="file"
               accept="image/*"
               onChange={
                 handleFrontImageChange
               }
-              className="input-field"
+              className="
+                input-field
+              "
             />
 
           </div>
 
 
           {/* =================================================
-              BACK COVER UPLOAD
+              BACK COVER IMAGE
           ================================================= */}
 
-          <div className="flex flex-col gap-1">
+          <div
+            className="
+              flex
+              flex-col
+              gap-2
+            "
+          >
 
             <label
-              htmlFor="back-cover-image"
+              htmlFor="back-cover"
               className="
                 font-mono
                 text-xs
@@ -630,25 +731,27 @@ export default function Dashboard() {
                 text-ink-soft
               "
             >
-              Back cover image (optional)
+              Back cover image
             </label>
 
 
             <input
-              id="back-cover-image"
+              id="back-cover"
               type="file"
               accept="image/*"
               onChange={
                 handleBackImageChange
               }
-              className="input-field"
+              className="
+                input-field
+              "
             />
 
           </div>
 
 
           {/* =================================================
-              COVER EDITOR
+              COVER IMAGE EDITOR
           ================================================= */}
 
           {(
@@ -904,10 +1007,6 @@ export default function Dashboard() {
 
           {/* =================================================
               MOBILE BOOK LAYOUT TOGGLE
-
-              This control is intentionally hidden on
-              tablets and desktop. The normal layout remains
-              unchanged outside mobile.
           ================================================= */}
 
           <button
@@ -1024,7 +1123,9 @@ export default function Dashboard() {
                 <JournalCard
                   key={j.id}
                   journal={j}
-                  compactMobile={compactMobileView}
+                  compactMobile={
+                    compactMobileView
+                  }
                 />
 
               )

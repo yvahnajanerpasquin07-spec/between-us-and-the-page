@@ -28,6 +28,39 @@ export async function getMyJournals() {
 
 
 /* =========================================================
+   GET SAMPLE JOURNALS
+   ---------------------------------------------------------
+   Sample journals are public, view-only journals that the
+   owner has chosen to feature in Explore.
+========================================================= */
+
+export async function getSampleJournals() {
+  const {
+    data,
+    error,
+  } = await supabase
+    .from('journals')
+    .select('*')
+    .eq(
+      'is_sample',
+      true
+    )
+    .order(
+      'created_at',
+      {
+        ascending: false,
+      }
+    );
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+
+/* =========================================================
    GET SHARED JOURNALS
 ========================================================= */
 
@@ -92,16 +125,20 @@ export async function createJournal({
   coverColor,
   coverMaterial,
   spineColor,
+  isSample = false,
 }) {
+
   const {
     data: userData,
     error: userError,
   } =
     await supabase.auth.getUser();
 
+
   if (userError) {
     throw userError;
   }
+
 
   const {
     data,
@@ -186,6 +223,28 @@ export async function createJournal({
         '#8a6f47',
 
 
+      /*
+        OPTION A:
+        Store whether this journal is featured
+        as a public sample.
+      */
+
+      is_sample:
+        Boolean(isSample),
+
+
+      /*
+        OPTION A:
+        Give sample journals a public share token
+        immediately so Explore can open them.
+      */
+
+      public_share_token:
+        isSample
+          ? crypto.randomUUID()
+          : null,
+
+
       owner_id:
         userData.user.id,
 
@@ -193,9 +252,11 @@ export async function createJournal({
     .select()
     .single();
 
+
   if (error) {
     throw error;
   }
+
 
   return data;
 }
@@ -266,11 +327,13 @@ export async function uploadJournalCover(
   file,
   side = 'front'
 ) {
+
   if (!file) {
     throw new Error(
       'No cover image selected.'
     );
   }
+
 
   const bucket =
     'journal-covers';
@@ -312,6 +375,7 @@ export async function uploadJournalCover(
         }
       );
 
+
   if (error) {
     throw error;
   }
@@ -330,11 +394,13 @@ export async function uploadJournalCover(
         path
       );
 
+
   if (!data?.publicUrl) {
     throw new Error(
       'Could not generate public cover image URL.'
     );
   }
+
 
   return data.publicUrl;
 }
@@ -349,23 +415,34 @@ export async function updateJournalCoverImages(
   frontImageUrl,
   backImageUrl
 ) {
+
   const updates = {};
 
+
   if (frontImageUrl) {
+
     updates.cover_image_url =
       frontImageUrl;
+
   }
 
+
   if (backImageUrl) {
+
     updates.cover_back_image_url =
       backImageUrl;
+
   }
+
 
   if (
     !Object.keys(updates).length
   ) {
+
     return null;
+
   }
+
 
   const {
     data,
@@ -381,9 +458,11 @@ export async function updateJournalCoverImages(
       .select()
       .single();
 
+
   if (error) {
     throw error;
   }
+
 
   return data;
 }
@@ -399,11 +478,13 @@ export async function updateJournalCoverImage(
   journalId,
   imageUrl
 ) {
+
   return updateJournalCoverImages(
     journalId,
     imageUrl,
     null
   );
+
 }
 
 
@@ -416,6 +497,7 @@ export async function updateJournalCoverImage(
 export async function getPublicJournal(
   shareToken
 ) {
+
   const {
     data,
     error,
@@ -427,13 +509,16 @@ export async function getPublicJournal(
     }
   );
 
+
   if (error) {
     throw error;
   }
 
+
   if (!data?.journal) {
     return null;
   }
+
 
   return data.journal;
 }
@@ -448,6 +533,7 @@ export async function getPublicJournal(
 export async function getPublicPoems(
   shareToken
 ) {
+
   const {
     data,
     error,
@@ -459,9 +545,11 @@ export async function getPublicPoems(
     }
   );
 
+
   if (error) {
     throw error;
   }
+
 
   return data?.poems ?? [];
 }
