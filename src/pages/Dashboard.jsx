@@ -46,6 +46,12 @@ export default function Dashboard() {
 
 
   const [
+    compactMobileView,
+    setCompactMobileView,
+  ] = useState(false);
+
+
+  const [
     title,
     setTitle,
   ] = useState('');
@@ -874,18 +880,120 @@ export default function Dashboard() {
 
       <section className="mb-12">
 
-        <h2
+        <div
           className="
             mb-4
-            font-mono
-            text-xs
-            uppercase
-            tracking-wide
-            text-ink-soft
+            flex
+            items-center
+            justify-between
           "
         >
-          Your journals
-        </h2>
+
+          <h2
+            className="
+              font-mono
+              text-xs
+              uppercase
+              tracking-wide
+              text-ink-soft
+            "
+          >
+            Your journals
+          </h2>
+
+
+          {/* =================================================
+              MOBILE BOOK LAYOUT TOGGLE
+
+              This control is intentionally hidden on
+              tablets and desktop. The normal layout remains
+              unchanged outside mobile.
+          ================================================= */}
+
+          <button
+            type="button"
+            onClick={() =>
+              setCompactMobileView(
+                (value) => !value
+              )
+            }
+            className="
+              flex
+              h-8
+              w-8
+              items-center
+              justify-center
+              rounded-md
+              border
+              border-ink/15
+              bg-transparent
+              text-ink-soft
+              transition
+              hover:border-ink/30
+              hover:bg-ink/5
+              md:hidden
+            "
+            aria-label={
+              compactMobileView
+                ? 'Show larger journal covers'
+                : 'Show compact journal covers'
+            }
+            title={
+              compactMobileView
+                ? 'Larger view'
+                : 'Compact view'
+            }
+          >
+
+            {compactMobileView ? (
+
+              <svg
+                viewBox="0 0 24 24"
+                className="h-[17px] w-[17px]"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect
+                  x="4"
+                  y="4"
+                  width="16"
+                  height="16"
+                  rx="1.5"
+                />
+                <path d="M4 9h16" />
+                <path d="M9 4v16" />
+              </svg>
+
+            ) : (
+
+              <svg
+                viewBox="0 0 24 24"
+                className="h-[17px] w-[17px]"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect
+                  x="4"
+                  y="3"
+                  width="16"
+                  height="18"
+                  rx="1.5"
+                />
+                <path d="M8 3v18" />
+                <path d="M8 7h8" />
+              </svg>
+
+            )}
+
+          </button>
+
+        </div>
 
 
         {loading ? (
@@ -897,13 +1005,17 @@ export default function Dashboard() {
         ) : journals?.length ? (
 
           <div
-            className="
+            className={`
               grid
-              grid-cols-1
               gap-6
               sm:grid-cols-2
               md:grid-cols-3
-            "
+              ${
+                compactMobileView
+                  ? 'grid-cols-3 gap-3'
+                  : 'grid-cols-1'
+              }
+            `}
           >
 
             {journals.map(
@@ -912,6 +1024,7 @@ export default function Dashboard() {
                 <JournalCard
                   key={j.id}
                   journal={j}
+                  compactMobile={compactMobileView}
                 />
 
               )

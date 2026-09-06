@@ -269,6 +269,7 @@ export default function NotebookCover({
   isOwner,
   onEditJournal,
   onDeleteJournal,
+  compactMobile = false,
 }) {
 
   const material =
@@ -405,7 +406,7 @@ export default function NotebookCover({
         style.fontFamily,
 
       fontSize:
-        `${style.fontSize}px`,
+        `${style.fontSize * (compactMobile ? 0.58 : 1)}px`,
 
       fontWeight:
         style.fontWeight,
@@ -417,7 +418,7 @@ export default function NotebookCover({
         style.textAlign,
 
       letterSpacing:
-        `${style.letterSpacing}px`,
+        `${style.letterSpacing * (compactMobile ? 0.72 : 1)}px`,
 
       lineHeight:
         style.lineHeight,
@@ -487,7 +488,7 @@ export default function NotebookCover({
 
       <div
 
-        className="
+        className={`
           relative
           z-10
           flex
@@ -496,12 +497,17 @@ export default function NotebookCover({
           flex-col
           items-center
           justify-center
-          gap-3
-          p-6
-          pl-10
           text-center
           text-white
-        "
+          transition-all
+          duration-300
+          ease-out
+          ${
+            compactMobile
+              ? 'gap-1 p-2 pl-4'
+              : 'gap-3 p-6 pl-10'
+          }
+        `}
 
       >
 
@@ -595,13 +601,16 @@ export default function NotebookCover({
 
           <p
 
-            className="
+            className={`
               font-mono
-              text-[10px]
+              ${compactMobile ? 'text-[6px]' : 'text-[10px]'}
               uppercase
               tracking-wide
               text-white/70
-            "
+              transition-all
+              duration-300
+              ease-out
+            `}
 
           >
 
@@ -620,13 +629,16 @@ export default function NotebookCover({
 
           <span
 
-            className="
+            className={`
               font-mono
-              text-[10px]
+              ${compactMobile ? 'text-[6px]' : 'text-[10px]'}
               uppercase
               tracking-wide
               text-white/70
-            "
+              transition-all
+              duration-300
+              ease-out
+            `}
 
           >
 
@@ -1196,10 +1208,17 @@ export default function NotebookCover({
           top-0
           z-20
           h-full
-          w-7
+          transition-[width]
+          duration-300
+          ease-out
         "
 
         style={{
+
+          width:
+            compactMobile
+              ? '12px'
+              : '28px',
 
           background:
             `linear-gradient(
@@ -1239,9 +1258,18 @@ export default function NotebookCover({
 
               className="
                 h-px
-                w-4
                 bg-black/30
+                transition-[width]
+                duration-300
+                ease-out
               "
+
+              style={{
+                width:
+                  compactMobile
+                    ? '7px'
+                    : '16px',
+              }}
 
             />
 

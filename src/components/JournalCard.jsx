@@ -5,6 +5,7 @@ import NotebookCover from './NotebookCover';
 export default function JournalCard({
   journal,
   readOnly = false,
+  compactMobile = false,
 }) {
 
   const navigate =
@@ -35,9 +36,8 @@ export default function JournalCard({
 
     <motion.div
 
-      layoutId={
-        `journal-cover-${journal.id}`
-      }
+      layout
+
 
       onClick={() =>
         navigate(
@@ -56,6 +56,18 @@ export default function JournalCard({
 
       whileTap={{
         scale: 0.97,
+      }}
+
+      transition={{
+        layout: {
+          duration: 0.42,
+          ease: [
+            0.22,
+            0.61,
+            0.36,
+            1,
+          ],
+        },
       }}
 
     >
@@ -96,6 +108,10 @@ export default function JournalCard({
 
         readOnly={
           readOnly
+        }
+
+        compactMobile={
+          compactMobile
         }
 
       />
