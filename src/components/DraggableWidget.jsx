@@ -1,8 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 const MIN_W = 120;
 const MIN_H = 80;
 
+
+/* =========================================================
+   DRAGGABLE WIDGET
+========================================================= */
 
 export default function DraggableWidget({
   children,
@@ -12,7 +20,10 @@ export default function DraggableWidget({
   onSave,
 }) {
 
-  const [box, setBox] = useState(
+  const [
+    box,
+    setBox,
+  ] = useState(
     initial ?? {
       x: 20,
       y: 20,
@@ -23,12 +34,16 @@ export default function DraggableWidget({
 
 
   /*
-    Controls are hidden normally.
+    Keep the latest box available to pointer handlers.
 
-    They appear when:
-    - the mouse is hovering over the widget
-    - the widget has been clicked/selected
+    This prevents mobile pointer events from working
+    with an outdated state value.
   */
+
+  const boxRef =
+    useRef(box);
+
+
   const [
     isSelected,
     setIsSelected,
@@ -46,6 +61,20 @@ export default function DraggableWidget({
 
 
   /* =========================================================
+     KEEP BOX REF IN SYNC
+  ========================================================= */
+
+  useEffect(() => {
+
+    boxRef.current =
+      box;
+
+  }, [
+    box,
+  ]);
+
+
+  /* =========================================================
      UPDATE BOX WHEN INITIAL VALUE CHANGES
   ========================================================= */
 
@@ -55,24 +84,32 @@ export default function DraggableWidget({
       return;
     }
 
-    // Only update local state when the actual saved box values changed.
-    // The parent creates a new object on every render; blindly calling
-    // setBox(initial) here would cause an infinite render loop after a
-    // widget is dragged or resized.
+
     setBox((current) => {
 
-      const same =
-        current.x === (initial.x ?? current.x) &&
-        current.y === (initial.y ?? current.y) &&
-        current.w === (initial.w ?? current.w) &&
-        current.h === (initial.h ?? current.h);
+      const next = {
+        ...current,
+        ...initial,
+      };
 
-      return same
-        ? current
-        : {
-            ...current,
-            ...initial,
-          };
+
+      const same =
+        current.x === next.x &&
+        current.y === next.y &&
+        current.w === next.w &&
+        current.h === next.h;
+
+
+      if (same) {
+        return current;
+      }
+
+
+      boxRef.current =
+        next;
+
+
+      return next;
 
     });
 
@@ -101,27 +138,6 @@ export default function DraggableWidget({
 
       }
 
-
-      window.removeEventListener(
-        'pointermove',
-        onDragMove
-      );
-
-      window.removeEventListener(
-        'pointerup',
-        onDragEnd
-      );
-
-      window.removeEventListener(
-        'pointermove',
-        onResizeMove
-      );
-
-      window.removeEventListener(
-        'pointerup',
-        onResizeEnd
-      );
-
     };
 
   }, []);
@@ -131,36 +147,60 @@ export default function DraggableWidget({
      CLAMP BOX INSIDE CONTAINER
   ========================================================= */
 
-  function clamp(box, container) {
+  function clamp(
+    nextBox,
+    container
+  ) {
 
     const maxX =
-      container.width - box.w;
+      Math.max(
+        container.width -
+          nextBox.w,
+        0
+      );
+
 
     const maxY =
-      container.height - box.h;
+      Math.max(
+        container.height -
+          nextBox.h,
+        0
+      );
 
 
     return {
 
-      ...box,
+      ...nextBox,
 
       x: Math.min(
-        Math.max(box.x, 0),
-        Math.max(maxX, 0)
+        Math.max(
+          nextBox.x,
+          0
+        ),
+        maxX
       ),
 
       y: Math.min(
-        Math.max(box.y, 0),
-        Math.max(maxY, 0)
+        Math.max(
+          nextBox.y,
+          0
+        ),
+        maxY
       ),
 
       w: Math.min(
-        box.w,
+        Math.max(
+          nextBox.w,
+          MIN_W
+        ),
         container.width
       ),
 
       h: Math.min(
-        box.h,
+        Math.max(
+          nextBox.h,
+          MIN_H
+        ),
         container.height
       ),
 
@@ -170,10 +210,12 @@ export default function DraggableWidget({
 
 
   /* =========================================================
-     SAVE WITH SMALL DELAY
+     SAVE
   ========================================================= */
 
-  function scheduleSave(nextBox) {
+  function scheduleSave(
+    nextBox
+  ) {
 
     if (!onSave) {
       return;
@@ -192,7 +234,9 @@ export default function DraggableWidget({
     saveTimeout.current =
       setTimeout(() => {
 
-        onSave(nextBox);
+        onSave(
+          nextBox
+        );
 
       }, 400);
 
@@ -211,46 +255,30 @@ export default function DraggableWidget({
 
 
     /*
-      Clicking the resize handle should NOT
-      start dragging.
+      Only the move handle starts dragging.
+
+      Do not allow this event to become a normal
+      browser touch/scroll gesture.
     */
-
-    if (
-      e.target.closest(
-        '[data-resize-handle]'
-      )
-    ) {
-
-      return;
-
-    }
-
-
-    /*
-      Don't drag when clicking interactive
-      elements inside the widget.
-    */
-
-    if (
-      e.target.closest(
-        'button, input, textarea, select, a'
-      )
-    ) {
-
-      setIsSelected(true);
-
-      return;
-
-    }
-
 
     e.preventDefault();
 
+    e.stopPropagation();
 
-    setIsSelected(true);
+
+    setIsSelected(
+      true
+    );
+
+
+    const currentBox =
+      boxRef.current;
 
 
     dragState.current = {
+
+      pointerId:
+        e.pointerId,
 
       startX:
         e.clientX,
@@ -259,23 +287,31 @@ export default function DraggableWidget({
         e.clientY,
 
       origX:
-        box.x,
+        currentBox.x,
 
       origY:
-        box.y,
+        currentBox.y,
 
     };
 
 
-    window.addEventListener(
-      'pointermove',
-      onDragMove
-    );
+    /*
+      Pointer capture is important on mobile.
 
-    window.addEventListener(
-      'pointerup',
-      onDragEnd
-    );
+      Once the finger starts moving, the handle
+      continues receiving the pointer events even
+      if the finger moves outside the icon.
+    */
+
+    try {
+
+      e.currentTarget.setPointerCapture(
+        e.pointerId
+      );
+
+    } catch {
+      // Ignore pointer capture errors.
+    }
 
   }
 
@@ -286,8 +322,14 @@ export default function DraggableWidget({
 
   function onDragMove(e) {
 
+    const drag =
+      dragState.current;
+
+
     if (
-      !dragState.current ||
+      !drag ||
+      drag.pointerId !==
+        e.pointerId ||
       !containerRef?.current
     ) {
 
@@ -296,55 +338,76 @@ export default function DraggableWidget({
     }
 
 
+    /*
+      Prevent normal scrolling while the
+      move handle is actively being dragged.
+    */
+
+    if (
+      e.cancelable
+    ) {
+
+      e.preventDefault();
+
+    }
+
+
     const rect =
-      containerRef.current.getBoundingClientRect();
+      containerRef.current
+        .getBoundingClientRect();
 
 
     const dx =
       e.clientX -
-      dragState.current.startX;
+      drag.startX;
 
 
     const dy =
       e.clientY -
-      dragState.current.startY;
+      drag.startY;
 
 
-    setBox((prev) => {
-
-      const next =
-        clamp(
-
-          {
-
-            ...prev,
-
-            x:
-              dragState.current.origX +
-              dx,
-
-            y:
-              dragState.current.origY +
-              dy,
-
-          },
-
-          {
-
-            width:
-              rect.width,
-
-            height:
-              rect.height,
-
-          }
-
-        );
+    const currentBox =
+      boxRef.current;
 
 
-      return next;
+    const next =
+      clamp(
 
-    });
+        {
+
+          ...currentBox,
+
+          x:
+            drag.origX +
+            dx,
+
+          y:
+            drag.origY +
+            dy,
+
+        },
+
+        {
+
+          width:
+            rect.width,
+
+          height:
+            rect.height,
+
+        }
+
+      );
+
+
+    boxRef.current =
+      next;
+
+
+    setBox(
+      next
+    );
 
   }
 
@@ -353,34 +416,49 @@ export default function DraggableWidget({
      DRAG END
   ========================================================= */
 
-  function onDragEnd() {
+  function onDragEnd(e) {
+
+    const drag =
+      dragState.current;
+
+
+    if (
+      !drag ||
+      drag.pointerId !==
+        e.pointerId
+    ) {
+
+      return;
+
+    }
+
 
     dragState.current =
       null;
 
 
-    window.removeEventListener(
-      'pointermove',
-      onDragMove
-    );
+    /*
+      Release pointer capture.
+    */
 
+    try {
 
-    window.removeEventListener(
-      'pointerup',
-      onDragEnd
-    );
-
-
-    setBox((current) => {
-
-      scheduleSave(
-        current
+      e.currentTarget.releasePointerCapture(
+        e.pointerId
       );
 
+    } catch {
+      // Ignore pointer capture errors.
+    }
 
-      return current;
 
-    });
+    /*
+      Save the actual latest position.
+    */
+
+    scheduleSave(
+      boxRef.current
+    );
 
   }
 
@@ -400,17 +478,20 @@ export default function DraggableWidget({
 
     e.stopPropagation();
 
-    try {
-      e.currentTarget.setPointerCapture?.(e.pointerId);
-    } catch {
-      // Ignore browsers that do not support pointer capture.
-    }
+
+    setIsSelected(
+      true
+    );
 
 
-    setIsSelected(true);
+    const currentBox =
+      boxRef.current;
 
 
     resizeState.current = {
+
+      pointerId:
+        e.pointerId,
 
       startX:
         e.clientX,
@@ -419,23 +500,28 @@ export default function DraggableWidget({
         e.clientY,
 
       origW:
-        box.w,
+        currentBox.w,
 
       origH:
-        box.h,
+        currentBox.h,
 
     };
 
 
-    window.addEventListener(
-      'pointermove',
-      onResizeMove
-    );
+    /*
+      Keep receiving pointer events even when
+      the finger moves outside the resize handle.
+    */
 
-    window.addEventListener(
-      'pointerup',
-      onResizeEnd
-    );
+    try {
+
+      e.currentTarget.setPointerCapture(
+        e.pointerId
+      );
+
+    } catch {
+      // Ignore pointer capture errors.
+    }
 
   }
 
@@ -446,8 +532,14 @@ export default function DraggableWidget({
 
   function onResizeMove(e) {
 
+    const resize =
+      resizeState.current;
+
+
     if (
-      !resizeState.current ||
+      !resize ||
+      resize.pointerId !==
+        e.pointerId ||
       !containerRef?.current
     ) {
 
@@ -456,59 +548,80 @@ export default function DraggableWidget({
     }
 
 
+    /*
+      Prevent normal scrolling while
+      the resize handle is active.
+    */
+
+    if (
+      e.cancelable
+    ) {
+
+      e.preventDefault();
+
+    }
+
+
     const rect =
-      containerRef.current.getBoundingClientRect();
+      containerRef.current
+        .getBoundingClientRect();
 
 
     const dx =
       e.clientX -
-      resizeState.current.startX;
+      resize.startX;
 
 
     const dy =
       e.clientY -
-      resizeState.current.startY;
+      resize.startY;
 
 
-    setBox((prev) => {
-
-      const next =
-        clamp(
-
-          {
-
-            ...prev,
-
-            w: Math.max(
-              MIN_W,
-              resizeState.current.origW +
-                dx
-            ),
-
-            h: Math.max(
-              MIN_H,
-              resizeState.current.origH +
-                dy
-            ),
-
-          },
-
-          {
-
-            width:
-              rect.width,
-
-            height:
-              rect.height,
-
-          }
-
-        );
+    const currentBox =
+      boxRef.current;
 
 
-      return next;
+    const next =
+      clamp(
 
-    });
+        {
+
+          ...currentBox,
+
+          w: Math.max(
+            MIN_W,
+            resize.origW +
+              dx
+          ),
+
+          h: Math.max(
+            MIN_H,
+            resize.origH +
+              dy
+          ),
+
+        },
+
+        {
+
+          width:
+            rect.width,
+
+          height:
+            rect.height,
+
+        }
+
+      );
+
+
+    boxRef.current =
+      next;
+
+
+    setBox(
+      next
+    );
 
   }
 
@@ -517,34 +630,49 @@ export default function DraggableWidget({
      RESIZE END
   ========================================================= */
 
-  function onResizeEnd() {
+  function onResizeEnd(e) {
+
+    const resize =
+      resizeState.current;
+
+
+    if (
+      !resize ||
+      resize.pointerId !==
+        e.pointerId
+    ) {
+
+      return;
+
+    }
+
 
     resizeState.current =
       null;
 
 
-    window.removeEventListener(
-      'pointermove',
-      onResizeMove
-    );
+    /*
+      Release pointer capture.
+    */
 
+    try {
 
-    window.removeEventListener(
-      'pointerup',
-      onResizeEnd
-    );
-
-
-    setBox((current) => {
-
-      scheduleSave(
-        current
+      e.currentTarget.releasePointerCapture(
+        e.pointerId
       );
 
+    } catch {
+      // Ignore pointer capture errors.
+    }
 
-      return current;
 
-    });
+    /*
+      Save the actual latest size.
+    */
+
+    scheduleSave(
+      boxRef.current
+    );
 
   }
 
@@ -574,19 +702,11 @@ export default function DraggableWidget({
         height:
           box.h,
 
-        touchAction:
-          'none',
-
       }}
 
-      className={`
+      className="
         group
-        ${editable ? 'cursor-move' : ''}
-      `}
-
-      onPointerDown={
-        onDragStart
-      }
+      "
 
       onClick={(e) => {
 
@@ -596,13 +716,16 @@ export default function DraggableWidget({
 
 
         /*
-          Clicking anywhere on the widget
-          selects it so the controls remain visible.
+          Clicking the widget selects it,
+          but does NOT start dragging.
         */
 
         e.stopPropagation();
 
-        setIsSelected(true);
+
+        setIsSelected(
+          true
+        );
 
       }}
 
@@ -611,9 +734,10 @@ export default function DraggableWidget({
       {/* =====================================================
           CONTENT
 
-          No border here.
+          Nothing covers the content.
 
-          This keeps the actual media clean.
+          Spotify, images, links, buttons, etc.
+          remain interactive.
       ===================================================== */}
 
       <div
@@ -629,29 +753,9 @@ export default function DraggableWidget({
 
       </div>
 
-      {/*
-        Iframes (especially Spotify) live in their own document, so
-        pointer events inside them cannot bubble to this wrapper.
-        While editing, this transparent surface lets the widget still
-        be dragged from anywhere without changing the public viewer.
-      */}
-      {editable && (
-        <div
-          aria-hidden="true"
-          onPointerDown={onDragStart}
-          className="absolute inset-0 z-10 cursor-move"
-          style={{ touchAction: 'none' }}
-        />
-      )}
-
 
       {/* =====================================================
           EDITOR CONTROLS
-
-          Only rendered for owners.
-
-          They are invisible until the widget is
-          hovered or selected.
       ===================================================== */}
 
       {editable && (
@@ -659,7 +763,16 @@ export default function DraggableWidget({
         <>
 
           {/* ===============================================
-              MOVE INDICATOR
+              MOVE HANDLE
+
+              44x44px touch target.
+
+              touchAction: none is applied ONLY here.
+
+              This means:
+              - dragging this handle = widget moves
+              - page does not scroll
+              - touching the rest of the page = normal scroll
           =============================================== */}
 
           <div
@@ -668,12 +781,16 @@ export default function DraggableWidget({
               pointer-events-auto
               absolute
               left-1/2
-              top-1
+              top-0
+              z-20
+              flex
+              h-11
+              w-11
               -translate-x-1/2
+              items-center
+              justify-center
               rounded-md
               bg-black/55
-              px-2
-              py-1
               text-white
               shadow-sm
               transition-opacity
@@ -685,13 +802,42 @@ export default function DraggableWidget({
               }
             `}
 
-            onPointerDown={onDragStart}
+            onPointerDown={
+              onDragStart
+            }
+
+            onPointerMove={
+              onDragMove
+            }
+
+            onPointerUp={
+              onDragEnd
+            }
+
+            onPointerCancel={
+              onDragEnd
+            }
+
+            style={{
+              touchAction:
+                'none',
+
+              userSelect:
+                'none',
+
+              WebkitUserSelect:
+                'none',
+
+              WebkitTouchCallout:
+                'none',
+
+            }}
 
           >
 
             <svg
-              width="13"
-              height="13"
+              width="15"
+              height="15"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -699,6 +845,7 @@ export default function DraggableWidget({
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden="true"
+              pointerEvents="none"
             >
 
               <path d="M12 2v20" />
@@ -720,6 +867,10 @@ export default function DraggableWidget({
 
           {/* ===============================================
               RESIZE HANDLE
+
+              44x44px touch target.
+
+              touchAction: none is applied ONLY here.
           =============================================== */}
 
           <div
@@ -730,14 +881,29 @@ export default function DraggableWidget({
               onResizeStart
             }
 
+            onPointerMove={
+              onResizeMove
+            }
+
+            onPointerUp={
+              onResizeEnd
+            }
+
+            onPointerCancel={
+              onResizeEnd
+            }
+
             className={`
               absolute
               bottom-0
               right-0
               z-20
-              h-5
-              w-5
+              flex
+              h-11
+              w-11
               cursor-se-resize
+              items-end
+              justify-end
               rounded-tl-md
               bg-black/55
               shadow-sm
@@ -750,21 +916,36 @@ export default function DraggableWidget({
               }
             `}
 
+            style={{
+              touchAction:
+                'none',
+
+              userSelect:
+                'none',
+
+              WebkitUserSelect:
+                'none',
+
+              WebkitTouchCallout:
+                'none',
+
+            }}
+
           >
 
             <svg
-              width="12"
-              height="12"
+              width="15"
+              height="15"
               viewBox="0 0 12 12"
               fill="none"
               stroke="white"
               strokeWidth="1.5"
               strokeLinecap="round"
               aria-hidden="true"
+              pointerEvents="none"
               className="
-                absolute
-                bottom-1
-                right-1
+                mb-2
+                mr-2
               "
             >
 

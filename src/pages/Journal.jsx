@@ -834,8 +834,19 @@ export default function Journal() {
    This matches the actual paper structure generated below.
 */
 
+const tocPaperCount =
+  Math.ceil(
+    tocPages.length / 2
+  ) +
+  (
+    tocPages.length % 2 === 0
+      ? 1
+      : 0
+  );
+
+
 const estimatedPaperCount =
-  tocPages.length +
+  tocPaperCount +
   poemPageEntries.length +
   2;
 
@@ -1380,281 +1391,220 @@ const isOpen =
      TABLE OF CONTENTS PAPERS
   ======================================================= */
 
+  /*
+     TOC pages are paired exactly like physical book pages:
+
+       TOC 1 | TOC 2
+       TOC 3 | TOC 4
+       TOC 5 | TOC 6
+
+     TOC page 1 is always on the RIGHT side.
+     TOC page 2 is on the LEFT side.
+
+     If the TOC has an ODD number of pages, the final TOC page
+     stays on the RIGHT and the LEFT side of that same paper is
+     used for POEM 1 MEDIA.
+
+     If the TOC has an EVEN number of pages, the final TOC page
+     is on the LEFT, so a separate paper is added with:
+
+       BLANK | POEM 1 MEDIA
+
+     This keeps the first poem spread as:
+
+       POEM 1 MEDIA | POEM 1 TEXT
+  */
+
+  for (
+    let tocIndex = 0;
+    tocIndex < tocPages.length;
+    tocIndex += 2
+  ) {
+
+    const rightTocIndex =
+      tocIndex;
+
+    const leftTocIndex =
+      tocIndex + 1;
+
+    const hasLeftToc =
+      leftTocIndex < tocPages.length;
+
+    const isLastTocPaper =
+      rightTocIndex ===
+      tocPages.length - 1;
+
+    papers.push({
+
+      id:
+        papers.length + 1,
+
+      /* RIGHT PAGE */
+      front: (
+
+        <div className="book-right-page">
+
+          <TocPage
+
+            journal={
+              activeJournal
+            }
+
+            poems={
+              tocPages[rightTocIndex]
+            }
+
+            globalStartIndex={
+              rightTocIndex *
+              TOC_ITEMS_PER_PAGE
+            }
+
+            poemsLoading={
+              rightTocIndex === 0
+                ? poemsLoading
+                : false
+            }
+
+            isOwner={
+              isOwner
+            }
+
+            onSelectPoem={
+              goToPoem
+            }
+
+            onShare={() =>
+              setShowShare(
+                true
+              )
+            }
+
+            onNewPoem={
+              handleNewPoem
+            }
+
+            isContinuation={
+              rightTocIndex > 0
+            }
+
+          />
+
+        </div>
+
+      ),
+
+      /* LEFT PAGE */
+      back:
+
+        hasLeftToc
+          ? (
+
+            <div className="book-left-page">
+
+              <TocPage
+
+                journal={
+                  activeJournal
+                }
+
+                poems={
+                  tocPages[leftTocIndex]
+                }
+
+                globalStartIndex={
+                  leftTocIndex *
+                  TOC_ITEMS_PER_PAGE
+                }
+
+                poemsLoading={false}
+
+                isOwner={
+                  isOwner
+                }
+
+                onSelectPoem={
+                  goToPoem
+                }
+
+                onShare={() =>
+                  setShowShare(
+                    true
+                  )
+                }
+
+                onNewPoem={
+                  handleNewPoem
+                }
+
+                isContinuation
+
+              />
+
+            </div>
+
+          )
+          : isLastTocPaper &&
+            poemPageEntries.length > 0
+            ? (
+
+              /*
+                 ODD TOC PAGE COUNT:
+                 The final TOC page is on the RIGHT, so the LEFT
+                 side of this same paper becomes POEM 1 MEDIA.
+              */
+              <PoemMediaPage
+
+                poem={
+                  poemPageEntries[0].poem
+                }
+
+                imageWidgets={
+                  imageWidgets
+                }
+
+                isOwner={
+                  isOwner
+                }
+
+                onSaveImage={
+                  saveImageWidget
+                }
+
+              />
+
+            )
+            : (
+
+              <div className="book-left-page">
+
+                <div className="blank-paper-page" />
+
+              </div>
+
+            ),
+
+    });
+  }
+
+
+  /*
+     EVEN TOC PAGE COUNT:
+     The final TOC page is on the LEFT, so add one more paper:
+
+       BLANK | POEM 1 MEDIA
+
+     The next paper then renders POEM 1 TEXT on the RIGHT,
+     producing the requested first poem spread.
+  */
+
   if (
-    tocPages.length === 1
+    tocPages.length % 2 === 0
   ) {
 
     papers.push({
 
       id:
         papers.length + 1,
-
-
-      front: (
-
-        <div className="book-right-page">
-
-          <TocPage
-
-            journal={
-              activeJournal
-            }
-
-            poems={
-              tocPages[0]
-            }
-
-            globalStartIndex={0}
-
-            poemsLoading={
-              poemsLoading
-            }
-
-            isOwner={
-              isOwner
-            }
-
-            onSelectPoem={
-              goToPoem
-            }
-
-            onShare={() =>
-              setShowShare(
-                true
-              )
-            }
-
-            onNewPoem={
-              handleNewPoem
-            }
-
-          />
-
-        </div>
-
-      ),
-
-
-      back:
-
-        poemPageEntries.length > 0
-          ? (
-
-            <PoemMediaPage
-
-              poem={
-                poemPageEntries[0].poem
-              }
-
-              imageWidgets={
-                imageWidgets
-              }
-
-              isOwner={
-                isOwner
-              }
-
-              onSaveImage={
-                saveImageWidget
-              }
-
-            />
-
-          )
-          : (
-
-            <div className="book-left-page">
-
-              <div className="blank-paper-page" />
-
-            </div>
-
-          ),
-
-    });
-
-  } else {
-
-    papers.push({
-
-      id:
-        papers.length + 1,
-
-
-      front: (
-
-        <div className="book-right-page">
-
-          <TocPage
-
-            journal={
-              activeJournal
-            }
-
-            poems={
-              tocPages[0]
-            }
-
-            globalStartIndex={0}
-
-            poemsLoading={
-              poemsLoading
-            }
-
-            isOwner={
-              isOwner
-            }
-
-            onSelectPoem={
-              goToPoem
-            }
-
-            onShare={() =>
-              setShowShare(
-                true
-              )
-            }
-
-            onNewPoem={
-              handleNewPoem
-            }
-
-          />
-
-        </div>
-
-      ),
-
-
-      back: (
-
-        <div className="book-left-page">
-
-          <TocPage
-
-            journal={
-              activeJournal
-            }
-
-            poems={
-              tocPages[1]
-            }
-
-            globalStartIndex={
-              TOC_ITEMS_PER_PAGE
-            }
-
-            poemsLoading={false}
-
-            isOwner={
-              isOwner
-            }
-
-            onSelectPoem={
-              goToPoem
-            }
-
-            onShare={() =>
-              setShowShare(
-                true
-              )
-            }
-
-            onNewPoem={
-              handleNewPoem
-            }
-
-            isContinuation
-
-          />
-
-        </div>
-
-      ),
-
-    });
-
-
-    for (
-      let tocIndex = 2;
-      tocIndex < tocPages.length;
-      tocIndex += 1
-    ) {
-
-      papers.push({
-
-        id:
-          papers.length + 1,
-
-
-        front: (
-
-          <div className="book-right-page">
-
-            <div className="blank-paper-page" />
-
-          </div>
-
-        ),
-
-
-        back: (
-
-          <div className="book-left-page">
-
-            <TocPage
-
-              journal={
-                activeJournal
-              }
-
-              poems={
-                tocPages[tocIndex]
-              }
-
-              globalStartIndex={
-                tocIndex *
-                TOC_ITEMS_PER_PAGE
-              }
-
-              poemsLoading={false}
-
-              isOwner={
-                isOwner
-              }
-
-              onSelectPoem={
-                goToPoem
-              }
-
-              onShare={() =>
-                setShowShare(
-                  true
-                )
-              }
-
-              onNewPoem={
-                handleNewPoem
-              }
-
-              isContinuation
-
-            />
-
-          </div>
-
-        ),
-
-      });
-
-    }
-
-
-    papers.push({
-
-      id:
-        papers.length + 1,
-
 
       front: (
 
@@ -1666,7 +1616,6 @@ const isOpen =
 
       ),
 
-
       back:
 
         poemPageEntries.length > 0
@@ -1704,7 +1653,6 @@ const isOpen =
           ),
 
     });
-
   }
 
 

@@ -403,6 +403,86 @@ export default function Poem() {
 
 
   /* =======================================================
+     DELETE IMAGE MEDIA
+  ======================================================= */
+
+  async function handleDeleteImage() {
+
+    if (
+      !confirm(
+        'Delete this picture?'
+      )
+    ) {
+      return;
+    }
+
+    try {
+
+      await updatePoemImage(
+        poemId,
+        null
+      );
+
+      setImageUrl('');
+
+    } catch (error) {
+
+      console.error(
+        'Failed to delete image:',
+        error
+      );
+
+      alert(
+        'Failed to delete picture.'
+      );
+
+    }
+
+  }
+
+
+  /* =======================================================
+     DELETE SPOTIFY MEDIA
+  ======================================================= */
+
+  async function handleDeleteSpotify() {
+
+    if (
+      !confirm(
+        'Delete this Spotify media?'
+      )
+    ) {
+      return;
+    }
+
+    try {
+
+      await updatePoem(
+        poemId,
+        {
+          spotify_url: null,
+        }
+      );
+
+      setSpotifyUrl('');
+
+    } catch (error) {
+
+      console.error(
+        'Failed to delete Spotify media:',
+        error
+      );
+
+      alert(
+        'Failed to delete Spotify media.'
+      );
+
+    }
+
+  }
+
+
+  /* =======================================================
      DELETE POEM
   ======================================================= */
 
@@ -588,12 +668,19 @@ export default function Poem() {
 
                 {imageUrl && (
 
-                  <div className="mt-2 overflow-hidden rounded-md border border-ink/10">
+                  <div className="relative mt-2 overflow-hidden rounded-md border border-ink/10">
 
                     <img
                       src={imageUrl}
                       alt="Poem"
                       className="max-h-80 w-full object-contain"
+                    />
+
+                    <DeleteMediaButton
+                      label="Delete picture"
+                      onClick={
+                        handleDeleteImage
+                      }
                     />
 
                   </div>
@@ -640,11 +727,22 @@ export default function Poem() {
                     spotifyUrl
                   ) && (
 
-                    <SpotifyPlayer
-                      spotifyUrl={
-                        spotifyUrl
-                      }
-                    />
+                    <div className="relative overflow-hidden rounded-md border border-ink/10">
+
+                      <SpotifyPlayer
+                        spotifyUrl={
+                          spotifyUrl
+                        }
+                      />
+
+                      <DeleteMediaButton
+                        label="Delete Spotify"
+                        onClick={
+                          handleDeleteSpotify
+                        }
+                      />
+
+                    </div>
 
                   )}
 
@@ -660,12 +758,19 @@ export default function Poem() {
             {!activePanel &&
               imageUrl && (
 
-                <div className="overflow-hidden rounded-md border border-ink/10">
+                <div className="relative overflow-hidden rounded-md border border-ink/10">
 
                   <img
                     src={imageUrl}
                     alt="Poem"
                     className="max-h-80 w-full object-contain"
+                  />
+
+                  <DeleteMediaButton
+                    label="Delete picture"
+                    onClick={
+                      handleDeleteImage
+                    }
                   />
 
                 </div>
@@ -683,11 +788,22 @@ export default function Poem() {
                 spotifyUrl
               ) && (
 
-                <SpotifyPlayer
-                  spotifyUrl={
-                    spotifyUrl
-                  }
-                />
+                <div className="relative overflow-hidden rounded-md border border-ink/10">
+
+                  <SpotifyPlayer
+                    spotifyUrl={
+                      spotifyUrl
+                    }
+                  />
+
+                  <DeleteMediaButton
+                    label="Delete Spotify"
+                    onClick={
+                      handleDeleteSpotify
+                    }
+                  />
+
+                </div>
 
               )}
 
@@ -871,6 +987,40 @@ export default function Poem() {
 
   );
 
+}
+
+
+function DeleteMediaButton({
+  label,
+  onClick,
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className="absolute right-2 top-2 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-ink/15 bg-paper/90 text-margin/80 shadow-sm backdrop-blur-sm transition-colors hover:bg-paper hover:text-margin"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        width="16"
+        height="16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M4 7h16" />
+        <path d="M10 11v6" />
+        <path d="M14 11v6" />
+        <path d="M6 7l1 13h10l1-13" />
+        <path d="M9 7V4h6v3" />
+      </svg>
+    </button>
+  );
 }
 
 
