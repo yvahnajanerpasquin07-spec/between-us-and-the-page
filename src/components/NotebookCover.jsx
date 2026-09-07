@@ -303,6 +303,12 @@ export default function NotebookCover({
 
 
   const [
+    showDeleteConfirm,
+    setShowDeleteConfirm,
+  ] = useState(false);
+
+
+  const [
     textStyles,
     setTextStyles,
   ] = useState(
@@ -837,7 +843,7 @@ export default function NotebookCover({
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                onDeleteJournal();
+                setShowDeleteConfirm(true);
               }}
               aria-label="Delete journal"
               title="Delete journal"
@@ -904,6 +910,121 @@ export default function NotebookCover({
         </div>
 
       )}
+
+      {/* =================================================
+          DELETE JOURNAL CONFIRMATION
+      ================================================= */}
+
+      {showDeleteConfirm && (
+
+        <div
+
+          onClick={(e) => e.stopPropagation()}
+
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 200,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            boxSizing: 'border-box',
+            background: 'rgba(0,0,0,0.38)',
+            backdropFilter: 'blur(3px)',
+          }}
+
+        >
+
+          <div
+
+            style={{
+              width: 'min(320px, 100%)',
+              boxSizing: 'border-box',
+              padding: '22px',
+              borderRadius: '14px',
+              background: '#faf7ee',
+              color: '#2b2a27',
+              boxShadow: '0 12px 35px rgba(0,0,0,0.25)',
+              fontFamily: 'Arial, Helvetica, sans-serif',
+            }}
+
+          >
+
+            <div
+              style={{
+                fontSize: '18px',
+                fontWeight: 600,
+                marginBottom: '8px',
+              }}
+            >
+              Delete this journal?
+            </div>
+
+            <div
+              style={{
+                fontSize: '14px',
+                lineHeight: 1.5,
+                opacity: 0.78,
+                marginBottom: '20px',
+                overflowWrap: 'anywhere',
+              }}
+            >
+              Are you sure you want to delete <strong>{title || 'this journal'}</strong>?
+              This will also delete all of its poems and cannot be undone.
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '10px',
+              }}
+            >
+
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                style={{
+                  padding: '9px 15px',
+                  border: '1px solid rgba(43,42,39,0.18)',
+                  borderRadius: '8px',
+                  background: 'transparent',
+                  color: '#2b2a27',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  onDeleteJournal();
+                }}
+                style={{
+                  padding: '9px 15px',
+                  border: '1px solid rgba(120,30,30,0.25)',
+                  borderRadius: '8px',
+                  background: '#7a1f2b',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                }}
+              >
+                Delete
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      )}
+
 
       {/* =================================================
           COVER TEXT STYLE PANEL

@@ -129,6 +129,18 @@ export default function Poem() {
 
 
   const [
+    deleting,
+    setDeleting,
+  ] = useState(false);
+
+
+  const [
+    deleteConfirmOpen,
+    setDeleteConfirmOpen,
+  ] = useState(false);
+
+
+  const [
     uploadingImage,
     setUploadingImage,
   ] = useState(false);
@@ -494,15 +506,19 @@ export default function Poem() {
 
   async function handleDelete() {
 
-    if (
-      !confirm(
-        'Delete this poem? This cannot be undone.'
-      )
-    ) {
+    setDeleteConfirmOpen(true);
 
+  }
+
+
+  async function confirmDelete() {
+
+    if (deleting) {
       return;
-
     }
+
+
+    setDeleting(true);
 
 
     try {
@@ -532,6 +548,8 @@ export default function Poem() {
       alert(
         'Failed to delete poem.'
       );
+
+      setDeleting(false);
 
     }
 
@@ -920,6 +938,65 @@ export default function Poem() {
           </aside>
 
         </div>
+
+
+        {deleteConfirmOpen && (
+
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 px-4 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-poem-title"
+          >
+
+            <div className="w-full max-w-sm rounded-lg border border-ink/10 bg-paper p-6 shadow-xl">
+
+              <h2
+                id="delete-poem-title"
+                className="font-display text-2xl text-ink"
+              >
+                Delete this poem?
+              </h2>
+
+
+              <p className="mt-2 font-body text-sm leading-relaxed text-ink-soft">
+                Are you sure you want to delete
+                {title ? ` "${title}"` : ' this poem'}?
+                This cannot be undone.
+              </p>
+
+
+              <div className="mt-6 flex items-center justify-end gap-3">
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setDeleteConfirmOpen(false)
+                  }
+                  disabled={deleting}
+                  className="rounded-md border border-ink/15 px-4 py-2 font-mono text-xs uppercase tracking-wide text-ink-soft transition-colors hover:border-ink/30 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+
+
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  disabled={deleting}
+                  className="rounded-md bg-margin px-4 py-2 font-mono text-xs uppercase tracking-wide text-paper transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {deleting ? 'Deleting…' : 'Delete'}
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        )}
+
 
       </div>
 

@@ -1121,17 +1121,6 @@ const isOpen =
 
   async function handleDeleteJournal() {
 
-    if (
-      !confirm(
-        'Delete this journal and all its poems? This cannot be undone.'
-      )
-    ) {
-
-      return;
-
-    }
-
-
     try {
 
       await deleteJournal(
