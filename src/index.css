@@ -570,7 +570,7 @@
     0 auto;
 
   transform:
-    translateY(20px);
+    translateY(-12px);
 
   perspective:
     1800px;
@@ -1995,6 +1995,52 @@
 
 
 /* =========================================================
+   LAPTOP / DESKTOP JOURNAL FIT
+
+   ONLY affects laptop/desktop screens.
+   Keeps the book centered and makes it fit the
+   available browser viewport height.
+========================================================= */
+
+@media (min-width: 801px) {
+
+  .book-stack-wrapper {
+    --book-scale:
+      calc(
+        0.90 * clamp(
+          0.60,
+          min(
+            calc((100vw - 32px) / 720px),
+            calc((100dvh - 150px) / 480px)
+          ),
+          1
+        )
+      );
+
+    margin-left: auto;
+    margin-right: auto;
+
+    transform: translateX(-31px) translateY(-10px);
+  }
+
+}
+
+
+/* =========================================================
+   MOBILE BOOK NAVIGATION
+
+   Hidden by default. The original desktop controls remain
+   unchanged. Phones get a separate Previous / Next row
+   below the journal.
+========================================================= */
+
+.mobile-book-navigation {
+  display:
+    none;
+}
+
+
+/* =========================================================
    RESPONSIVE TABLET / MOBILE
 ========================================================= */
 
@@ -2220,6 +2266,16 @@
       2000;
   }
 
+
+  @media (max-width: 600px) {
+
+    .mobile-book-navigation {
+      margin-top:
+        -82px;
+    }
+
+  }
+
 }
 
 
@@ -2305,6 +2361,115 @@
         calc((100vw - 16px) / 720px),
         0.85
       );
+  }
+
+}
+
+
+/* =========================================================
+   PHONE CONTROLS BELOW THE JOURNAL
+
+   Touch phones only. The page number / location label stays
+   above the book while Previous / Next move below it.
+========================================================= */
+
+@media (max-width: 600px)
+  and (hover: none)
+  and (pointer: coarse) {
+
+  .book-controls {
+    margin-bottom:
+      18px;
+  }
+
+
+  .book-controls button {
+    display:
+      none;
+  }
+
+
+  .mobile-book-navigation {
+    width:
+      100%;
+
+    display:
+      flex;
+
+    align-items:
+      center;
+
+    justify-content:
+      center;
+
+    gap:
+      clamp(
+        14px,
+        6vw,
+        32px
+      );
+
+    margin:
+      32px auto 0;
+
+    padding:
+      0 8px;
+
+    font-family:
+      monospace;
+
+    z-index:
+      2000;
+  }
+
+
+  .mobile-book-navigation button {
+    min-width:
+      105px;
+
+    padding:
+      8px 10px;
+
+    border:
+      1px solid
+      rgba(
+        43,
+        42,
+        40,
+        0.18
+      );
+
+    border-radius:
+      20px;
+
+    background:
+      rgba(
+        255,
+        255,
+        255,
+        0.25
+      );
+
+    font-family:
+      monospace;
+
+    font-size:
+      8px;
+
+    cursor:
+      pointer;
+
+    white-space:
+      nowrap;
+  }
+
+
+  .mobile-book-navigation button:disabled {
+    opacity:
+      0.25;
+
+    cursor:
+      default;
   }
 
 }
@@ -2535,6 +2700,91 @@
 
     margin-left:
       -360px;
+  }
+
+}
+
+
+/* =========================================================
+   LANDSCAPE PHONE CONTROLS
+========================================================= */
+
+@media (orientation: landscape)
+  and (max-height: 600px)
+  and (hover: none)
+  and (pointer: coarse) {
+
+  .book-controls button {
+    display:
+      none;
+  }
+
+
+  .mobile-book-navigation {
+    width:
+      100%;
+
+    display:
+      flex;
+
+    align-items:
+      center;
+
+    justify-content:
+      center;
+
+    gap:
+      20px;
+
+    margin:
+      -58px auto 0;
+
+    padding:
+      0 8px;
+
+    font-family:
+      monospace;
+
+    z-index:
+      2000;
+  }
+
+
+  .mobile-book-navigation button {
+    min-width:
+      105px;
+
+    padding:
+      7px 9px;
+
+    border:
+      1px solid
+      rgba(
+        43,
+        42,
+        40,
+        0.18
+      );
+
+    border-radius:
+      20px;
+
+    background:
+      rgba(
+        255,
+        255,
+        255,
+        0.25
+      );
+
+    font-family:
+      monospace;
+
+    font-size:
+      8px;
+
+    white-space:
+      nowrap;
   }
 
 }

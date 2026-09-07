@@ -2551,6 +2551,59 @@ const isOpen =
 
 
       {/* ===================================================
+          MOBILE PAGE NAVIGATION
+
+          On phones only, Previous / Next are displayed
+          below the journal. Desktop keeps the original
+          controls above the book.
+      =================================================== */}
+
+      <div className="mobile-book-navigation">
+
+        <button
+
+          disabled={
+            currentLocation <= 1 ||
+            isTurning
+          }
+
+          onClick={
+            goPreviousPage
+          }
+
+        >
+
+          ← PREVIOUS
+
+        </button>
+
+
+        <button
+
+          disabled={
+            currentLocation >=
+              safeMaxLocation ||
+            isTurning
+          }
+
+          onClick={
+            goNextPage
+          }
+
+        >
+
+          {
+            isClosedFront
+              ? 'OPEN →'
+              : 'NEXT →'
+          }
+
+        </button>
+
+      </div>
+
+
+      {/* ===================================================
           SHARE MODAL
       =================================================== */}
 
