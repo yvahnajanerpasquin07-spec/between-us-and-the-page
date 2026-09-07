@@ -7,6 +7,7 @@ import {
   updateJournalCoverImages,
 } from '../services/journalService';
 import { useAsync } from '../hooks/useAsync';
+import { useAuth } from '../context/AuthContext';
 import { materialOptions } from '../components/NotebookCover';
 import JournalCard from '../components/JournalCard';
 import Button from '../components/Button';
@@ -25,6 +26,8 @@ const DEFAULT_COVER_SETTINGS = {
 
 
 export default function Dashboard() {
+
+  const { isAdmin } = useAuth();
 
   const {
     data: journals,
@@ -600,6 +603,8 @@ export default function Dashboard() {
               OPTION A — FEATURE AS SAMPLE JOURNAL
           ================================================= */}
 
+          {isAdmin && (
+
           <label
             htmlFor="sample-journal"
             className="
@@ -667,6 +672,8 @@ export default function Dashboard() {
 
           </label>
 
+
+          )}
 
           {/* =================================================
               FRONT COVER IMAGE

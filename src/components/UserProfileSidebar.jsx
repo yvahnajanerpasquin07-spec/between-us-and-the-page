@@ -4,6 +4,8 @@ import {
   getSharedJournals,
 } from '../services/journalService';
 import { supabase } from '../services/supabase';
+import AdminPanel from './AdminPanel';
+import { useAuth } from '../context/AuthContext';
 
 export default function UserProfileSidebar({
   open,
@@ -40,6 +42,13 @@ export default function UserProfileSidebar({
   const [
     loadingCounts,
     setLoadingCounts,
+  ] = useState(false);
+
+  const { isAdmin } = useAuth();
+
+  const [
+    adminPanelOpen,
+    setAdminPanelOpen,
   ] = useState(false);
 
 
@@ -253,6 +262,11 @@ export default function UserProfileSidebar({
 
   return (
     <>
+
+      <AdminPanel
+        open={adminPanelOpen}
+        onClose={() => setAdminPanelOpen(false)}
+      />
 
       {/* =====================================================
           SIDEBAR OVERLAY
@@ -551,10 +565,85 @@ export default function UserProfileSidebar({
 
 
           {/* =================================================
+              ADMIN PANEL
+          ================================================= */}
+
+          {isAdmin && (
+
+            <section>
+
+              <button
+                type="button"
+                onClick={() => setAdminPanelOpen(true)}
+                className="
+                  flex
+                  w-full
+                  items-center
+                  justify-between
+                  rounded-xl
+                  border
+                  border-ink/10
+                  bg-white/30
+                  px-4
+                  py-4
+                  text-left
+                  transition
+                  hover:border-ink/20
+                  hover:bg-white/50
+                "
+              >
+
+                <div>
+
+                  <p
+                    className="
+                      font-display
+                      text-lg
+                      text-ink
+                    "
+                  >
+                    Admin panel
+                  </p>
+
+                  <p
+                    className="
+                      mt-0.5
+                      font-mono
+                      text-[11px]
+                      text-ink/45
+                    "
+                  >
+                    Manage who can feature journals
+                  </p>
+
+                </div>
+
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-5 w-5 text-ink/50"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+
+              </button>
+
+            </section>
+
+          )}
+
+
+          {/* =================================================
               LIBRARY COUNTS
           ================================================= */}
 
-          <section>
+          <section
+            className={isAdmin ? 'mt-8' : ''}
+          >
 
             <p
               className="

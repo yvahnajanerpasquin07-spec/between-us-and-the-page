@@ -20,6 +20,7 @@ import CoverImageEditor, {
 } from './CoverImageEditor';
 
 import { materialOptions } from './NotebookCover';
+import { useAuth } from '../context/AuthContext';
 
 
 const DEFAULT_COVER_SETTINGS = {
@@ -34,6 +35,8 @@ export default function EditJournalModal({
   onClose,
   onSaved,
 }) {
+
+  const { isAdmin } = useAuth();
 
   const [
     title,
@@ -733,6 +736,8 @@ export default function EditJournalModal({
             SAMPLE JOURNAL
         ================================================= */}
 
+        {isAdmin && (
+
         <label
           htmlFor="edit-sample-journal"
           className="
@@ -789,6 +794,8 @@ export default function EditJournalModal({
           </span>
         </label>
 
+
+        )}
 
         {/* =================================================
             FRONT COVER IMAGE
