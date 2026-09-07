@@ -513,7 +513,13 @@ export default function Poem() {
 
 
       navigate(
-        `/journal/${journalId}`
+        `/journal/${journalId}`,
+        {
+          state: {
+            poemDeleted: true,
+            deletedPoemId: poemId,
+          },
+        }
       );
 
     } catch (error) {

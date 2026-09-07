@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getPublicJournal } from '../services/journalService';
+import { recordPublicShareView } from '../services/shareService';
 import { useAsync } from '../hooks/useAsync';
 import Loading from '../components/Loading';
 import Button from '../components/Button';
@@ -7,6 +9,20 @@ import Button from '../components/Button';
 export default function PublicShareLanding() {
   const { shareToken } = useParams();
   const navigate = useNavigate();
+
+
+  useEffect(() => {
+
+    if (!shareToken) {
+      return;
+    }
+
+    recordPublicShareView(shareToken).catch(() => {
+      // The journal should still open even if analytics are unavailable.
+    });
+
+  }, [shareToken]);
+
 
   const {
     data: journal,

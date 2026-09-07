@@ -102,3 +102,56 @@ export async function getOrCreatePublicShareToken(
 
   return data.public_share_token;
 }
+
+
+/* =========================================================
+   GET PUBLIC VIEW COUNT
+========================================================= */
+
+export async function getPublicShareViewCount(
+  journalId
+) {
+  const {
+    data,
+    error,
+  } = await supabase
+    .from('journals')
+    .select('public_share_views')
+    .eq('id', journalId)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return Number(
+    data?.public_share_views ?? 0
+  );
+}
+
+
+/* =========================================================
+   RECORD A PUBLIC SHARE VIEW
+========================================================= */
+
+export async function recordPublicShareView(
+  shareToken
+) {
+  const {
+    data,
+    error,
+  } = await supabase.rpc(
+    'record_public_share_view',
+    {
+      p_share_token: shareToken,
+    }
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return Number(
+    data ?? 0
+  );
+}

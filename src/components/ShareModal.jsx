@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   findUserByEmail,
   getSharesForJournal,
   getOrCreatePublicShareToken,
+  getPublicShareViewCount,
   revokeShare,
   shareJournal,
 } from '../services/shareService';
@@ -40,6 +41,11 @@ export default function ShareModal({
     setCopied,
   ] = useState(false);
 
+  const [
+    viewCount,
+    setViewCount,
+  ] = useState(0);
+
   const {
     data: shares,
     loading,
@@ -51,6 +57,27 @@ export default function ShareModal({
       ),
     [journalId]
   );
+
+
+  useEffect(() => {
+
+    let active = true;
+
+    getPublicShareViewCount(journalId)
+      .then((count) => {
+        if (active) {
+          setViewCount(count);
+        }
+      })
+      .catch(() => {
+        // Keep the share modal usable if the view counter is unavailable.
+      });
+
+    return () => {
+      active = false;
+    };
+
+  }, [journalId]);
 
 
   async function handleShare(e) {
@@ -273,6 +300,34 @@ export default function ShareModal({
             Anyone with this link can view the journal,
             but cannot edit it.
           </p>
+
+          <div
+            className="
+              mb-3
+              flex
+              items-center
+              gap-2
+              text-sm
+              text-ink-soft
+            "
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+              <circle cx="12" cy="12" r="2.5" />
+            </svg>
+            <span>
+              {viewCount} {viewCount === 1 ? 'view' : 'views'}
+            </span>
+          </div>
 
 
           {!publicLink ? (

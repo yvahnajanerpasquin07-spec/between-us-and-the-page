@@ -1587,6 +1587,10 @@ const isOpen =
               isOwner
             }
 
+            publicShareViews={
+              activeJournal?.public_share_views ?? 0
+            }
+
             onSelectPoem={
               goToPoem
             }
@@ -1638,6 +1642,10 @@ const isOpen =
 
                 isOwner={
                   isOwner
+                }
+
+                publicShareViews={
+                  activeJournal?.public_share_views ?? 0
                 }
 
                 onSelectPoem={
@@ -2926,6 +2934,7 @@ function TocPage({
   globalStartIndex,
   poemsLoading,
   isOwner,
+  publicShareViews = 0,
   onSelectPoem,
   onShare,
   onNewPoem,
@@ -2962,6 +2971,42 @@ function TocPage({
           !isContinuation && (
 
             <div className="toc-actions">
+
+              {/* VIEW COUNT */}
+
+              <div
+
+                className="flex items-center gap-1 font-mono text-xs text-ink-soft"
+
+                aria-label={`${publicShareViews} total views`}
+
+                title={`${publicShareViews} total views from the view-only link`}
+
+              >
+
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+
+                  <path
+                    d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"
+                  />
+
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="2.5"
+                  />
+
+                </svg>
+
+                <span>
+                  {publicShareViews}
+                </span>
+
+              </div>
+
 
               {/* SHARE */}
 
