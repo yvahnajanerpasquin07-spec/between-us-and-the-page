@@ -44,9 +44,11 @@ export default function PublicShareLanding() {
           <h1 className="mb-3 font-display text-2xl">
             This shared book is unavailable
           </h1>
+
           <p className="mb-6 text-sm text-ink-soft">
             The link may be invalid or the book may no longer be available.
           </p>
+
           <Button onClick={() => navigate('/')}>
             Go home
           </Button>
@@ -60,6 +62,104 @@ export default function PublicShareLanding() {
   return (
     <section className="min-h-[calc(100vh-80px)] flex items-center justify-center px-4 py-12">
       <div className="page-card w-full max-w-xl bg-paper p-8 text-center sm:p-12">
+
+        {/* =================================================
+            SHARED BOOK ICON
+        ================================================= */}
+
+        <div className="mb-6 flex justify-center">
+
+          <div
+            className="
+              flex
+              h-24
+              w-24
+              items-center
+              justify-center
+              rounded-full
+              border
+              border-ink/15
+              bg-white/40
+            "
+          >
+
+            <svg
+              viewBox="0 0 64 64"
+              className="h-14 w-14 text-ink"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+
+              {/* Left page */}
+
+              <path
+                d="M10 13.5C17.5 11.5 25 13 32 17V53C25 49 17.5 47.5 10 49.5V13.5Z"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+
+              {/* Right page */}
+
+              <path
+                d="M54 13.5C46.5 11.5 39 13 32 17V53C39 49 46.5 47.5 54 49.5V13.5Z"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+
+              {/* Center spine */}
+
+              <path
+                d="M32 17V53"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+              />
+
+              {/* Page lines */}
+
+              <path
+                d="M15.5 21C20 20.5 24.5 21.5 28 23.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                opacity="0.55"
+              />
+
+              <path
+                d="M15.5 27C20 26.5 24.5 27.5 28 29.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                opacity="0.55"
+              />
+
+              <path
+                d="M48.5 21C44 20.5 39.5 21.5 36 23.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                opacity="0.55"
+              />
+
+              <path
+                d="M48.5 27C44 26.5 39.5 27.5 36 29.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                opacity="0.55"
+              />
+
+            </svg>
+
+          </div>
+
+        </div>
+
+
         <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">
           A book was shared with you
         </p>
@@ -73,6 +173,7 @@ export default function PublicShareLanding() {
         >
           Open the book →
         </Button>
+
       </div>
     </section>
   );
