@@ -7,6 +7,7 @@ import {
   updateJournalCoverImages,
 } from '../services/journalService';
 import { useAsync } from '../hooks/useAsync';
+import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
 import { materialOptions } from '../components/NotebookCover';
 import JournalCard from '../components/JournalCard';
@@ -39,7 +40,19 @@ export default function Dashboard() {
   const {
     data: sharedJournals,
     loading: sharedLoading,
+    refetch: refetchSharedJournals,
   } = useAsync(getSharedJournals);
+
+
+  const [
+    removingSharedId,
+    setRemovingSharedId,
+  ] = useState(null);
+
+  const [
+    sharedJournalToRemove,
+    setSharedJournalToRemove,
+  ] = useState(null);
 
 
   const [
@@ -506,6 +519,62 @@ export default function Dashboard() {
     } finally {
 
       setCreating(false);
+
+    }
+
+  }
+
+
+  /* =======================================================
+     REMOVE SHARED JOURNAL FROM MY LIBRARY
+     -------------------------------------------------------
+     This removes ONLY the current user's access.
+     It does NOT delete the owner's journal.
+  ======================================================= */
+
+  async function handleRemoveShared(
+    journalAccessId
+  ) {
+
+    setRemovingSharedId(
+      journalAccessId
+    );
+
+
+    try {
+
+      const {
+        error,
+      } = await supabase.rpc(
+        'leave_shared_journal',
+        {
+          p_journal_access_id:
+            journalAccessId,
+        }
+      );
+
+
+      if (error) {
+        throw error;
+      }
+
+
+      await refetchSharedJournals();
+
+    } catch (error) {
+
+      console.error(error);
+
+      window.alert(
+        error?.message ||
+        'Could not remove the shared journal. Please try again.'
+      );
+
+    } finally {
+
+      setRemovingSharedId(
+        null
+      );
 
     }
 
@@ -1278,13 +1347,101 @@ export default function Dashboard() {
                 {filteredSharedJournals.map(
                   (j) => (
 
-                    <JournalCard
+                    <div
                       key={j.id}
-                      journal={j}
-                      readOnly={
-                        sharedView === 'viewer'
-                      }
-                    />
+                      className="relative"
+                    >
+
+                      <JournalCard
+                        journal={j}
+                        readOnly={
+                          sharedView === 'viewer'
+                        }
+                      />
+
+                      {j.access_id && (
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+
+                            if (!removingSharedId) {
+                              setSharedJournalToRemove(j);
+                            }
+                          }}
+                          disabled={
+                            removingSharedId === j.access_id
+                          }
+                          className="
+                            absolute
+                            right-2
+                            top-2
+                            z-20
+                            flex
+                            h-8
+                            w-8
+                            items-center
+                            justify-center
+                            rounded-full
+                            border
+                            border-ink/15
+                            bg-paper/90
+                            text-ink-soft
+                            shadow-sm
+                            transition
+                            hover:border-ink/30
+                            hover:bg-paper
+                            hover:text-ink
+                            disabled:cursor-not-allowed
+                            disabled:opacity-50
+                          "
+                          aria-label="Remove from Shared with you"
+                          title="Remove from Shared with you"
+                        >
+
+                          {removingSharedId === j.access_id ? (
+
+                            <svg
+                              viewBox="0 0 24 24"
+                              className="h-4 w-4 animate-spin"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.7"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <circle
+                                cx="12"
+                                cy="12"
+                                r="9"
+                                strokeOpacity="0.25"
+                              />
+                              <path d="M21 12a9 9 0 0 0-9-9" />
+                            </svg>
+
+                          ) : (
+
+                            <svg
+                              viewBox="0 0 24 24"
+                              className="h-4 w-4"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.7"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M6 6l12 12" />
+                              <path d="M18 6L6 18" />
+                            </svg>
+
+                          )}
+
+                        </button>
+
+                      )}
+
+                    </div>
 
                   )
                 )}
@@ -1296,6 +1453,93 @@ export default function Dashboard() {
         )}
 
       </section>
+
+      {sharedJournalToRemove && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 px-4 backdrop-blur-sm"
+          onClick={() => {
+            if (!removingSharedId) {
+              setSharedJournalToRemove(null);
+            }
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="remove-shared-title"
+            className="w-full max-w-md rounded-2xl border border-ink/10 bg-paper p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2
+                  id="remove-shared-title"
+                  className="font-display text-xl text-ink"
+                >
+                  Remove shared journal?
+                </h2>
+                <p className="mt-2 font-body text-sm leading-6 text-ink-soft">
+                  Are you sure you want to remove this book from Shared with you?
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSharedJournalToRemove(null)}
+                disabled={!!removingSharedId}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-soft transition hover:bg-ink/5 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Close"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                >
+                  <path d="M6 6l12 12" />
+                  <path d="M18 6L6 18" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="mb-6 rounded-xl border border-ink/10 bg-ink/[0.03] p-4">
+              <p className="font-mono text-xs uppercase tracking-wide text-ink-soft">
+                {sharedJournalToRemove.title || 'Untitled journal'}
+              </p>
+              <p className="mt-2 font-body text-xs leading-5 text-ink-soft">
+                This only removes your access. The owner's original journal and its contents will not be deleted.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setSharedJournalToRemove(null)}
+                disabled={!!removingSharedId}
+                className="rounded-lg border border-ink/15 px-4 py-2.5 font-mono text-xs uppercase tracking-wide text-ink-soft transition hover:border-ink/30 hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  if (sharedJournalToRemove?.access_id) {
+                    await handleRemoveShared(sharedJournalToRemove.access_id);
+                    setSharedJournalToRemove(null);
+                  }
+                }}
+                disabled={!!removingSharedId}
+                className="rounded-lg bg-ink px-4 py-2.5 font-mono text-xs uppercase tracking-wide text-paper transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {removingSharedId ? 'Removing…' : 'Remove book'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
 

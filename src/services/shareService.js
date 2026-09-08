@@ -1,28 +1,74 @@
 import { supabase } from './supabase';
 
-export async function getSharesForJournal(journalId) {
-  const { data, error } = await supabase
-    .from('journal_access')
-    .select('id, viewer_id, role, created_at, profiles:viewer_id (email)')
-    .eq('journal_id', journalId)
-    .order('created_at', { ascending: false });
 
-  if (error) throw error;
+export async function getSharesForJournal(
+  journalId
+) {
+
+  const {
+    data,
+    error,
+  } = await supabase
+
+    .from('journal_access')
+
+    .select(
+      'id, viewer_id, role, created_at, profiles:viewer_id (email)'
+    )
+
+    .eq(
+      'journal_id',
+      journalId
+    )
+
+    .order(
+      'created_at',
+      {
+        ascending: false,
+      }
+    );
+
+
+  if (error) {
+    throw error;
+  }
+
 
   return data;
 }
 
+
 // Looks up a registered user by email so an owner can share by address
 // rather than by internal id. Requires the `profiles` table/view described
 // in schema.sql.
-export async function findUserByEmail(email) {
-  const { data, error } = await supabase
+
+export async function findUserByEmail(
+  email
+) {
+
+  const {
+    data,
+    error,
+  } = await supabase
+
     .from('profiles')
-    .select('id, email')
-    .eq('email', email)
+
+    .select(
+      'id, email'
+    )
+
+    .eq(
+      'email',
+      email
+    )
+
     .maybeSingle();
 
-  if (error) throw error;
+
+  if (error) {
+    throw error;
+  }
+
 
   return data;
 }
@@ -40,19 +86,29 @@ export async function shareJournalByEmail(
   email,
   role = 'viewer'
 ) {
+
   const {
     data,
     error,
   } = await supabase.rpc(
     'share_journal_by_email',
     {
-      p_journal_id: journalId,
-      p_email: email,
-      p_role: role,
+      p_journal_id:
+        journalId,
+
+      p_email:
+        email,
+
+      p_role:
+        role,
     }
   );
 
-  if (error) throw error;
+
+  if (error) {
+    throw error;
+  }
+
 
   return data;
 }
@@ -70,19 +126,29 @@ export async function shareJournal(
   viewerId,
   role = 'viewer'
 ) {
+
   const {
     data,
     error,
   } = await supabase.rpc(
     'share_journal_with_user',
     {
-      p_journal_id: journalId,
-      p_viewer_id: viewerId,
-      p_role: role,
+      p_journal_id:
+        journalId,
+
+      p_viewer_id:
+        viewerId,
+
+      p_role:
+        role,
     }
   );
 
-  if (error) throw error;
+
+  if (error) {
+    throw error;
+  }
+
 
   return data;
 }
@@ -92,14 +158,32 @@ export async function updateShareRole(
   journalAccessId,
   role
 ) {
-  const { data, error } = await supabase
+
+  const {
+    data,
+    error,
+  } = await supabase
+
     .from('journal_access')
-    .update({ role })
-    .eq('id', journalAccessId)
+
+    .update({
+      role,
+    })
+
+    .eq(
+      'id',
+      journalAccessId
+    )
+
     .select()
+
     .single();
 
-  if (error) throw error;
+
+  if (error) {
+    throw error;
+  }
+
 
   return data;
 }
@@ -108,36 +192,106 @@ export async function updateShareRole(
 export async function getMyJournalAccess(
   journalId
 ) {
-  const { data, error } = await supabase
+
+  const {
+    data,
+    error,
+  } = await supabase
+
     .from('journal_access')
-    .select('id, journal_id, viewer_id, role')
+
+    .select(
+      'id, journal_id, viewer_id, role'
+    )
+
     .eq(
       'journal_id',
       journalId
     )
+
     .eq(
       'viewer_id',
       (
         await supabase.auth.getUser()
       ).data.user?.id ?? ''
     )
+
     .maybeSingle();
 
-  if (error) throw error;
+
+  if (error) {
+    throw error;
+  }
+
 
   return data;
 }
 
 
+/* =========================================================
+   REVOKE SHARE
+   ---------------------------------------------------------
+   Used by the journal owner to remove another user's access.
+========================================================= */
+
 export async function revokeShare(
   journalAccessId
 ) {
-  const { error } = await supabase
-    .from('journal_access')
-    .delete()
-    .eq('id', journalAccessId);
 
-  if (error) throw error;
+  const {
+    error,
+  } = await supabase
+
+    .from('journal_access')
+
+    .delete()
+
+    .eq(
+      'id',
+      journalAccessId
+    );
+
+
+  if (error) {
+    throw error;
+  }
+
+}
+
+
+/* =========================================================
+   LEAVE SHARED JOURNAL
+   ---------------------------------------------------------
+   Removes ONLY the current user's access to a shared journal.
+
+   IMPORTANT:
+   This does NOT delete the journal itself.
+
+   The owner's journal remains completely untouched.
+========================================================= */
+
+export async function leaveSharedJournal(
+  journalAccessId
+) {
+
+  const {
+    data,
+    error,
+  } = await supabase.rpc(
+    'leave_shared_journal',
+    {
+      p_journal_access_id:
+        journalAccessId,
+    }
+  );
+
+
+  if (error) {
+    throw error;
+  }
+
+
+  return data;
 }
 
 
@@ -148,56 +302,82 @@ export async function revokeShare(
 export async function getOrCreateEditorShareToken(
   journalId
 ) {
+
   const {
     data: journal,
     error: fetchError,
   } = await supabase
+
     .from('journals')
+
     .select(
       'id, editor_share_token'
     )
+
     .eq(
       'id',
       journalId
     )
+
     .single();
 
-  if (fetchError) throw fetchError;
 
-  if (journal.editor_share_token) {
-    return journal.editor_share_token;
+  if (fetchError) {
+    throw fetchError;
   }
+
+
+  if (
+    journal.editor_share_token
+  ) {
+
+    return journal.editor_share_token;
+
+  }
+
 
   const token =
     crypto.randomUUID();
+
 
   const {
     data,
     error,
   } = await supabase
+
     .from('journals')
+
     .update({
       editor_share_token:
         token,
     })
+
     .eq(
       'id',
       journalId
     )
+
     .select(
       'editor_share_token'
     )
+
     .single();
 
-  if (error) throw error;
+
+  if (error) {
+    throw error;
+  }
+
 
   return data.editor_share_token;
+
 }
 
 
 export async function acceptEditorShareToken(
   editorToken
 ) {
+
   const {
     data,
     error,
@@ -209,9 +389,14 @@ export async function acceptEditorShareToken(
     }
   );
 
-  if (error) throw error;
+
+  if (error) {
+    throw error;
+  }
+
 
   return data;
+
 }
 
 
@@ -222,32 +407,44 @@ export async function acceptEditorShareToken(
 export async function getOrCreatePublicShareToken(
   journalId
 ) {
+
   const {
     data: journal,
     error: fetchError,
   } = await supabase
+
     .from('journals')
+
     .select(
       'id, public_share_token'
     )
+
     .eq(
       'id',
       journalId
     )
+
     .single();
+
 
   if (fetchError) {
     throw fetchError;
   }
+
 
   /*
     If this journal already has a public share token,
     use the existing token instead of creating a new one.
   */
 
-  if (journal.public_share_token) {
+  if (
+    journal.public_share_token
+  ) {
+
     return journal.public_share_token;
+
   }
+
 
   /*
     Create a unique token for the public view-only link.
@@ -257,25 +454,33 @@ export async function getOrCreatePublicShareToken(
     data,
     error,
   } = await supabase
+
     .from('journals')
+
     .update({
       public_share_token:
         crypto.randomUUID(),
     })
+
     .eq(
       'id',
       journalId
     )
+
     .select(
       'public_share_token'
     )
+
     .single();
+
 
   if (error) {
     throw error;
   }
 
+
   return data.public_share_token;
+
 }
 
 
@@ -290,19 +495,26 @@ export async function getOrCreatePublicShareToken(
 export async function registerPublicJournalViewer(
   shareToken
 ) {
+
   const {
     data,
     error,
   } = await supabase.rpc(
     'register_public_journal_viewer',
     {
-      p_share_token: shareToken,
+      p_share_token:
+        shareToken,
     }
   );
 
-  if (error) throw error;
+
+  if (error) {
+    throw error;
+  }
+
 
   return data;
+
 }
 
 
@@ -313,27 +525,35 @@ export async function registerPublicJournalViewer(
 export async function getPublicShareViewCount(
   journalId
 ) {
+
   const {
     data,
     error,
   } = await supabase
+
     .from('journals')
+
     .select(
       'public_share_views'
     )
+
     .eq(
       'id',
       journalId
     )
+
     .single();
+
 
   if (error) {
     throw error;
   }
 
+
   return Number(
     data?.public_share_views ?? 0
   );
+
 }
 
 
@@ -344,6 +564,7 @@ export async function getPublicShareViewCount(
 export async function recordPublicShareView(
   shareToken
 ) {
+
   const {
     data,
     error,
@@ -355,11 +576,14 @@ export async function recordPublicShareView(
     }
   );
 
+
   if (error) {
     throw error;
   }
 
+
   return Number(
     data ?? 0
   );
+
 }
