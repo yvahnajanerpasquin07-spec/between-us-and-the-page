@@ -3,7 +3,7 @@
 A personal journal and poetry platform: multiple themed journals, poems with
 optional Spotify tracks, and view-only sharing with specific registered users.
 
-Stack: **React + Vite + Tailwind CSS + Supabase (Postgres, Auth, RLS) + Netlify.**
+Stack: **React + Vite + Tailwind CSS + Supabase (Postgres, Auth, RLS)**
 
 ## 1. Set up Supabase
 
