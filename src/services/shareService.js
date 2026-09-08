@@ -29,6 +29,36 @@ export async function findUserByEmail(email) {
 
 
 /* =========================================================
+   SHARE JOURNAL BY REGISTERED USER EMAIL
+   ---------------------------------------------------------
+   Uses a secure database function so the owner can share
+   directly by email without relying on profiles RLS.
+========================================================= */
+
+export async function shareJournalByEmail(
+  journalId,
+  email,
+  role = 'viewer'
+) {
+  const {
+    data,
+    error,
+  } = await supabase.rpc(
+    'share_journal_by_email',
+    {
+      p_journal_id: journalId,
+      p_email: email,
+      p_role: role,
+    }
+  );
+
+  if (error) throw error;
+
+  return data;
+}
+
+
+/* =========================================================
    SHARE JOURNAL WITH REGISTERED USER
    ---------------------------------------------------------
    Uses a secure database function so both viewer and editor
@@ -246,6 +276,33 @@ export async function getOrCreatePublicShareToken(
   }
 
   return data.public_share_token;
+}
+
+
+/* =========================================================
+   REGISTER AUTHENTICATED PUBLIC VIEWER
+   ---------------------------------------------------------
+   When a logged-in user opens a public view-only link, add
+   them to journal_access as a viewer. Anonymous users are
+   allowed to keep viewing the public journal normally.
+========================================================= */
+
+export async function registerPublicJournalViewer(
+  shareToken
+) {
+  const {
+    data,
+    error,
+  } = await supabase.rpc(
+    'register_public_journal_viewer',
+    {
+      p_share_token: shareToken,
+    }
+  );
+
+  if (error) throw error;
+
+  return data;
 }
 
 

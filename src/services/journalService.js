@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { registerPublicJournalViewer } from './shareService';
 
 
 /* =========================================================
@@ -91,79 +92,18 @@ export async function getSharedJournals() {
     return [];
   }
 
-  /*
-    Get the access records first.
-    This makes sure shared journals are found directly from
-    the logged-in user's journal_access records.
-  */
   const {
-    data: accessRows,
-    error: accessError,
-  } = await supabase
-    .from('journal_access')
-    .select('id, journal_id, viewer_id, role, created_at')
-    .eq('viewer_id', userData.user.id)
-    .order(
-      'created_at',
-      {
-        ascending: false,
-      }
-    );
-
-  if (accessError) {
-    throw accessError;
-  }
-
-  if (!accessRows?.length) {
-    return [];
-  }
-
-  /*
-    Load the journal records using the journal ids from the
-    access table. The new RLS policy allows shared users to read
-    journals they have been given access to.
-  */
-  const journalIds = accessRows.map(
-    (row) => row.journal_id
+    data,
+    error,
+  } = await supabase.rpc(
+    'get_my_shared_journals'
   );
 
-  const {
-    data: journals,
-    error: journalsError,
-  } = await supabase
-    .from('journals')
-    .select('*')
-    .in('id', journalIds);
-
-  if (journalsError) {
-    throw journalsError;
+  if (error) {
+    throw error;
   }
 
-  const journalMap = new Map(
-    (journals ?? []).map((journal) => [
-      journal.id,
-      journal,
-    ])
-  );
-
-  return accessRows
-    .map((share) => {
-      const journal = journalMap.get(
-        share.journal_id
-      );
-
-      if (!journal) {
-        return null;
-      }
-
-      return {
-        ...journal,
-        access_id: share.id,
-        access_role: share.role || 'viewer',
-        shared_at: share.created_at,
-      };
-    })
-    .filter(Boolean);
+  return Array.isArray(data) ? data : [];
 }
 
 /* =========================================================
@@ -578,6 +518,11 @@ export async function getPublicJournal(
   shareToken
 ) {
 
+  // Register the authenticated user as a viewer first.
+  // Anonymous public viewing still works because the RPC
+  // simply returns null when no user is signed in.
+  await registerPublicJournalViewer(shareToken);
+
   const {
     data,
     error,
@@ -613,6 +558,10 @@ export async function getPublicJournal(
 export async function getPublicPoems(
   shareToken
 ) {
+
+  // Also register here so the viewer is recorded even if this
+  // function is called without getPublicJournal first.
+  await registerPublicJournalViewer(shareToken);
 
   const {
     data,

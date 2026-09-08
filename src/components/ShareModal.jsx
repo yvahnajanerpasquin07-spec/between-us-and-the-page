@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
-  findUserByEmail,
+  shareJournalByEmail,
   getSharesForJournal,
   getOrCreatePublicShareToken,
   getOrCreateEditorShareToken,
   getPublicShareViewCount,
   revokeShare,
-  shareJournal,
   updateShareRole,
 } from '../services/shareService';
 import { useAsync } from '../hooks/useAsync';
@@ -59,17 +58,11 @@ export default function ShareModal({
     setStatus(null);
 
     try {
-      const person = await findUserByEmail(email.trim());
-
-      if (!person) {
-        setStatus({
-          type: 'error',
-          message: 'No registered user with that email.',
-        });
-        return;
-      }
-
-      await shareJournal(journalId, person.id, shareRole);
+      await shareJournalByEmail(
+        journalId,
+        email.trim().toLowerCase(),
+        shareRole
+      );
 
       setEmail('');
       refetch();
