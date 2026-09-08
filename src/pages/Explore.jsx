@@ -35,7 +35,15 @@ const faqs = [
       'What happens when I share a journal?',
 
     answer:
-      'Sharing creates a view-only link. Someone with the link can read the journal, but they cannot edit it.',
+      'You can share a view-only version of your journal with someone, or invite someone to collaborate with you if you want them to help edit it.',
+  },
+
+  {
+    question:
+      'What is collaboration?',
+
+    answer:
+      'Collaboration lets you invite another person to work on a journal with you. Depending on the access you give them, they can help edit and build the journal together with you.',
   },
 
   {
@@ -53,10 +61,6 @@ export default function Explore() {
   const location =
     useLocation();
 
-
-  /* =======================================================
-     OPTION A — LOAD REAL SAMPLE JOURNALS
-  ======================================================= */
 
   const {
     data: sampleJournals,
@@ -119,10 +123,6 @@ export default function Explore() {
       "
     >
 
-      {/* ===================================================
-          HERO
-      =================================================== */}
-
       <section
         className="
           mx-auto
@@ -172,10 +172,6 @@ export default function Explore() {
 
       </section>
 
-
-      {/* ===================================================
-          SAMPLE WORKS
-      =================================================== */}
 
       <section
         id="samples"
@@ -235,10 +231,6 @@ export default function Explore() {
         </div>
 
 
-        {/* =================================================
-            LOADING
-        ================================================= */}
-
         {sampleLoading ? (
 
           <p
@@ -290,12 +282,6 @@ export default function Explore() {
                     }
 
                     readOnly
-
-                    /*
-                      OPTION A:
-                      Pass the public share token so the
-                      sample opens in view-only mode.
-                    */
 
                     publicShareToken={
                       journal.public_share_token
@@ -349,10 +335,6 @@ export default function Explore() {
 
       </section>
 
-
-      {/* ===================================================
-          HOW IT WORKS
-      =================================================== */}
 
       <section
         id="how-it-works"
@@ -428,7 +410,7 @@ export default function Explore() {
             [
               '04',
               'Share',
-              'Share a view-only version with someone when you are ready.',
+              'Share your journal privately with someone, either as view-only or through collaboration.',
             ],
 
           ].map(
@@ -494,9 +476,101 @@ export default function Explore() {
       </section>
 
 
-      {/* ===================================================
-          FAQ
-      =================================================== */}
+      <section
+        id="collaboration"
+        className="
+          scroll-mt-24
+          pt-20
+          sm:pt-28
+        "
+      >
+
+        <div
+          className="
+            border-t
+            border-ink/10
+            pt-10
+            sm:pt-12
+          "
+        >
+
+          <p
+            className="
+              font-mono
+              text-[10px]
+              uppercase
+              tracking-[0.2em]
+              text-ink-soft
+            "
+          >
+            03 / Collaboration
+          </p>
+
+
+          <div
+            className="
+              mt-3
+              grid
+              gap-8
+              lg:grid-cols-[1fr_1.2fr]
+              lg:items-center
+            "
+          >
+
+            <div>
+
+              <h2
+                className="
+                  font-display
+                  text-3xl
+                  text-ink
+                  sm:text-4xl
+                "
+              >
+                Some pages are better written together.
+              </h2>
+
+            </div>
+
+
+            <div>
+
+              <p
+                className="
+                  font-body
+                  text-sm
+                  leading-7
+                  text-ink-soft
+                "
+              >
+                Invite someone into your journal and create
+                something together. Collaboration lets you give
+                another person access to help edit and build the
+                pages with you, while your journal remains yours.
+              </p>
+
+
+              <p
+                className="
+                  mt-4
+                  font-body
+                  text-sm
+                  leading-7
+                  text-ink-soft
+                "
+              >
+                Want someone to simply read what you wrote?
+                You can still share a view-only version instead.
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
 
       <section
         id="faqs"
@@ -522,7 +596,7 @@ export default function Explore() {
               text-ink-soft
             "
           >
-            03 / FAQs
+            04 / FAQs
           </p>
 
 
@@ -620,10 +694,6 @@ export default function Explore() {
 
       </section>
 
-
-      {/* ===================================================
-          CTA
-      =================================================== */}
 
       <section
         className="
