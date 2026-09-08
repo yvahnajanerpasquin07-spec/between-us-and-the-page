@@ -27,39 +27,41 @@ export async function findUserByEmail(email) {
   return data;
 }
 
-export async function shareJournal(journalId, viewerId, role = 'viewer') {
+
+/* =========================================================
+   SHARE JOURNAL WITH REGISTERED USER
+   ---------------------------------------------------------
+   Uses a secure database function so both viewer and editor
+   shares are created correctly even with RLS enabled.
+========================================================= */
+
+export async function shareJournal(
+  journalId,
+  viewerId,
+  role = 'viewer'
+) {
   const {
-    data: existing,
-    error: lookupError,
-  } = await supabase
-    .from('journal_access')
-    .select('id')
-    .eq('journal_id', journalId)
-    .eq('viewer_id', viewerId)
-    .maybeSingle();
-
-  if (lookupError) throw lookupError;
-
-  if (existing) {
-    return updateShareRole(existing.id, role);
-  }
-
-  const { data, error } = await supabase
-    .from('journal_access')
-    .insert({
-      journal_id: journalId,
-      viewer_id: viewerId,
-      role,
-    })
-    .select()
-    .single();
+    data,
+    error,
+  } = await supabase.rpc(
+    'share_journal_with_user',
+    {
+      p_journal_id: journalId,
+      p_viewer_id: viewerId,
+      p_role: role,
+    }
+  );
 
   if (error) throw error;
 
   return data;
 }
 
-export async function updateShareRole(journalAccessId, role) {
+
+export async function updateShareRole(
+  journalAccessId,
+  role
+) {
   const { data, error } = await supabase
     .from('journal_access')
     .update({ role })
@@ -72,12 +74,23 @@ export async function updateShareRole(journalAccessId, role) {
   return data;
 }
 
-export async function getMyJournalAccess(journalId) {
+
+export async function getMyJournalAccess(
+  journalId
+) {
   const { data, error } = await supabase
     .from('journal_access')
     .select('id, journal_id, viewer_id, role')
-    .eq('journal_id', journalId)
-    .eq('viewer_id', (await supabase.auth.getUser()).data.user?.id ?? '')
+    .eq(
+      'journal_id',
+      journalId
+    )
+    .eq(
+      'viewer_id',
+      (
+        await supabase.auth.getUser()
+      ).data.user?.id ?? ''
+    )
     .maybeSingle();
 
   if (error) throw error;
@@ -85,7 +98,10 @@ export async function getMyJournalAccess(journalId) {
   return data;
 }
 
-export async function revokeShare(journalAccessId) {
+
+export async function revokeShare(
+  journalAccessId
+) {
   const { error } = await supabase
     .from('journal_access')
     .delete()
@@ -99,14 +115,21 @@ export async function revokeShare(journalAccessId) {
    CREATE / GET EDITOR SHARE TOKEN
 ========================================================= */
 
-export async function getOrCreateEditorShareToken(journalId) {
+export async function getOrCreateEditorShareToken(
+  journalId
+) {
   const {
     data: journal,
     error: fetchError,
   } = await supabase
     .from('journals')
-    .select('id, editor_share_token')
-    .eq('id', journalId)
+    .select(
+      'id, editor_share_token'
+    )
+    .eq(
+      'id',
+      journalId
+    )
     .single();
 
   if (fetchError) throw fetchError;
@@ -115,7 +138,8 @@ export async function getOrCreateEditorShareToken(journalId) {
     return journal.editor_share_token;
   }
 
-  const token = crypto.randomUUID();
+  const token =
+    crypto.randomUUID();
 
   const {
     data,
@@ -123,10 +147,16 @@ export async function getOrCreateEditorShareToken(journalId) {
   } = await supabase
     .from('journals')
     .update({
-      editor_share_token: token,
+      editor_share_token:
+        token,
     })
-    .eq('id', journalId)
-    .select('editor_share_token')
+    .eq(
+      'id',
+      journalId
+    )
+    .select(
+      'editor_share_token'
+    )
     .single();
 
   if (error) throw error;
@@ -134,14 +164,18 @@ export async function getOrCreateEditorShareToken(journalId) {
   return data.editor_share_token;
 }
 
-export async function acceptEditorShareToken(editorToken) {
+
+export async function acceptEditorShareToken(
+  editorToken
+) {
   const {
     data,
     error,
   } = await supabase.rpc(
     'accept_editor_share_token',
     {
-      p_editor_token: editorToken,
+      p_editor_token:
+        editorToken,
     }
   );
 
@@ -163,8 +197,13 @@ export async function getOrCreatePublicShareToken(
     error: fetchError,
   } = await supabase
     .from('journals')
-    .select('id, public_share_token')
-    .eq('id', journalId)
+    .select(
+      'id, public_share_token'
+    )
+    .eq(
+      'id',
+      journalId
+    )
     .single();
 
   if (fetchError) {
@@ -190,10 +229,16 @@ export async function getOrCreatePublicShareToken(
   } = await supabase
     .from('journals')
     .update({
-      public_share_token: crypto.randomUUID(),
+      public_share_token:
+        crypto.randomUUID(),
     })
-    .eq('id', journalId)
-    .select('public_share_token')
+    .eq(
+      'id',
+      journalId
+    )
+    .select(
+      'public_share_token'
+    )
     .single();
 
   if (error) {
@@ -216,8 +261,13 @@ export async function getPublicShareViewCount(
     error,
   } = await supabase
     .from('journals')
-    .select('public_share_views')
-    .eq('id', journalId)
+    .select(
+      'public_share_views'
+    )
+    .eq(
+      'id',
+      journalId
+    )
     .single();
 
   if (error) {
@@ -243,7 +293,8 @@ export async function recordPublicShareView(
   } = await supabase.rpc(
     'record_public_share_view',
     {
-      p_share_token: shareToken,
+      p_share_token:
+        shareToken,
     }
   );
 
