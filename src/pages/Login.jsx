@@ -18,7 +18,15 @@ export default function Login() {
     setSubmitting(true);
     try {
       await signIn(email, password);
-      navigate('/dashboard');
+
+      const pendingEditorToken =
+        localStorage.getItem('pendingEditorShareToken');
+
+      if (pendingEditorToken) {
+        navigate(`/collab/${pendingEditorToken}`);
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError('That email and password combination did not work.');
     } finally {

@@ -55,6 +55,12 @@ export default function Dashboard() {
 
 
   const [
+    sharedView,
+    setSharedView,
+  ] = useState('editor');
+
+
+  const [
     title,
     setTitle,
   ] = useState('');
@@ -1162,18 +1168,67 @@ export default function Dashboard() {
 
       <section>
 
-        <h2
-          className="
-            mb-4
-            font-mono
-            text-xs
-            uppercase
-            tracking-wide
-            text-ink-soft
-          "
+        <div
+          className="mb-4 flex flex-wrap items-center justify-between gap-3"
         >
-          Shared with you
-        </h2>
+
+          <h2
+            className="
+              font-mono
+              text-xs
+              uppercase
+              tracking-wide
+              text-ink-soft
+            "
+          >
+            Shared with you
+          </h2>
+
+
+          <div
+            className="
+              flex
+              items-center
+              gap-1
+              rounded-full
+              border
+              border-ink/10
+              bg-ink/5
+              p-1
+              font-mono
+              text-[10px]
+              uppercase
+              tracking-wide
+            "
+          >
+
+            <button
+              type="button"
+              onClick={() => setSharedView('editor')}
+              className={`rounded-full px-3 py-1.5 transition ${
+                sharedView === 'editor'
+                  ? 'bg-ink text-paper'
+                  : 'text-ink-soft hover:bg-ink/5'
+              }`}
+            >
+              Editors
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSharedView('viewer')}
+              className={`rounded-full px-3 py-1.5 transition ${
+                sharedView === 'viewer'
+                  ? 'bg-ink text-paper'
+                  : 'text-ink-soft hover:bg-ink/5'
+              }`}
+            >
+              Viewers
+            </button>
+
+          </div>
+
+        </div>
 
 
         {sharedLoading ? (
@@ -1182,42 +1237,61 @@ export default function Dashboard() {
             label="Checking shared journals"
           />
 
-        ) : sharedJournals?.length ? (
-
-          <div
-            className="
-              grid
-              grid-cols-1
-              gap-6
-              sm:grid-cols-2
-              md:grid-cols-3
-            "
-          >
-
-            {sharedJournals.map(
-              (j) => (
-
-                <JournalCard
-                  key={j.id}
-                  journal={j}
-                  readOnly
-                />
-
-              )
-            )}
-
-          </div>
-
         ) : (
 
-          <p
-            className="
-              font-body
-              text-ink-soft
-            "
-          >
-            Nothing shared with you yet.
-          </p>
+          (() => {
+            const filteredSharedJournals =
+              (sharedJournals ?? []).filter(
+                (j) =>
+                  (j.access_role || 'viewer') ===
+                  sharedView
+              );
+
+
+            if (!filteredSharedJournals.length) {
+              return (
+                <p
+                  className="
+                    font-body
+                    text-ink-soft
+                  "
+                >
+                  {sharedView === 'editor'
+                    ? 'No journals shared with you as an editor.'
+                    : 'No journals shared with you as a viewer.'}
+                </p>
+              );
+            }
+
+
+            return (
+              <div
+                className="
+                  grid
+                  grid-cols-1
+                  gap-6
+                  sm:grid-cols-2
+                  md:grid-cols-3
+                "
+              >
+
+                {filteredSharedJournals.map(
+                  (j) => (
+
+                    <JournalCard
+                      key={j.id}
+                      journal={j}
+                      readOnly={
+                        sharedView === 'viewer'
+                      }
+                    />
+
+                  )
+                )}
+
+              </div>
+            );
+          })()
 
         )}
 

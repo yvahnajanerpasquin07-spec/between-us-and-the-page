@@ -22,6 +22,10 @@ import {
 } from '../services/journalService';
 
 import {
+  getMyJournalAccess,
+} from '../services/shareService';
+
+import {
   useAsync,
 } from '../hooks/useAsync';
 
@@ -71,6 +75,14 @@ export default function Poem() {
     data: journal,
   } = useAsync(
     () => getJournal(journalId),
+    [journalId]
+  );
+
+
+  const {
+    data: journalAccess,
+  } = useAsync(
+    () => getMyJournalAccess(journalId),
     [journalId]
   );
 
@@ -214,6 +226,11 @@ export default function Poem() {
     journal &&
     user &&
     journal.owner_id === user.id;
+
+
+  const canEdit =
+    Boolean(isOwner) ||
+    journalAccess?.role === 'editor';
 
 
   /* =======================================================
@@ -586,7 +603,7 @@ export default function Poem() {
      EDITOR
   ======================================================= */
 
-  if (isOwner) {
+  if (canEdit) {
 
     return (
 

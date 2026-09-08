@@ -19,6 +19,10 @@ import {
 } from '../services/journalService';
 
 import {
+  getMyJournalAccess,
+} from '../services/shareService';
+
+import {
   createPoem,
   getPoemsForJournal,
   updatePoemWidgetBox,
@@ -691,6 +695,17 @@ export default function Journal() {
   );
 
 
+  const {
+    data: journalAccess,
+  } = useAsync(
+    () =>
+      isPublicView
+        ? Promise.resolve(null)
+        : getMyJournalAccess(journalId),
+    [journalId, isPublicView]
+  );
+
+
   /* =======================================================
      LOAD POEMS
   ======================================================= */
@@ -726,6 +741,11 @@ export default function Journal() {
     user &&
     journal.owner_id ===
       user.id;
+
+
+  const canEdit =
+    Boolean(isOwner) ||
+    journalAccess?.role === 'editor';
 
 
   /* =======================================================
@@ -1075,6 +1095,10 @@ const isOpen =
 
   async function handleNewPoem() {
 
+    if (!canEdit) {
+      return;
+    }
+
     try {
 
       const poem =
@@ -1191,7 +1215,7 @@ const isOpen =
     );
 
 
-    if (isOwner) {
+    if (canEdit) {
 
       updatePoemImageBox(
         poemId,
@@ -1576,6 +1600,10 @@ const isOpen =
               isOwner
             }
 
+            canEdit={
+              canEdit
+            }
+
             publicShareViews={
               activeJournal?.public_share_views ?? 0
             }
@@ -1633,6 +1661,10 @@ const isOpen =
                   isOwner
                 }
 
+                canEdit={
+                  canEdit
+                }
+
                 publicShareViews={
                   activeJournal?.public_share_views ?? 0
                 }
@@ -1678,7 +1710,7 @@ const isOpen =
                 }
 
                 isOwner={
-                  isOwner
+                  canEdit
                 }
 
                 onSaveImage={
@@ -1747,7 +1779,7 @@ const isOpen =
               }
 
               isOwner={
-                isOwner
+                canEdit
               }
 
               onSaveImage={
@@ -1840,7 +1872,7 @@ const isOpen =
               }
 
               isOwner={
-                isOwner
+                canEdit
               }
 
               onEditJournal={() =>
@@ -1901,7 +1933,7 @@ const isOpen =
                 }
 
                 isOwner={
-                  isOwner
+                  canEdit
                 }
 
                 onSaveImage={
@@ -2923,6 +2955,7 @@ function TocPage({
   globalStartIndex,
   poemsLoading,
   isOwner,
+  canEdit = false,
   publicShareViews = 0,
   onSelectPoem,
   onShare,
@@ -2956,10 +2989,12 @@ function TocPage({
         </div>
 
 
-        {isOwner &&
-          !isContinuation && (
+        {!isContinuation &&
+          (isOwner || canEdit) && (
 
             <div className="toc-actions">
+
+              {isOwner && (<>
 
               {/* VIEW COUNT */}
 
@@ -3057,8 +3092,11 @@ function TocPage({
               </button>
 
 
+              </>)}
+
               {/* NEW POEM */}
 
+              {canEdit && (
               <button
 
                 type="button"
@@ -3100,6 +3138,7 @@ function TocPage({
                 </svg>
 
               </button>
+              )}
 
             </div>
 

@@ -10,6 +10,7 @@ import Journal from './pages/Journal';
 import Poem from './pages/Poem';
 import PublicShareLanding from './pages/PublicShareLanding';
 import Explore from './pages/Explore';
+import CollaborativeShareLanding from './pages/CollaborativeShareLanding';
 
 export default function App() {
   return (
@@ -45,6 +46,12 @@ export default function App() {
                   <Poem />
                 </ProtectedRoute>
               }
+            />
+
+            {/* Collaborative editor link */}
+            <Route
+              path="/collab/:editorToken"
+              element={<CollaborativeShareLanding />}
             />
 
             {/* Public share landing page */}

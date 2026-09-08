@@ -7,11 +7,25 @@ import { supabase } from './supabase';
 
 export async function getMyJournals() {
   const {
+    data: userData,
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    throw userError;
+  }
+
+  if (!userData?.user) {
+    return [];
+  }
+
+  const {
     data,
     error,
   } = await supabase
     .from('journals')
     .select('*')
+    .eq('owner_id', userData.user.id)
     .order(
       'created_at',
       {
@@ -23,9 +37,8 @@ export async function getMyJournals() {
     throw error;
   }
 
-  return data;
+  return data ?? [];
 }
-
 
 /* =========================================================
    GET SAMPLE JOURNALS
@@ -66,11 +79,30 @@ export async function getSampleJournals() {
 
 export async function getSharedJournals() {
   const {
-    data,
-    error,
+    data: userData,
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    throw userError;
+  }
+
+  if (!userData?.user) {
+    return [];
+  }
+
+  /*
+    Get the access records first.
+    This makes sure shared journals are found directly from
+    the logged-in user's journal_access records.
+  */
+  const {
+    data: accessRows,
+    error: accessError,
   } = await supabase
-    .from('shared_journals')
-    .select('*')
+    .from('journal_access')
+    .select('id, journal_id, viewer_id, role, created_at')
+    .eq('viewer_id', userData.user.id)
     .order(
       'created_at',
       {
@@ -78,13 +110,61 @@ export async function getSharedJournals() {
       }
     );
 
-  if (error) {
-    throw error;
+  if (accessError) {
+    throw accessError;
   }
 
-  return data;
-}
+  if (!accessRows?.length) {
+    return [];
+  }
 
+  /*
+    Load the journal records using the journal ids from the
+    access table. The new RLS policy allows shared users to read
+    journals they have been given access to.
+  */
+  const journalIds = accessRows.map(
+    (row) => row.journal_id
+  );
+
+  const {
+    data: journals,
+    error: journalsError,
+  } = await supabase
+    .from('journals')
+    .select('*')
+    .in('id', journalIds);
+
+  if (journalsError) {
+    throw journalsError;
+  }
+
+  const journalMap = new Map(
+    (journals ?? []).map((journal) => [
+      journal.id,
+      journal,
+    ])
+  );
+
+  return accessRows
+    .map((share) => {
+      const journal = journalMap.get(
+        share.journal_id
+      );
+
+      if (!journal) {
+        return null;
+      }
+
+      return {
+        ...journal,
+        access_id: share.id,
+        access_role: share.role || 'viewer',
+        shared_at: share.created_at,
+      };
+    })
+    .filter(Boolean);
+}
 
 /* =========================================================
    GET ONE JOURNAL
