@@ -73,6 +73,22 @@ export default function Dashboard() {
   ] = useState('editor');
 
 
+  /*
+    ADMIN ONLY
+
+    Controls which library view the admin is currently
+    looking at.
+
+    "library"   = normal journals
+    "featured"  = featured/sample journals
+  */
+
+  const [
+    adminLibraryView,
+    setAdminLibraryView,
+  ] = useState('library');
+
+
   const [
     title,
     setTitle,
@@ -211,6 +227,44 @@ export default function Dashboard() {
     };
 
   }, []);
+
+
+  /* =======================================================
+     SEPARATE ADMIN JOURNAL VIEWS
+     -------------------------------------------------------
+     This separation is ONLY used for admins.
+
+     Normal users continue to see all journals returned
+     from getMyJournals() exactly as before.
+  ======================================================= */
+
+  const normalJournals =
+    (journals ?? []).filter(
+      (journal) =>
+        journal.is_sample !== true
+    );
+
+
+  const featuredJournals =
+    (journals ?? []).filter(
+      (journal) =>
+        journal.is_sample === true
+    );
+
+
+  /*
+    For admins, choose the journals displayed by the
+    selected library view.
+
+    For normal users, use the original journal list.
+  */
+
+  const displayedJournals =
+    isAdmin
+      ? adminLibraryView === 'featured'
+        ? featuredJournals
+        : normalJournals
+      : (journals ?? []);
 
 
   /* =======================================================
@@ -680,75 +734,75 @@ export default function Dashboard() {
 
           {isAdmin && (
 
-          <label
-            htmlFor="sample-journal"
-            className="
-              flex
-              cursor-pointer
-              items-start
-              gap-3
-              rounded-lg
-              border
-              border-ink/10
-              bg-ink/[0.02]
-              p-4
-              transition
-              hover:border-ink/20
-            "
-          >
-
-            <input
-              id="sample-journal"
-              type="checkbox"
-              checked={isSample}
-              onChange={(e) =>
-                setIsSample(
-                  e.target.checked
-                )
-              }
+            <label
+              htmlFor="sample-journal"
               className="
-                mt-1
-                h-4
-                w-4
-                accent-ink
+                flex
+                cursor-pointer
+                items-start
+                gap-3
+                rounded-lg
+                border
+                border-ink/10
+                bg-ink/[0.02]
+                p-4
+                transition
+                hover:border-ink/20
               "
-            />
+            >
 
-            <span>
-
-              <span
-                className="
-                  block
-                  font-mono
-                  text-xs
-                  uppercase
-                  tracking-wide
-                  text-ink
-                "
-              >
-                Feature as a sample journal
-              </span>
-
-              <span
+              <input
+                id="sample-journal"
+                type="checkbox"
+                checked={isSample}
+                onChange={(e) =>
+                  setIsSample(
+                    e.target.checked
+                  )
+                }
                 className="
                   mt-1
-                  block
-                  font-body
-                  text-xs
-                  leading-5
-                  text-ink-soft
+                  h-4
+                  w-4
+                  accent-ink
                 "
-              >
-                This journal will appear in Explore as a
-                public, view-only sample work.
+              />
+
+              <span>
+
+                <span
+                  className="
+                    block
+                    font-mono
+                    text-xs
+                    uppercase
+                    tracking-wide
+                    text-ink
+                  "
+                >
+                  Feature as a sample journal
+                </span>
+
+                <span
+                  className="
+                    mt-1
+                    block
+                    font-body
+                    text-xs
+                    leading-5
+                    text-ink-soft
+                  "
+                >
+                  This journal will appear in Explore as a
+                  public, view-only sample work.
+                </span>
+
               </span>
 
-            </span>
-
-          </label>
-
+            </label>
 
           )}
+
 
           {/* =================================================
               FRONT COVER IMAGE
@@ -1060,7 +1114,15 @@ export default function Dashboard() {
 
 
       {/* =====================================================
-          YOUR JOURNALS
+          LIBRARY / FEATURED BOOKS VIEW
+          -----------------------------------------------------
+          ADMIN ONLY
+
+          Admins can switch between:
+          - Your library
+          - Featured books
+
+          Normal users do not see this switch.
       ===================================================== */}
 
       <section className="mb-12">
@@ -1069,8 +1131,10 @@ export default function Dashboard() {
           className="
             mb-4
             flex
+            flex-wrap
             items-center
             justify-between
+            gap-3
           "
         >
 
@@ -1083,96 +1147,192 @@ export default function Dashboard() {
               text-ink-soft
             "
           >
-            Your journals
+            {isAdmin
+              ? adminLibraryView === 'featured'
+                ? 'Featured books'
+                : 'Your journals'
+              : 'Your journals'}
           </h2>
 
 
           {/* =================================================
-              MOBILE BOOK LAYOUT TOGGLE
+              ADMIN ONLY VIEW SWITCH
           ================================================= */}
 
-          <button
-            type="button"
-            onClick={() =>
-              setCompactMobileView(
-                (value) => !value
-              )
-            }
-            className="
-              flex
-              h-8
-              w-8
-              items-center
-              justify-center
-              rounded-md
-              border
-              border-ink/15
-              bg-transparent
-              text-ink-soft
-              transition
-              hover:border-ink/30
-              hover:bg-ink/5
-              md:hidden
-            "
-            aria-label={
-              compactMobileView
-                ? 'Show larger journal covers'
-                : 'Show compact journal covers'
-            }
-            title={
-              compactMobileView
-                ? 'Larger view'
-                : 'Compact view'
-            }
-          >
+          {isAdmin && (
 
-            {compactMobileView ? (
+            <div
+              className="
+                flex
+                items-center
+                gap-1
+                rounded-full
+                border
+                border-ink/10
+                bg-ink/5
+                p-1
+                font-mono
+                text-[10px]
+                uppercase
+                tracking-wide
+              "
+            >
 
-              <svg
-                viewBox="0 0 24 24"
-                className="h-[17px] w-[17px]"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+              <button
+                type="button"
+                onClick={() =>
+                  setAdminLibraryView(
+                    'library'
+                  )
+                }
+                className={`
+                  rounded-full
+                  px-3
+                  py-1.5
+                  transition
+                  ${
+                    adminLibraryView ===
+                    'library'
+                      ? 'bg-ink text-paper'
+                      : 'text-ink-soft hover:bg-ink/5'
+                  }
+                `}
               >
-                <rect
-                  x="4"
-                  y="4"
-                  width="16"
-                  height="16"
-                  rx="1.5"
-                />
-                <path d="M4 9h16" />
-                <path d="M9 4v16" />
-              </svg>
+                Your library
+              </button>
 
-            ) : (
 
-              <svg
-                viewBox="0 0 24 24"
-                className="h-[17px] w-[17px]"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+              <button
+                type="button"
+                onClick={() =>
+                  setAdminLibraryView(
+                    'featured'
+                  )
+                }
+                className={`
+                  rounded-full
+                  px-3
+                  py-1.5
+                  transition
+                  ${
+                    adminLibraryView ===
+                    'featured'
+                      ? 'bg-ink text-paper'
+                      : 'text-ink-soft hover:bg-ink/5'
+                  }
+                `}
               >
-                <rect
-                  x="4"
-                  y="3"
-                  width="16"
-                  height="18"
-                  rx="1.5"
-                />
-                <path d="M8 3v18" />
-                <path d="M8 7h8" />
-              </svg>
+                Featured books
+              </button>
 
-            )}
+            </div>
 
-          </button>
+          )}
+
+
+          {/* =================================================
+              MOBILE BOOK LAYOUT TOGGLE
+              -------------------------------------------------
+              Still available for the normal library view.
+          ================================================= */}
+
+          {(
+            !isAdmin ||
+            adminLibraryView === 'library'
+          ) && (
+
+            <button
+              type="button"
+              onClick={() =>
+                setCompactMobileView(
+                  (value) => !value
+                )
+              }
+              className="
+                flex
+                h-8
+                w-8
+                items-center
+                justify-center
+                rounded-md
+                border
+                border-ink/15
+                bg-transparent
+                text-ink-soft
+                transition
+                hover:border-ink/30
+                hover:bg-ink/5
+                md:hidden
+              "
+              aria-label={
+                compactMobileView
+                  ? 'Show larger journal covers'
+                  : 'Show compact journal covers'
+              }
+              title={
+                compactMobileView
+                  ? 'Larger view'
+                  : 'Compact view'
+              }
+            >
+
+              {compactMobileView ? (
+
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-[17px] w-[17px]"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+
+                  <rect
+                    x="4"
+                    y="4"
+                    width="16"
+                    height="16"
+                    rx="1.5"
+                  />
+
+                  <path d="M4 9h16" />
+
+                  <path d="M9 4v16" />
+
+                </svg>
+
+              ) : (
+
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-[17px] w-[17px]"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+
+                  <rect
+                    x="4"
+                    y="3"
+                    width="16"
+                    height="18"
+                    rx="1.5"
+                  />
+
+                  <path d="M8 3v18" />
+
+                  <path d="M8 7h8" />
+
+                </svg>
+
+              )}
+
+            </button>
+
+          )}
 
         </div>
 
@@ -1183,7 +1343,7 @@ export default function Dashboard() {
             label="Opening your library"
           />
 
-        ) : journals?.length ? (
+        ) : displayedJournals.length ? (
 
           <div
             className={`
@@ -1192,21 +1352,29 @@ export default function Dashboard() {
               sm:grid-cols-2
               md:grid-cols-3
               ${
-                compactMobileView
+                compactMobileView &&
+                (
+                  !isAdmin ||
+                  adminLibraryView === 'library'
+                )
                   ? 'grid-cols-3 gap-3'
                   : 'grid-cols-1'
               }
             `}
           >
 
-            {journals.map(
+            {displayedJournals.map(
               (j) => (
 
                 <JournalCard
                   key={j.id}
                   journal={j}
                   compactMobile={
-                    compactMobileView
+                    compactMobileView &&
+                    (
+                      !isAdmin ||
+                      adminLibraryView === 'library'
+                    )
                   }
                 />
 
@@ -1223,7 +1391,10 @@ export default function Dashboard() {
               text-ink-soft
             "
           >
-            No journals yet — start your first one above.
+            {isAdmin &&
+            adminLibraryView === 'featured'
+              ? 'No featured books yet.'
+              : 'No journals yet — start your first one above.'}
           </p>
 
         )}
@@ -1238,7 +1409,14 @@ export default function Dashboard() {
       <section>
 
         <div
-          className="mb-4 flex flex-wrap items-center justify-between gap-3"
+          className="
+            mb-4
+            flex
+            flex-wrap
+            items-center
+            justify-between
+            gap-3
+          "
         >
 
           <h2
@@ -1273,24 +1451,41 @@ export default function Dashboard() {
 
             <button
               type="button"
-              onClick={() => setSharedView('editor')}
-              className={`rounded-full px-3 py-1.5 transition ${
-                sharedView === 'editor'
-                  ? 'bg-ink text-paper'
-                  : 'text-ink-soft hover:bg-ink/5'
-              }`}
+              onClick={() =>
+                setSharedView('editor')
+              }
+              className={`
+                rounded-full
+                px-3
+                py-1.5
+                transition
+                ${
+                  sharedView === 'editor'
+                    ? 'bg-ink text-paper'
+                    : 'text-ink-soft hover:bg-ink/5'
+                }
+              `}
             >
               Editors
             </button>
 
+
             <button
               type="button"
-              onClick={() => setSharedView('viewer')}
-              className={`rounded-full px-3 py-1.5 transition ${
-                sharedView === 'viewer'
-                  ? 'bg-ink text-paper'
-                  : 'text-ink-soft hover:bg-ink/5'
-              }`}
+              onClick={() =>
+                setSharedView('viewer')
+              }
+              className={`
+                rounded-full
+                px-3
+                py-1.5
+                transition
+                ${
+                  sharedView === 'viewer'
+                    ? 'bg-ink text-paper'
+                    : 'text-ink-soft hover:bg-ink/5'
+                }
+              `}
             >
               Viewers
             </button>
@@ -1309,6 +1504,7 @@ export default function Dashboard() {
         ) : (
 
           (() => {
+
             const filteredSharedJournals =
               (sharedJournals ?? []).filter(
                 (j) =>
@@ -1318,7 +1514,9 @@ export default function Dashboard() {
 
 
             if (!filteredSharedJournals.length) {
+
               return (
+
                 <p
                   className="
                     font-body
@@ -1329,11 +1527,14 @@ export default function Dashboard() {
                     ? 'No journals shared with you as an editor.'
                     : 'No journals shared with you as a viewer.'}
                 </p>
+
               );
+
             }
 
 
             return (
+
               <div
                 className="
                   grid
@@ -1359,19 +1560,30 @@ export default function Dashboard() {
                         }
                       />
 
+
                       {j.access_id && (
 
                         <button
                           type="button"
                           onClick={(e) => {
+
                             e.stopPropagation();
 
-                            if (!removingSharedId) {
-                              setSharedJournalToRemove(j);
+
+                            if (
+                              !removingSharedId
+                            ) {
+
+                              setSharedJournalToRemove(
+                                j
+                              );
+
                             }
+
                           }}
                           disabled={
-                            removingSharedId === j.access_id
+                            removingSharedId ===
+                            j.access_id
                           }
                           className="
                             absolute
@@ -1400,7 +1612,8 @@ export default function Dashboard() {
                           title="Remove from Shared with you"
                         >
 
-                          {removingSharedId === j.access_id ? (
+                          {removingSharedId ===
+                          j.access_id ? (
 
                             <svg
                               viewBox="0 0 24 24"
@@ -1411,13 +1624,18 @@ export default function Dashboard() {
                               strokeLinecap="round"
                               strokeLinejoin="round"
                             >
+
                               <circle
                                 cx="12"
                                 cy="12"
                                 r="9"
                                 strokeOpacity="0.25"
                               />
-                              <path d="M21 12a9 9 0 0 0-9-9" />
+
+                              <path
+                                d="M21 12a9 9 0 0 0-9-9"
+                              />
+
                             </svg>
 
                           ) : (
@@ -1431,8 +1649,11 @@ export default function Dashboard() {
                               strokeLinecap="round"
                               strokeLinejoin="round"
                             >
+
                               <path d="M6 6l12 12" />
+
                               <path d="M18 6L6 18" />
+
                             </svg>
 
                           )}
@@ -1447,49 +1668,130 @@ export default function Dashboard() {
                 )}
 
               </div>
+
             );
+
           })()
 
         )}
 
       </section>
 
+
+      {/* =====================================================
+          REMOVE SHARED JOURNAL CONFIRMATION POPUP
+      ===================================================== */}
+
       {sharedJournalToRemove && (
+
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 px-4 backdrop-blur-sm"
+          className="
+            fixed
+            inset-0
+            z-50
+            flex
+            items-center
+            justify-center
+            bg-ink/30
+            px-4
+            backdrop-blur-sm
+          "
           onClick={() => {
+
             if (!removingSharedId) {
+
               setSharedJournalToRemove(null);
+
             }
+
           }}
         >
+
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="remove-shared-title"
-            className="w-full max-w-md rounded-2xl border border-ink/10 bg-paper p-6 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
+            className="
+              w-full
+              max-w-md
+              rounded-2xl
+              border
+              border-ink/10
+              bg-paper
+              p-6
+              shadow-xl
+            "
+            onClick={(e) =>
+              e.stopPropagation()
+            }
           >
-            <div className="mb-5 flex items-start justify-between gap-4">
+
+            <div
+              className="
+                mb-5
+                flex
+                items-start
+                justify-between
+                gap-4
+              "
+            >
+
               <div>
+
                 <h2
                   id="remove-shared-title"
-                  className="font-display text-xl text-ink"
+                  className="
+                    font-display
+                    text-xl
+                    text-ink
+                  "
                 >
                   Remove shared journal?
                 </h2>
-                <p className="mt-2 font-body text-sm leading-6 text-ink-soft">
-                  Are you sure you want to remove this book from Shared with you?
+
+
+                <p
+                  className="
+                    mt-2
+                    font-body
+                    text-sm
+                    leading-6
+                    text-ink-soft
+                  "
+                >
+                  Are you sure you want to remove this
+                  book from Shared with you?
                 </p>
+
               </div>
+
 
               <button
                 type="button"
-                onClick={() => setSharedJournalToRemove(null)}
-                disabled={!!removingSharedId}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-soft transition hover:bg-ink/5 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() =>
+                  setSharedJournalToRemove(null)
+                }
+                disabled={
+                  !!removingSharedId
+                }
+                className="
+                  flex
+                  h-8
+                  w-8
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-full
+                  text-ink-soft
+                  transition
+                  hover:bg-ink/5
+                  hover:text-ink
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
+                "
                 aria-label="Close"
               >
+
                 <svg
                   viewBox="0 0 24 24"
                   className="h-4 w-4"
@@ -1498,47 +1800,147 @@ export default function Dashboard() {
                   strokeWidth="1.7"
                   strokeLinecap="round"
                 >
+
                   <path d="M6 6l12 12" />
+
                   <path d="M18 6L6 18" />
+
                 </svg>
+
               </button>
+
             </div>
 
-            <div className="mb-6 rounded-xl border border-ink/10 bg-ink/[0.03] p-4">
-              <p className="font-mono text-xs uppercase tracking-wide text-ink-soft">
-                {sharedJournalToRemove.title || 'Untitled journal'}
+
+            <div
+              className="
+                mb-6
+                rounded-xl
+                border
+                border-ink/10
+                bg-ink/[0.03]
+                p-4
+              "
+            >
+
+              <p
+                className="
+                  font-mono
+                  text-xs
+                  uppercase
+                  tracking-wide
+                  text-ink-soft
+                "
+              >
+                {sharedJournalToRemove.title ||
+                  'Untitled journal'}
               </p>
-              <p className="mt-2 font-body text-xs leading-5 text-ink-soft">
-                This only removes your access. The owner's original journal and its contents will not be deleted.
+
+
+              <p
+                className="
+                  mt-2
+                  font-body
+                  text-xs
+                  leading-5
+                  text-ink-soft
+                "
+              >
+                This only removes your access. The
+                owner's original journal and its contents
+                will not be deleted.
               </p>
+
             </div>
 
-            <div className="flex justify-end gap-3">
+
+            <div
+              className="
+                flex
+                justify-end
+                gap-3
+              "
+            >
+
               <button
                 type="button"
-                onClick={() => setSharedJournalToRemove(null)}
-                disabled={!!removingSharedId}
-                className="rounded-lg border border-ink/15 px-4 py-2.5 font-mono text-xs uppercase tracking-wide text-ink-soft transition hover:border-ink/30 hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() =>
+                  setSharedJournalToRemove(null)
+                }
+                disabled={
+                  !!removingSharedId
+                }
+                className="
+                  rounded-lg
+                  border
+                  border-ink/15
+                  px-4
+                  py-2.5
+                  font-mono
+                  text-xs
+                  uppercase
+                  tracking-wide
+                  text-ink-soft
+                  transition
+                  hover:border-ink/30
+                  hover:bg-ink/5
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
+                "
               >
                 Cancel
               </button>
 
+
               <button
                 type="button"
                 onClick={async () => {
-                  if (sharedJournalToRemove?.access_id) {
-                    await handleRemoveShared(sharedJournalToRemove.access_id);
-                    setSharedJournalToRemove(null);
+
+                  if (
+                    sharedJournalToRemove?.access_id
+                  ) {
+
+                    await handleRemoveShared(
+                      sharedJournalToRemove.access_id
+                    );
+
+                    setSharedJournalToRemove(
+                      null
+                    );
+
                   }
+
                 }}
-                disabled={!!removingSharedId}
-                className="rounded-lg bg-ink px-4 py-2.5 font-mono text-xs uppercase tracking-wide text-paper transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={
+                  !!removingSharedId
+                }
+                className="
+                  rounded-lg
+                  bg-ink
+                  px-4
+                  py-2.5
+                  font-mono
+                  text-xs
+                  uppercase
+                  tracking-wide
+                  text-paper
+                  transition
+                  hover:opacity-90
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
+                "
               >
-                {removingSharedId ? 'Removing…' : 'Remove book'}
+                {removingSharedId
+                  ? 'Removing…'
+                  : 'Remove book'}
               </button>
+
             </div>
+
           </div>
+
         </div>
+
       )}
 
     </div>
