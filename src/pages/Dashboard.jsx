@@ -1676,19 +1676,122 @@ export default function Dashboard() {
 
         ) : (
 
-          <p
+          <div
             className="
-              font-body
-              text-ink-soft
+              rounded-xl
+              border
+              border-ink/15
+              bg-ink/[0.02]
+              px-6
+              py-10
+              text-center
             "
           >
-            {journalSearch.trim()
-              ? 'No journals match your search.'
-              : isAdmin &&
+
+            <div
+              className="
+                mx-auto
+                mb-4
+                flex
+                h-12
+                w-12
+                items-center
+                justify-center
+                rounded-full
+                border
+                border-ink/15
+                text-ink-soft
+              "
+            >
+
+              {journalSearch.trim() ? (
+
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-4-4" />
+                </svg>
+
+              ) : (
+
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z" />
+                  <path d="M8 8h8" />
+                  <path d="M8 12h8" />
+                  <path d="M8 16h5" />
+                </svg>
+
+              )}
+
+            </div>
+
+            <h3
+              className="
+                font-display
+                text-xl
+                text-ink
+              "
+            >
+              {journalSearch.trim()
+                ? 'No journals found'
+                : isAdmin &&
+                  adminLibraryView === 'featured'
+                  ? 'Your featured shelf is empty'
+                  : 'Your shelf is waiting for its first story'}
+            </h3>
+
+            <p
+              className="
+                mx-auto
+                mt-2
+                max-w-md
+                font-body
+                text-sm
+                leading-6
+                text-ink-soft
+              "
+            >
+              {journalSearch.trim()
+                ? 'Try a different title, description, or author name.'
+                : isAdmin &&
+                  adminLibraryView === 'featured'
+                  ? 'Create a sample journal and feature it here for readers to discover.'
+                  : 'Create your first journal and start filling it with words, memories, and ideas.'}
+            </p>
+
+            {!journalSearch.trim() && (
+
+              <Button
+                type="button"
+                onClick={() =>
+                  setShowForm(true)
+                }
+                className="mt-5"
+              >
+                {isAdmin &&
                 adminLibraryView === 'featured'
-                ? 'No featured books yet.'
-                : 'No journals yet — start your first one above.'}
-          </p>
+                  ? 'Create sample journal'
+                  : 'Create your first journal'}
+              </Button>
+
+            )}
+
+          </div>
 
         )}
 
@@ -1810,16 +1913,79 @@ export default function Dashboard() {
 
               return (
 
-                <p
+                <div
                   className="
-                    font-body
-                    text-ink-soft
+                    rounded-xl
+                    border
+                    border-ink/15
+                    bg-ink/[0.02]
+                    px-6
+                    py-10
+                    text-center
                   "
                 >
-                  {sharedView === 'editor'
-                    ? 'No journals shared with you as an editor.'
-                    : 'No journals shared with you as a viewer.'}
-                </p>
+
+                  <div
+                    className="
+                      mx-auto
+                      mb-4
+                      flex
+                      h-12
+                      w-12
+                      items-center
+                      justify-center
+                      rounded-full
+                      border
+                      border-ink/15
+                      text-ink-soft
+                    "
+                  >
+
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
+                      <circle cx="9.5" cy="7" r="4" />
+                      <path d="M17 11l2 2 4-4" />
+                    </svg>
+
+                  </div>
+
+                  <h3
+                    className="
+                      font-display
+                      text-xl
+                      text-ink
+                    "
+                  >
+                    {sharedView === 'editor'
+                      ? 'No shared journals to edit'
+                      : 'No shared journals to read'}
+                  </h3>
+
+                  <p
+                    className="
+                      mx-auto
+                      mt-2
+                      max-w-md
+                      font-body
+                      text-sm
+                      leading-6
+                      text-ink-soft
+                    "
+                  >
+                    {sharedView === 'editor'
+                      ? 'Journals shared with you as an editor will appear here.'
+                      : 'Journals shared with you as a viewer will appear here.'}
+                  </p>
+
+                </div>
 
               );
 
