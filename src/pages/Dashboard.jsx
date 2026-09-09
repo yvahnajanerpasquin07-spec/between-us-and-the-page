@@ -74,6 +74,32 @@ export default function Dashboard() {
 
 
   /*
+    JOURNAL SEARCH + SORTING
+    -------------------------------------------------------
+    These controls only affect the journal library shown
+    above. They do not change the journals stored in
+    Supabase or the Shared with you section.
+  */
+
+  const [
+    journalSearch,
+    setJournalSearch,
+  ] = useState('');
+
+
+  const [
+    showJournalSearch,
+    setShowJournalSearch,
+  ] = useState(false);
+
+
+  const [
+    journalSort,
+    setJournalSort,
+  ] = useState('recent');
+
+
+  /*
     ADMIN ONLY
 
     Controls which library view the admin is currently
@@ -265,6 +291,103 @@ export default function Dashboard() {
         ? featuredJournals
         : normalJournals
       : (journals ?? []);
+
+
+  /* =======================================================
+     FILTER + SORT JOURNALS
+  ======================================================= */
+
+  const normalizedJournalSearch =
+    journalSearch
+      .trim()
+      .toLowerCase();
+
+
+  const filteredAndSortedJournals =
+    [...displayedJournals]
+      .filter((journal) => {
+
+        if (!normalizedJournalSearch) {
+          return true;
+        }
+
+
+        const searchableText = [
+          journal.title,
+          journal.description,
+          journal.author_name,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+
+        return searchableText.includes(
+          normalizedJournalSearch
+        );
+
+      })
+      .sort((a, b) => {
+
+        if (journalSort === 'az') {
+
+          return (a.title || 'Untitled journal')
+            .localeCompare(
+              b.title || 'Untitled journal',
+              undefined,
+              { sensitivity: 'base' }
+            );
+
+        }
+
+
+        if (journalSort === 'za') {
+
+          return (b.title || 'Untitled journal')
+            .localeCompare(
+              a.title || 'Untitled journal',
+              undefined,
+              { sensitivity: 'base' }
+            );
+
+        }
+
+
+        if (journalSort === 'oldest') {
+
+          return (
+            new Date(a.created_at || 0).getTime() -
+            new Date(b.created_at || 0).getTime()
+          );
+
+        }
+
+
+        if (journalSort === 'newest') {
+
+          return (
+            new Date(b.created_at || 0).getTime() -
+            new Date(a.created_at || 0).getTime()
+          );
+
+        }
+
+
+        /*
+          Default: recently updated.
+          Fall back to created_at for older records.
+        */
+
+        return (
+          new Date(
+            b.updated_at || b.created_at || 0
+          ).getTime() -
+          new Date(
+            a.updated_at || a.created_at || 0
+          ).getTime()
+        );
+
+      });
 
 
   /* =======================================================
@@ -1231,6 +1354,174 @@ export default function Dashboard() {
 
 
           {/* =================================================
+              JOURNAL SEARCH + SORTING
+          ================================================= */}
+
+          <div
+            className="
+              flex
+              w-full
+              items-center
+              justify-end
+              gap-2
+            "
+          >
+
+            {showJournalSearch && (
+
+              <div
+                className="
+                  relative
+                  w-full
+                  sm:w-64
+                "
+              >
+
+                <svg
+                  viewBox="0 0 24 24"
+                  className="
+                    pointer-events-none
+                    absolute
+                    left-3
+                    top-1/2
+                    h-4
+                    w-4
+                    -translate-y-1/2
+                    text-ink-soft
+                  "
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-4-4" />
+                </svg>
+
+                <input
+                  type="search"
+                  value={journalSearch}
+                  onChange={(e) =>
+                    setJournalSearch(
+                      e.target.value
+                    )
+                  }
+                  placeholder="Search journals..."
+                  aria-label="Search journals"
+                  autoFocus
+                  className="
+                    h-9
+                    w-full
+                    rounded-md
+                    border
+                    border-ink/25
+                    bg-transparent
+                    pl-9
+                    pr-3
+                    font-body
+                    text-sm
+                    text-ink
+                    outline-none
+                    transition
+                    placeholder:text-ink-soft
+                    focus:border-ink/50
+                    focus:ring-0
+                  "
+                />
+
+              </div>
+
+            )}
+
+
+            <button
+              type="button"
+              onClick={() =>
+                setShowJournalSearch(
+                  (value) => !value
+                )
+              }
+              aria-label={
+                showJournalSearch
+                  ? 'Close journal search'
+                  : 'Search journals'
+              }
+              title={
+                showJournalSearch
+                  ? 'Close search'
+                  : 'Search journals'
+              }
+              className="
+                flex
+                h-9
+                w-9
+                shrink-0
+                items-center
+                justify-center
+                rounded-md
+                border
+                border-ink/25
+                bg-transparent
+                text-ink
+                transition
+                hover:border-ink/45
+                hover:bg-ink/5
+              "
+            >
+
+              <svg
+                viewBox="0 0 24 24"
+                className="h-[17px] w-[17px]"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-4-4" />
+              </svg>
+
+            </button>
+
+
+            <select
+              value={journalSort}
+              onChange={(e) =>
+                setJournalSort(
+                  e.target.value
+                )
+              }
+              aria-label="Sort journals"
+              className="
+                h-9
+                cursor-pointer
+                rounded-md
+                border
+                border-ink/25
+                bg-transparent
+                px-3
+                font-body
+                text-sm
+                text-ink
+                outline-none
+                transition
+                hover:border-ink/45
+                focus:border-ink/50
+              "
+            >
+              <option value="recent">Recently updated</option>
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="az">A–Z</option>
+              <option value="za">Z–A</option>
+            </select>
+
+          </div>
+
+
+          {/* =================================================
               MOBILE BOOK LAYOUT TOGGLE
               -------------------------------------------------
               Still available for the normal library view.
@@ -1343,7 +1634,7 @@ export default function Dashboard() {
             label="Opening your library"
           />
 
-        ) : displayedJournals.length ? (
+        ) : filteredAndSortedJournals.length ? (
 
           <div
             className={`
@@ -1363,7 +1654,7 @@ export default function Dashboard() {
             `}
           >
 
-            {displayedJournals.map(
+            {filteredAndSortedJournals.map(
               (j) => (
 
                 <JournalCard
@@ -1391,10 +1682,12 @@ export default function Dashboard() {
               text-ink-soft
             "
           >
-            {isAdmin &&
-            adminLibraryView === 'featured'
-              ? 'No featured books yet.'
-              : 'No journals yet — start your first one above.'}
+            {journalSearch.trim()
+              ? 'No journals match your search.'
+              : isAdmin &&
+                adminLibraryView === 'featured'
+                ? 'No featured books yet.'
+                : 'No journals yet — start your first one above.'}
           </p>
 
         )}
