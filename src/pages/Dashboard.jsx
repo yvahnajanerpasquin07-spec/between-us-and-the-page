@@ -1261,21 +1261,45 @@ export default function Dashboard() {
           "
         >
 
-          <h2
-            className="
-              font-mono
-              text-xs
-              uppercase
-              tracking-wide
-              text-ink-soft
-            "
-          >
-            {isAdmin
-              ? adminLibraryView === 'featured'
-                ? 'Featured books'
-                : 'Your journals'
-              : 'Your journals'}
-          </h2>
+          <div className="flex items-center gap-2">
+
+            <h2
+              className="
+                font-mono
+                text-xs
+                uppercase
+                tracking-wide
+                text-ink-soft
+              "
+            >
+              {isAdmin
+                ? adminLibraryView === 'featured'
+                  ? 'Featured books'
+                  : 'Your journals'
+                : 'Your journals'}
+            </h2>
+
+
+            <span
+              className="
+                font-mono
+                text-[10px]
+                uppercase
+                tracking-wide
+                text-ink-soft/70
+              "
+            >
+              · {filteredAndSortedJournals.length}{' '}
+              {filteredAndSortedJournals.length === 1
+                ? adminLibraryView === 'featured' && isAdmin
+                  ? 'book'
+                  : 'journal'
+                : adminLibraryView === 'featured' && isAdmin
+                  ? 'books'
+                  : 'journals'}
+            </span>
+
+          </div>
 
 
           {/* =================================================
