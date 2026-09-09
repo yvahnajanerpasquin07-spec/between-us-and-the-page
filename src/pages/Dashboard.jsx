@@ -760,7 +760,7 @@ export default function Dashboard() {
 
   return (
 
-    <div className="mx-auto max-w-5xl px-6 py-12">
+    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-12">
 
       <div className="mb-8 flex items-center justify-between">
 
@@ -1248,16 +1248,18 @@ export default function Dashboard() {
           Normal users do not see this switch.
       ===================================================== */}
 
-      <section className="mb-12">
+      <section className="mb-10 sm:mb-12">
 
         <div
           className="
-            mb-4
+            mb-3
             flex
             flex-wrap
             items-center
             justify-between
-            gap-3
+            gap-2
+            sm:mb-4
+            sm:gap-3
           "
         >
 
@@ -1390,6 +1392,115 @@ export default function Dashboard() {
               gap-2
             "
           >
+
+          {/* =================================================
+              MOBILE BOOK LAYOUT TOGGLE
+              -------------------------------------------------
+              Still available for the normal library view.
+          ================================================= */}
+
+          {(
+            !isAdmin ||
+            adminLibraryView === 'library'
+          ) && (
+
+            <button
+              type="button"
+              onClick={() =>
+                setCompactMobileView(
+                  (value) => !value
+                )
+              }
+              className="
+                flex
+                h-9
+                w-9
+                mr-auto
+                items-center
+                justify-center
+                rounded-md
+                border
+                border-ink/25
+                bg-transparent
+                text-ink-soft
+                transition
+                hover:border-ink/30
+                hover:bg-ink/5
+                md:hidden
+              "
+              aria-label={
+                compactMobileView
+                  ? 'Show larger journal covers'
+                  : 'Show compact journal covers'
+              }
+              title={
+                compactMobileView
+                  ? 'Larger view'
+                  : 'Compact view'
+              }
+            >
+
+              {compactMobileView ? (
+
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-[17px] w-[17px]"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+
+                  <rect
+                    x="4"
+                    y="4"
+                    width="16"
+                    height="16"
+                    rx="1.5"
+                  />
+
+                  <path d="M4 9h16" />
+
+                  <path d="M9 4v16" />
+
+                </svg>
+
+              ) : (
+
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-[17px] w-[17px]"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+
+                  <rect
+                    x="4"
+                    y="3"
+                    width="16"
+                    height="18"
+                    rx="1.5"
+                  />
+
+                  <path d="M8 3v18" />
+
+                  <path d="M8 7h8" />
+
+                </svg>
+
+              )}
+
+            </button>
+
+          )}
+
+
+
+
 
             {showJournalSearch && (
 
@@ -1542,112 +1653,9 @@ export default function Dashboard() {
               <option value="za">Z–A</option>
             </select>
 
+
           </div>
 
-
-          {/* =================================================
-              MOBILE BOOK LAYOUT TOGGLE
-              -------------------------------------------------
-              Still available for the normal library view.
-          ================================================= */}
-
-          {(
-            !isAdmin ||
-            adminLibraryView === 'library'
-          ) && (
-
-            <button
-              type="button"
-              onClick={() =>
-                setCompactMobileView(
-                  (value) => !value
-                )
-              }
-              className="
-                flex
-                h-8
-                w-8
-                items-center
-                justify-center
-                rounded-md
-                border
-                border-ink/15
-                bg-transparent
-                text-ink-soft
-                transition
-                hover:border-ink/30
-                hover:bg-ink/5
-                md:hidden
-              "
-              aria-label={
-                compactMobileView
-                  ? 'Show larger journal covers'
-                  : 'Show compact journal covers'
-              }
-              title={
-                compactMobileView
-                  ? 'Larger view'
-                  : 'Compact view'
-              }
-            >
-
-              {compactMobileView ? (
-
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-[17px] w-[17px]"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-
-                  <rect
-                    x="4"
-                    y="4"
-                    width="16"
-                    height="16"
-                    rx="1.5"
-                  />
-
-                  <path d="M4 9h16" />
-
-                  <path d="M9 4v16" />
-
-                </svg>
-
-              ) : (
-
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-[17px] w-[17px]"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-
-                  <rect
-                    x="4"
-                    y="3"
-                    width="16"
-                    height="18"
-                    rx="1.5"
-                  />
-
-                  <path d="M8 3v18" />
-
-                  <path d="M8 7h8" />
-
-                </svg>
-
-              )}
-
-            </button>
-
-          )}
 
         </div>
 
@@ -1703,7 +1711,8 @@ export default function Dashboard() {
           <div
             className={`
               grid
-              gap-6
+              gap-4
+              sm:gap-6
               sm:grid-cols-2
               md:grid-cols-3
               ${
@@ -1870,12 +1879,14 @@ export default function Dashboard() {
 
         <div
           className="
-            mb-4
+            mb-3
             flex
             flex-wrap
             items-center
             justify-between
-            gap-3
+            gap-2
+            sm:mb-4
+            sm:gap-3
           "
         >
 
