@@ -1630,9 +1630,49 @@ export default function Dashboard() {
 
         {loading ? (
 
-          <Loading
-            label="Opening your library"
-          />
+          <div
+            className="
+              flex
+              items-center
+              justify-center
+              gap-3
+              rounded-xl
+              border
+              border-ink/15
+              bg-ink/[0.02]
+              px-6
+              py-10
+              text-ink-soft
+            "
+          >
+
+            <svg
+              viewBox="0 0 24 24"
+              className="h-5 w-5 animate-spin"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="9"
+                strokeOpacity="0.25"
+              />
+              <path d="M21 12a9 9 0 0 0-9-9" />
+            </svg>
+
+            <span
+              className="
+                font-body
+                text-sm
+              "
+            >
+              Loading your journals...
+            </span>
+
+          </div>
 
         ) : filteredAndSortedJournals.length ? (
 
@@ -1893,9 +1933,49 @@ export default function Dashboard() {
 
         {sharedLoading ? (
 
-          <Loading
-            label="Checking shared journals"
-          />
+          <div
+            className="
+              flex
+              items-center
+              justify-center
+              gap-3
+              rounded-xl
+              border
+              border-ink/15
+              bg-ink/[0.02]
+              px-6
+              py-10
+              text-ink-soft
+            "
+          >
+
+            <svg
+              viewBox="0 0 24 24"
+              className="h-5 w-5 animate-spin"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="9"
+                strokeOpacity="0.25"
+              />
+              <path d="M21 12a9 9 0 0 0-9-9" />
+            </svg>
+
+            <span
+              className="
+                font-body
+                text-sm
+              "
+            >
+              Loading shared journals...
+            </span>
+
+          </div>
 
         ) : (
 
