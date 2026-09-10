@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import NotebookCover from './NotebookCover';
 
-
 export default function JournalCard({
   journal,
   readOnly = false,
@@ -16,8 +15,8 @@ export default function JournalCard({
   onToggleSelection = null,
   navigationState = null,
 }) {
-
   const navigate = useNavigate();
+
   const longPressTimer = useRef(null);
   const longPressTriggered = useRef(false);
 
@@ -40,7 +39,12 @@ export default function JournalCard({
   }
 
   function handlePointerDown(e) {
-    if (selectionMode || e.pointerType !== 'touch' || readOnly || publicShareToken) {
+    if (
+      selectionMode ||
+      e.pointerType !== 'touch' ||
+      readOnly ||
+      publicShareToken
+    ) {
       return;
     }
 
@@ -48,7 +52,10 @@ export default function JournalCard({
 
     longPressTimer.current = window.setTimeout(() => {
       longPressTriggered.current = true;
-      onStartSelection?.(journal.id);
+
+      if (onStartSelection) {
+        onStartSelection(journal.id);
+      }
     }, 550);
   }
 
@@ -60,32 +67,67 @@ export default function JournalCard({
     clearLongPress();
   }
 
-  useEffect(() => clearLongPress, []);
+  useEffect(() => {
+    return () => {
+      clearLongPress();
+    };
+  }, []);
 
-  function handleClick() {
-    if (longPressTriggered.current) {
-      longPressTriggered.current = false;
-      return;
-    }
+  function handleClick(e) {
+    /*
+      When selection mode is active, clicking the book should
+      ONLY select/deselect it.
 
-    if (selectionMode && onToggleSelection) {
+      This is intentionally checked first so the normal journal
+      navigation cannot happen while selecting books.
+    */
+    if (
+      selectionMode &&
+      !readOnly &&
+      !publicShareToken &&
+      onToggleSelection
+    ) {
+      e.preventDefault();
+      e.stopPropagation();
+
       onToggleSelection(journal.id);
       return;
     }
 
-    const journalPath =
-      publicShareToken
-        ? `/shared/${publicShareToken}/book`
-        : navigationState?.fromBookcaseId
-          ? `/journal/${journal.id}?fromBookcase=${encodeURIComponent(
-              navigationState.fromBookcaseId
+    /*
+      Long press on mobile starts selection mode.
+      Do not open the journal after the long press finishes.
+    */
+    if (longPressTriggered.current) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      longPressTriggered.current = false;
+      return;
+    }
+
+    const journalPath = publicShareToken
+      ? `/shared/${publicShareToken}/book`
+      : navigationState?.fromBookcaseId
+        ? `/journal/${journal.id}?fromBookcase=${encodeURIComponent(
+            navigationState.fromBookcaseId
+          )}`
+        : navigationState?.fromCollaboration
+          ? `/journal/${journal.id}?fromCollaboration=${encodeURIComponent(
+              navigationState.fromCollaboration
             )}`
           : `/journal/${journal.id}`;
 
+    navigate(journalPath);
+  }
 
-    navigate(
-      journalPath
-    );
+  function handleSelectionButtonClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (onToggleSelection) {
+      onToggleSelection(journal.id);
+    }
   }
 
   return (
@@ -114,7 +156,6 @@ export default function JournalCard({
         },
       }}
     >
-
       <NotebookCover
         title={journal.title}
         description={journal.description}
@@ -131,10 +172,7 @@ export default function JournalCard({
       {selectionMode && !readOnly && !publicShareToken && (
         <button
           type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleSelection?.(journal.id);
-          }}
+          onClick={handleSelectionButtonClick}
           className={`
             absolute
             right-2
@@ -176,7 +214,9 @@ export default function JournalCard({
         <button
           type="button"
           onClick={(e) => {
+            e.preventDefault();
             e.stopPropagation();
+
             onRemoveShared(journal.access_id);
           }}
           className="absolute right-2 top-2 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-ink/15 bg-paper/90 text-ink-soft shadow-sm transition hover:border-ink/30 hover:bg-paper hover:text-ink"
@@ -197,7 +237,6 @@ export default function JournalCard({
           </svg>
         </button>
       )}
-
     </motion.div>
   );
 }

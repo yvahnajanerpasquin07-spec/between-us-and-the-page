@@ -1,7 +1,9 @@
 import { Route, Routes } from 'react-router-dom';
 import { LayoutGroup } from 'framer-motion';
+
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
+
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -13,35 +15,57 @@ import Explore from './pages/Explore';
 import CollaborativeShareLanding from './pages/CollaborativeShareLanding';
 import BookcasePage from './pages/BookcasePage';
 import Chat from './pages/Chat';
+import Collaboration from './pages/Collaboration';
+
 
 export default function App() {
+
   return (
-    <div className="min-h-screen">
+
+    <div
+      className="
+        min-h-screen
+      "
+    >
+
       <Navbar />
 
+
       <main>
+
         <LayoutGroup>
 
           <Routes>
 
             <Route
               path="/"
-              element={<Home />}
+              element={
+                <Home />
+              }
             />
+
 
             <Route
               path="/explore"
-              element={<Explore />}
+              element={
+                <Explore />
+              }
             />
+
 
             <Route
               path="/login"
-              element={<Login />}
+              element={
+                <Login />
+              }
             />
+
 
             <Route
               path="/register"
-              element={<Register />}
+              element={
+                <Register />
+              }
             />
 
 
@@ -68,6 +92,30 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <Chat />
+                </ProtectedRoute>
+              }
+            />
+
+
+            {/* =================================================
+                COLLABORATION
+            ================================================= */}
+
+            <Route
+              path="/collaboration"
+              element={
+                <ProtectedRoute>
+                  <Collaboration />
+                </ProtectedRoute>
+              }
+            />
+
+
+            <Route
+              path="/collaboration/:spaceId"
+              element={
+                <ProtectedRoute>
+                  <Collaboration />
                 </ProtectedRoute>
               }
             />
@@ -116,7 +164,7 @@ export default function App() {
 
 
             {/* =================================================
-                COLLABORATIVE EDITOR
+                COLLABORATIVE EDITOR LINK
             ================================================= */}
 
             <Route
@@ -145,14 +193,19 @@ export default function App() {
 
             <Route
               path="/shared/:shareToken/book"
-              element={<Journal />}
+              element={
+                <Journal />
+              }
             />
 
           </Routes>
 
         </LayoutGroup>
+
       </main>
 
     </div>
+
   );
+
 }

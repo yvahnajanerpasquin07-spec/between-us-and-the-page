@@ -1,11 +1,18 @@
 import { useEffect, useState } from 'react';
+
 import {
   getMyJournals,
   getSharedJournals,
 } from '../services/journalService';
+
 import { supabase } from '../services/supabase';
+
 import AdminPanel from './AdminPanel';
+
 import { useAuth } from '../context/AuthContext';
+
+import { useNavigate } from 'react-router-dom';
+
 
 export default function UserProfileSidebar({
   open,
@@ -50,6 +57,9 @@ export default function UserProfileSidebar({
     adminPanelOpen,
     setAdminPanelOpen,
   ] = useState(false);
+
+  const navigate =
+    useNavigate();
 
 
   /* =======================================================
@@ -565,6 +575,93 @@ export default function UserProfileSidebar({
 
 
           {/* =================================================
+              COLLABORATION
+          ================================================= */}
+
+          <section>
+
+            <button
+              type="button"
+              onClick={() => {
+
+                onClose();
+
+                navigate('/collaboration');
+
+              }}
+              className="
+                flex
+                w-full
+                items-center
+                justify-between
+                rounded-xl
+                border
+                border-ink/10
+                bg-white/30
+                px-4
+                py-4
+                text-left
+                transition
+                hover:border-ink/20
+                hover:bg-white/50
+              "
+            >
+
+              <div>
+
+                <p
+                  className="
+                    font-display
+                    text-lg
+                    text-ink
+                  "
+                >
+                  Collaboration
+                </p>
+
+                <p
+                  className="
+                    mt-0.5
+                    font-mono
+                    text-[11px]
+                    text-ink/45
+                  "
+                >
+                  Create and work on shared books
+                </p>
+
+              </div>
+
+
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5 text-ink/50"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+
+                <path d="M9 18l6-6-6-6" />
+
+              </svg>
+
+            </button>
+
+          </section>
+
+
+          <div
+            className="
+              my-7
+              border-t
+              border-ink/10
+            "
+          />
+
+
+          {/* =================================================
               ADMIN PANEL
           ================================================= */}
 
@@ -618,6 +715,7 @@ export default function UserProfileSidebar({
 
                 </div>
 
+
                 <svg
                   viewBox="0 0 24 24"
                   className="h-5 w-5 text-ink/50"
@@ -627,7 +725,9 @@ export default function UserProfileSidebar({
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
+
                   <path d="M9 18l6-6-6-6" />
+
                 </svg>
 
               </button>

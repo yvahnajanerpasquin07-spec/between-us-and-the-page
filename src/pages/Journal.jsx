@@ -564,9 +564,21 @@ export default function Journal() {
     useLocation();
 
 
+  const searchParams =
+    new URLSearchParams(
+      location.search
+    );
+
+
   const fromBookcaseId =
-    new URLSearchParams(location.search).get(
+    searchParams.get(
       'fromBookcase'
+    );
+
+
+  const fromCollaborationId =
+    searchParams.get(
+      'fromCollaboration'
     );
 
 
@@ -847,18 +859,35 @@ export default function Journal() {
     const html = document.documentElement;
     const body = document.body;
 
-    const previousHtmlOverflow = html.style.overflow;
-    const previousBodyOverflow = body.style.overflow;
-    const previousBodyTouchAction = body.style.touchAction;
+    const previousHtmlOverflow =
+      html.style.overflow;
 
-    html.style.overflow = 'hidden';
-    body.style.overflow = 'hidden';
-    body.style.touchAction = 'none';
+    const previousBodyOverflow =
+      body.style.overflow;
+
+    const previousBodyTouchAction =
+      body.style.touchAction;
+
+    html.style.overflow =
+      'hidden';
+
+    body.style.overflow =
+      'hidden';
+
+    body.style.touchAction =
+      'none';
 
     return () => {
-      html.style.overflow = previousHtmlOverflow;
-      body.style.overflow = previousBodyOverflow;
-      body.style.touchAction = previousBodyTouchAction;
+
+      html.style.overflow =
+        previousHtmlOverflow;
+
+      body.style.overflow =
+        previousBodyOverflow;
+
+      body.style.touchAction =
+        previousBodyTouchAction;
+
     };
 
   }, []);
@@ -874,8 +903,13 @@ export default function Journal() {
       location.state?.returnToPoemId;
 
 
-    if (!returnToPoemId || !poemPageEntries.length) {
+    if (
+      !returnToPoemId ||
+      !poemPageEntries.length
+    ) {
+
       return;
+
     }
 
 
@@ -934,7 +968,8 @@ export default function Journal() {
 
 
     navigate(
-      location.pathname,
+      location.pathname +
+        location.search,
       {
         replace: true,
         state: null,
@@ -943,6 +978,7 @@ export default function Journal() {
 
   }, [
     location.pathname,
+    location.search,
     location.state,
     navigate,
     poemPageEntries,
@@ -958,59 +994,52 @@ export default function Journal() {
 
 
   /* =======================================================
-   BOOK LOCATION LIMIT
-======================================================= */
+     BOOK LOCATION LIMIT
+  ======================================================= */
 
-/*
-   Count the real papers that are actually rendered below.
+  /*
+     Count the real papers that are actually rendered below.
 
-   The old calculation added an extra paper whenever there were
-   two or more Table of Contents pages. That made maxLocation one
-   step larger than the real back-cover location, so isClosedBack
-   never became true when the notebook was actually closed.
+     Rendered papers:
+     - 1 front-cover paper
+     - Table of Contents papers
+     - poemPageEntries.length poem papers
+     - 1 final inside/back-cover paper
+  */
 
-   Rendered papers:
-   - 1 front-cover paper
-   - Table of Contents papers
-   - poemPageEntries.length poem papers
-   - 1 final inside/back-cover paper
-
-   This matches the actual paper structure generated below.
-*/
-
-const tocPaperCount =
-  Math.ceil(
-    tocPages.length / 2
-  ) +
-  (
-    tocPages.length % 2 === 0
-      ? 1
-      : 0
-  );
+  const tocPaperCount =
+    Math.ceil(
+      tocPages.length / 2
+    ) +
+    (
+      tocPages.length % 2 === 0
+        ? 1
+        : 0
+    );
 
 
-const estimatedPaperCount =
-  tocPaperCount +
-  poemPageEntries.length +
-  2;
+  const estimatedPaperCount =
+    tocPaperCount +
+    poemPageEntries.length +
+    2;
 
 
-const maxLocation =
-  estimatedPaperCount + 1;
+  const maxLocation =
+    estimatedPaperCount + 1;
 
 
-const isClosedFront =
-  currentLocation === 1;
+  const isClosedFront =
+    currentLocation === 1;
 
 
-const isClosedBack =
-  currentLocation ===
-  maxLocation;
+  const isClosedBack =
+    currentLocation ===
+    maxLocation;
 
 
-const isOpen =
-  !isClosedFront &&
-  !isClosedBack;
+  const isOpen =
+    !isClosedFront &&
+    !isClosedBack;
 
 
   /* =======================================================
@@ -1502,11 +1531,9 @@ const isOpen =
 
         }}
 
-
       >
 
         {coverFront}
-
 
       </div>
 
@@ -1516,7 +1543,9 @@ const isOpen =
     back: (
 
       <div className="book-left-page">
+
         {insideCover}
+
       </div>
 
     ),
@@ -1546,10 +1575,6 @@ const isOpen =
      is on the LEFT, so a separate paper is added with:
 
        BLANK | POEM 1 MEDIA
-
-     This keeps the first poem spread as:
-
-       POEM 1 MEDIA | POEM 1 TEXT
   */
 
   for (
@@ -1561,22 +1586,28 @@ const isOpen =
     const rightTocIndex =
       tocIndex;
 
+
     const leftTocIndex =
       tocIndex + 1;
+
 
     const hasLeftToc =
       leftTocIndex < tocPages.length;
 
+
     const isLastTocPaper =
       rightTocIndex ===
       tocPages.length - 1;
+
 
     papers.push({
 
       id:
         papers.length + 1,
 
+
       /* RIGHT PAGE */
+
       front: (
 
         <div className="book-right-page">
@@ -1638,7 +1669,9 @@ const isOpen =
 
       ),
 
+
       /* LEFT PAGE */
+
       back:
 
         hasLeftToc
@@ -1700,11 +1733,6 @@ const isOpen =
             poemPageEntries.length > 0
             ? (
 
-              /*
-                 ODD TOC PAGE COUNT:
-                 The final TOC page is on the RIGHT, so the LEFT
-                 side of this same paper becomes POEM 1 MEDIA.
-              */
               <PoemMediaPage
 
                 poem={
@@ -1737,18 +1765,13 @@ const isOpen =
             ),
 
     });
+
   }
 
 
-  /*
-     EVEN TOC PAGE COUNT:
-     The final TOC page is on the LEFT, so add one more paper:
-
-       BLANK | POEM 1 MEDIA
-
-     The next paper then renders POEM 1 TEXT on the RIGHT,
-     producing the requested first poem spread.
-  */
+  /* =======================================================
+     EVEN TOC PAGE COUNT
+  ======================================================= */
 
   if (
     tocPages.length % 2 === 0
@@ -1759,6 +1782,7 @@ const isOpen =
       id:
         papers.length + 1,
 
+
       front: (
 
         <div className="book-right-page">
@@ -1768,6 +1792,7 @@ const isOpen =
         </div>
 
       ),
+
 
       back:
 
@@ -1806,6 +1831,7 @@ const isOpen =
           ),
 
     });
+
   }
 
 
@@ -1984,9 +2010,11 @@ const isOpen =
       <div className="book-right-page">
 
         <InsideBackCover
+
           journal={
             activeJournal
           }
+
         />
 
       </div>
@@ -1997,6 +2025,7 @@ const isOpen =
     back: (
 
       <ClosedBackCover
+
         journal={
           activeJournal
         }
@@ -2222,9 +2251,11 @@ const isOpen =
   if (journalLoading) {
 
     return (
+
       <Loading
         label="Opening journal"
       />
+
     );
 
   }
@@ -2233,9 +2264,13 @@ const isOpen =
   if (!journal) {
 
     return (
+
       <p className="p-6">
+
         Journal not found.
+
       </p>
+
     );
 
   }
@@ -2257,19 +2292,6 @@ const isOpen =
     }
 
 
-    /*
-       Every physical Table of Contents spread should show
-       "Table of Contents".
-
-       TOC pages are paired two-at-a-time:
-
-         TOC 1 | TOC 2
-         TOC 3 | TOC 4
-         TOC 5 | TOC 6
-
-       When there is an even number of TOC pages, an extra
-       blank paper is inserted before the first poem media page.
-    */
     const tocPaperCount =
       Math.ceil(
         tocPages.length / 2
@@ -2309,23 +2331,6 @@ const isOpen =
     }
 
 
-    /*
-       Determine which poem page/spread is currently visible.
-
-       The first poem page starts the numbered section at Page 2.
-       Page 1 is represented by the Table of Contents section,
-       but all TOC locations remain labeled "Table of Contents".
-
-       Each poem entry represents one numbered book page/spread,
-       so the numbering advances one at a time:
-
-         Page 2 of X
-         Page 3 of X
-         Page 4 of X
-         ...
-
-       Covers and the End page are not counted.
-    */
     const paperIndex =
       currentLocation - 1;
 
@@ -2382,7 +2387,6 @@ const isOpen =
   }
 
 
-
   /* =======================================================
      RENDER
   ======================================================= */
@@ -2399,27 +2403,57 @@ const isOpen =
           BACK TO BOOKCASE
       =================================================== */}
 
-      {fromBookcaseId && !isPublicView && (
+      {fromBookcaseId &&
+        !fromCollaborationId &&
+        !isPublicView && (
 
-        <button
+          <button
 
-          type="button"
+            type="button"
 
-          className="bookcase-page-back"
+            className="bookcase-page-back"
 
-          onClick={() =>
-            navigate(
-              `/bookcase/${fromBookcaseId}`
-            )
-          }
+            onClick={() =>
+              navigate(
+                `/bookcase/${fromBookcaseId}`
+              )
+            }
 
-        >
+          >
 
-          ← Back to your bookcase
+            ← Back to your bookcase
 
-        </button>
+          </button>
 
-      )}
+        )}
+
+
+      {/* ===================================================
+          BACK TO COLLABORATION
+      =================================================== */}
+
+      {fromCollaborationId &&
+        !isPublicView && (
+
+          <button
+
+            type="button"
+
+            className="bookcase-page-back"
+
+            onClick={() =>
+              navigate(
+                `/collaboration/${fromCollaborationId}`
+              )
+            }
+
+          >
+
+            ← Back to your collaboration
+
+          </button>
+
+        )}
 
 
       {/* ===================================================
@@ -2491,20 +2525,22 @@ const isOpen =
         ${isOpen ? 'book-wrapper-open' : ''}
       `}
 
-      onClick={
-        handleBookAreaClick
-      }
+        onClick={
+          handleBookAreaClick
+        }
 
-    >
+      >
 
-      <div
-        className={`
+        <div
+
+          className={`
           bs-book
           ${isClosedFront ? 'book-closed-front' : ''}
           ${isClosedBack ? 'book-closed-back' : ''}
           ${isOpen ? 'book-open' : ''}
         `}
-      >
+
+        >
 
           {papers.map(
             (
@@ -2614,10 +2650,6 @@ const isOpen =
 
       {/* ===================================================
           MOBILE PAGE NAVIGATION
-
-          On phones only, Previous / Next are displayed
-          below the journal. Desktop keeps the original
-          controls above the book.
       =================================================== */}
 
       <div className="mobile-book-navigation">
@@ -2746,9 +2778,6 @@ function PoemMediaPage({
     null;
 
 
-  // Always give the image widget usable dimensions. Older saved
-  // image positions may contain only x/y/url, which would otherwise
-  // make width/height undefined and break resizing.
   const imageWidget =
     savedImageWidget
       ? {
@@ -2761,9 +2790,6 @@ function PoemMediaPage({
       : null;
 
 
-  // The image URL is stored on the poem itself.
-  // Keep the saved widget position separate from the image URL
-  // so an older/local widget position cannot hide the picture.
   const imageUrl =
     imageWidget?.url ||
     poem.image_url ||
@@ -3029,148 +3055,150 @@ function TocPage({
 
               {isOwner && (<>
 
-              {/* VIEW COUNT */}
+                {/* VIEW COUNT */}
 
-              <div
+                <div
 
-                className="flex items-center gap-1 font-mono text-xs text-ink-soft"
+                  className="flex items-center gap-1 font-mono text-xs text-ink-soft"
 
-                aria-label={`${publicShareViews} total views`}
+                  aria-label={`${publicShareViews} total views`}
 
-                title={`${publicShareViews} total views from the view-only link`}
+                  title={`${publicShareViews} total views from the view-only link`}
 
-              >
-
-                <svg
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
                 >
 
-                  <path
-                    d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"
-                  />
+                  <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
 
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="2.5"
-                  />
+                    <path
+                      d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"
+                    />
 
-                </svg>
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="2.5"
+                    />
 
-                <span>
-                  {publicShareViews}
-                </span>
+                  </svg>
 
-              </div>
+                  <span>
+                    {publicShareViews}
+                  </span>
+
+                </div>
 
 
-              {/* SHARE */}
+                {/* SHARE */}
 
-              <button
+                <button
 
-                type="button"
+                  type="button"
 
-                className="toc-icon-button"
+                  className="toc-icon-button"
 
-                onClick={
-                  onShare
-                }
+                  onClick={
+                    onShare
+                  }
 
-                aria-label="Share journal"
+                  aria-label="Share journal"
 
-                title="Share journal"
+                  title="Share journal"
 
-              >
-
-                <svg
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
                 >
 
-                  <circle
-                    cx="18"
-                    cy="5"
-                    r="2"
-                  />
+                  <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
 
-                  <circle
-                    cx="6"
-                    cy="12"
-                    r="2"
-                  />
+                    <circle
+                      cx="18"
+                      cy="5"
+                      r="2"
+                    />
 
-                  <circle
-                    cx="18"
-                    cy="19"
-                    r="2"
-                  />
+                    <circle
+                      cx="6"
+                      cy="12"
+                      r="2"
+                    />
 
-                  <line
-                    x1="8"
-                    y1="11"
-                    x2="16"
-                    y2="6"
-                  />
+                    <circle
+                      cx="18"
+                      cy="19"
+                      r="2"
+                    />
 
-                  <line
-                    x1="8"
-                    y1="13"
-                    x2="16"
-                    y2="18"
-                  />
+                    <line
+                      x1="8"
+                      y1="11"
+                      x2="16"
+                      y2="6"
+                    />
 
-                </svg>
+                    <line
+                      x1="8"
+                      y1="13"
+                      x2="16"
+                      y2="18"
+                    />
 
-              </button>
+                  </svg>
 
+                </button>
 
               </>)}
+
 
               {/* NEW POEM */}
 
               {canEdit && (
-              <button
 
-                type="button"
+                <button
 
-                className="
-                  toc-icon-button
-                  toc-plus-button
-                "
+                  type="button"
 
-                onClick={
-                  onNewPoem
-                }
+                  className="
+                    toc-icon-button
+                    toc-plus-button
+                  "
 
-                aria-label="New poem"
+                  onClick={
+                    onNewPoem
+                  }
 
-                title="New poem"
+                  aria-label="New poem"
 
-              >
+                  title="New poem"
 
-                <svg
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
                 >
 
-                  <line
-                    x1="12"
-                    y1="5"
-                    x2="12"
-                    y2="19"
-                  />
+                  <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
 
-                  <line
-                    x1="5"
-                    y1="12"
-                    x2="19"
-                    y2="12"
-                  />
+                    <line
+                      x1="12"
+                      y1="5"
+                      x2="12"
+                      y2="19"
+                    />
 
-                </svg>
+                    <line
+                      x1="5"
+                      y1="12"
+                      x2="19"
+                      y2="12"
+                    />
 
-              </button>
+                  </svg>
+
+                </button>
+
               )}
 
             </div>
@@ -3735,9 +3763,6 @@ function PoemPage({
             </button>
 
 
-
-
-
             {/* PENCIL ICON */}
 
             <button
@@ -4147,11 +4172,16 @@ function TextStyleSection({
       {/* FONT */}
 
       <label
+
         style={{
+
           ...fieldLabelStyle,
+
           marginBottom:
             '7px',
+
         }}
+
       >
 
         <span>
@@ -4242,9 +4272,11 @@ function TextStyleSection({
         {/* SIZE */}
 
         <label
+
           style={
             fieldLabelStyle
           }
+
         >
 
           <span>
@@ -4285,9 +4317,11 @@ function TextStyleSection({
         {/* WEIGHT */}
 
         <label
+
           style={
             fieldLabelStyle
           }
+
         >
 
           <span>
@@ -4370,9 +4404,11 @@ function TextStyleSection({
         {/* ALIGNMENT */}
 
         <label
+
           style={
             fieldLabelStyle
           }
+
         >
 
           <span>
@@ -4423,9 +4459,11 @@ function TextStyleSection({
         {/* COLOR */}
 
         <label
+
           style={
             fieldLabelStyle
           }
+
         >
 
           <span>
@@ -4510,9 +4548,11 @@ function TextStyleSection({
         {/* LETTER SPACING */}
 
         <label
+
           style={
             fieldLabelStyle
           }
+
         >
 
           <span>
@@ -4555,9 +4595,11 @@ function TextStyleSection({
         {/* LINE HEIGHT */}
 
         <label
+
           style={
             fieldLabelStyle
           }
+
         >
 
           <span>
@@ -4794,8 +4836,13 @@ function ClosedBackCover({
       {journal.cover_back_image_url ? (
 
         <img
-          src={journal.cover_back_image_url}
+
+          src={
+            journal.cover_back_image_url
+          }
+
           alt="Back cover"
+
           className="
             absolute
             inset-0
@@ -4804,7 +4851,9 @@ function ClosedBackCover({
             w-full
             object-cover
           "
+
           draggable="false"
+
         />
 
       ) : null}
@@ -4813,6 +4862,7 @@ function ClosedBackCover({
       {journal.cover_back_image_url ? (
 
         <div
+
           className="
             pointer-events-none
             absolute
@@ -4820,6 +4870,7 @@ function ClosedBackCover({
             z-[1]
             bg-black/10
           "
+
         />
 
       ) : null}
