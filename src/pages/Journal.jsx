@@ -564,6 +564,12 @@ export default function Journal() {
     useLocation();
 
 
+  const fromBookcaseId =
+    new URLSearchParams(location.search).get(
+      'fromBookcase'
+    );
+
+
   const {
     user,
   } = useAuth();
@@ -2388,6 +2394,33 @@ const isOpen =
       className="journal-page"
 
     >
+
+      {/* ===================================================
+          BACK TO BOOKCASE
+      =================================================== */}
+
+      {fromBookcaseId && !isPublicView && (
+
+        <button
+
+          type="button"
+
+          className="bookcase-page-back"
+
+          onClick={() =>
+            navigate(
+              `/bookcase/${fromBookcaseId}`
+            )
+          }
+
+        >
+
+          ← Back to your bookcase
+
+        </button>
+
+      )}
+
 
       {/* ===================================================
           CONTROLS

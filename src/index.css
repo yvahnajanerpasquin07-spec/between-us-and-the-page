@@ -2951,3 +2951,791 @@
   }
 
 }
+
+.bookcases-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 28px 34px;
+}
+
+@media (max-width: 767px) {
+  .bookcases-container {
+    flex-direction: column;
+    gap: 24px;
+  }
+}
+
+/* =========================================================
+   BOOK SELECTION + BOOKCASE
+   ---------------------------------------------------------
+   These styles only support the journal selection and
+   bookcase feature.
+========================================================= */
+
+.journal-card-selected {
+  filter: brightness(0.96);
+}
+
+.bookcase-card {
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.bookcase-header {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.bookcase-title {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: #2b2a28;
+}
+
+.bookcase-count {
+  margin: 3px 0 0;
+  font-family: monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6f6b64;
+}
+
+.bookcase-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 5px;
+}
+
+.bookcase-action {
+  border: 1px solid rgba(43, 42, 40, 0.15);
+  border-radius: 5px;
+  background: transparent;
+  padding: 4px 7px;
+  font-family: monospace;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #403e39;
+  cursor: pointer;
+}
+
+.bookcase-action:hover {
+  border-color: rgba(43, 42, 40, 0.35);
+  background: rgba(43, 42, 40, 0.04);
+}
+
+.bookcase-shelf-wrap {
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 6px 7px 13px;
+}
+
+/* Wooden cabinet frame that grows with the number of books. */
+.bookcase-shelf {
+  position: relative;
+  display: inline-block;
+  width: max-content;
+  min-width: 86px;
+  min-height: 174px;
+  padding: 18px 18px 25px;
+  border: 9px solid #70482f;
+  border-radius: 2px;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(67, 39, 23, 0.08) 0,
+      rgba(67, 39, 23, 0.08) 2px,
+      transparent 2px,
+      transparent 8px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(62, 36, 22, 0.2) 0,
+      rgba(173, 119, 73, 0.12) 12%,
+      rgba(219, 167, 111, 0.18) 30%,
+      rgba(118, 72, 42, 0.08) 55%,
+      rgba(67, 39, 23, 0.15) 100%
+    ),
+    #9a6742;
+  box-shadow:
+    inset 0 0 0 2px rgba(232, 195, 151, 0.42),
+    inset 0 0 0 5px rgba(65, 37, 22, 0.2),
+    inset 0 10px 18px rgba(255, 220, 175, 0.08),
+    0 5px 0 rgba(70, 43, 28, 0.16),
+    0 9px 18px rgba(43, 31, 22, 0.12);
+}
+
+/* Wood grain running across the cabinet. */
+.bookcase-shelf::before {
+  content: '';
+  position: absolute;
+  top: -9px;
+  right: -9px;
+  bottom: -9px;
+  left: -9px;
+  border: 2px solid #563621;
+  border-radius: 2px;
+  background:
+    repeating-linear-gradient(
+      12deg,
+      transparent 0,
+      transparent 7px,
+      rgba(72, 40, 23, 0.12) 8px,
+      transparent 10px,
+      transparent 17px
+    );
+  box-shadow:
+    inset 0 0 0 2px rgba(226, 186, 139, 0.2),
+    inset 0 0 14px rgba(47, 27, 17, 0.18);
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Thick top and bottom wooden boards. */
+.bookcase-shelf::after {
+  content: '';
+  position: absolute;
+  right: -9px;
+  bottom: -9px;
+  left: -9px;
+  height: 15px;
+  border-top: 2px solid rgba(236, 199, 156, 0.34);
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(65, 37, 22, 0.14) 0,
+      rgba(65, 37, 22, 0.14) 2px,
+      transparent 2px,
+      transparent 6px
+    ),
+    linear-gradient(#805335, #5d3825);
+  box-shadow:
+    0 4px 0 rgba(57, 34, 22, 0.18),
+    inset 0 1px 0 rgba(239, 205, 166, 0.2);
+  pointer-events: none;
+  z-index: 4;
+}
+
+.bookcase-spines {
+  display: flex;
+  width: max-content;
+  min-height: 126px;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 5px;
+  position: relative;
+  z-index: 2;
+}
+
+.bookcase-spine {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  min-width: 30px;
+  height: 126px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.34);
+  border-radius: 3px 3px 1px 1px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,0.17),
+      transparent 18%,
+      rgba(0,0,0,0.14) 80%,
+      rgba(255,255,255,0.08)
+    ),
+    var(--book-spine-color);
+  box-shadow:
+    1px 3px 4px rgba(0,0,0,0.18),
+    inset 1px 0 rgba(255,255,255,0.12),
+    inset -1px 0 rgba(0,0,0,0.12);
+  color: rgba(255,255,255,0.9);
+  cursor: pointer;
+  transition: transform 150ms ease;
+}
+
+.bookcase-spine:hover {
+  transform: translateY(-5px);
+}
+
+.bookcase-spine::before,
+.bookcase-spine::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  height: 3px;
+  border-top: 1px solid rgba(255,255,255,0.3);
+  border-bottom: 1px solid rgba(0,0,0,0.16);
+}
+
+.bookcase-spine::before {
+  top: 8px;
+}
+
+.bookcase-spine::after {
+  bottom: 8px;
+}
+
+.bookcase-spine span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  max-height: 100px;
+  overflow: hidden;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 8px;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Actual shelf board underneath the books. */
+.bookcase-shelf-line {
+  position: absolute;
+  right: 13px;
+  bottom: 10px;
+  left: 13px;
+  height: 10px;
+  border: 2px solid #5c3824;
+  border-radius: 1px;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(55, 31, 19, 0.16) 0,
+      rgba(55, 31, 19, 0.16) 2px,
+      transparent 2px,
+      transparent 6px
+    ),
+    linear-gradient(#8a5938, #694027);
+  box-shadow:
+    inset 0 1px 0 rgba(239, 204, 166, 0.28),
+    0 3px 0 rgba(51, 30, 19, 0.18);
+  z-index: 5;
+}
+
+.bookcase-empty {
+  align-self: center;
+  margin: auto;
+  padding: 0 8px;
+  font-family: monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 239, 215, 0.82);
+}
+
+.bookcase-book-list {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(43,42,40,0.1);
+  padding-top: 9px;
+}
+
+.bookcase-book-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 12px;
+  color: #403e39;
+}
+
+.bookcase-remove {
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  padding: 3px 0;
+  font-family: monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6f6b64;
+  cursor: pointer;
+}
+
+@media (max-width: 767px) {
+  .bookcase-shelf-wrap {
+    max-width: calc(100vw - 28px);
+  }
+
+  .bookcase-shelf {
+    border-width: 8px;
+    padding: 16px 15px 23px;
+  }
+
+  .bookcase-shelf::before {
+    top: -8px;
+    right: -8px;
+    bottom: -8px;
+    left: -8px;
+  }
+
+  .bookcase-shelf::after {
+    right: -8px;
+    bottom: -8px;
+    left: -8px;
+  }
+}
+
+/* =========================================================
+   BOOKCASE MECHANISM — FITTED SHELF + INSIDE VIEW
+   ========================================================= */
+
+.bookcase-card {
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.bookcase-shelf-wrap {
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 6px 7px 13px;
+}
+
+.bookcase-shelf-button {
+  display: block;
+  width: max-content;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bookcase-shelf-button:focus-visible {
+  outline: 2px solid rgba(43, 42, 40, 0.55);
+  outline-offset: 5px;
+}
+
+.bookcase-shelf-button:hover .bookcase-shelf {
+  transform: translateY(-2px);
+}
+
+.bookcase-shelf {
+  transition: transform 150ms ease;
+}
+
+.bookcase-name-row {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 1px 4px 0;
+}
+
+.bookcase-name-row .bookcase-title {
+  margin: 0;
+}
+
+.bookcase-name-row .bookcase-count {
+  margin: 3px 0 0;
+}
+
+.bookcase-name-row .bookcase-action {
+  margin-top: 1px;
+}
+
+/* The inside of a bookcase is presented as its own page. */
+.bookcase-inside-page {
+  width: 100%;
+  min-height: 360px;
+  padding: 4px 0 20px;
+}
+
+.bookcase-inside-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.bookcase-back-button,
+.bookcase-delete-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(43, 42, 40, 0.15);
+  border-radius: 6px;
+  background: transparent;
+  padding: 6px 9px;
+  font-family: monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #403e39;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.bookcase-back-button:hover,
+.bookcase-delete-button:hover {
+  border-color: rgba(43, 42, 40, 0.35);
+  background: rgba(43, 42, 40, 0.04);
+}
+
+.bookcase-inside-heading {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.bookcase-inside-kicker {
+  display: block;
+  margin-bottom: 5px;
+  font-family: monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #6f6b64;
+}
+
+.bookcase-inside-heading h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(24px, 4vw, 34px);
+  font-weight: 600;
+  color: #2b2a28;
+}
+
+.bookcase-inside-heading p {
+  margin: 5px 0 0;
+  font-family: monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6f6b64;
+}
+
+.bookcase-cover-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 28px 22px;
+  align-items: start;
+}
+
+.bookcase-cover-item {
+  min-width: 0;
+}
+
+.bookcase-cover-button {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 160ms ease;
+}
+
+.bookcase-cover-button:hover {
+  transform: translateY(-4px);
+}
+
+.bookcase-cover-button:focus-visible {
+  outline: 2px solid rgba(43, 42, 40, 0.55);
+  outline-offset: 5px;
+}
+
+.bookcase-inside-remove {
+  display: block;
+  margin: 9px auto 0;
+  border: 0;
+  background: transparent;
+  padding: 3px 4px;
+  font-family: monospace;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6f6b64;
+  cursor: pointer;
+}
+
+.bookcase-inside-remove:hover {
+  color: #2b2a28;
+  text-decoration: underline;
+}
+
+.bookcase-inside-empty {
+  display: flex;
+  min-height: 240px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px dashed rgba(43, 42, 40, 0.2);
+  border-radius: 8px;
+  padding: 30px;
+  text-align: center;
+}
+
+.bookcase-inside-empty p {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 15px;
+  color: #6f6b64;
+}
+
+@media (max-width: 767px) {
+  .bookcase-inside-page {
+    padding-top: 0;
+  }
+
+  .bookcase-inside-topbar {
+    align-items: flex-start;
+  }
+
+  .bookcase-cover-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px 14px;
+  }
+}
+
+/* =========================================================
+   BOOKCASE PAGE — FULL DASHBOARD-STYLE VIEW
+   ========================================================= */
+
+.bookcase-page-shell {
+  width: min(1100px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0 70px;
+}
+
+.bookcase-page-header {
+  position: relative;
+  margin-bottom: 42px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(43, 42, 40, 0.08);
+}
+
+.bookcase-page-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  background: transparent;
+  padding: 5px 0;
+  font-family: monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #6f6b64;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+
+.bookcase-page-back:hover {
+  color: #2b2a28;
+}
+
+.bookcase-page-title-wrap {
+  margin-top: 24px;
+}
+
+.bookcase-page-title-wrap > span {
+  display: block;
+  margin-bottom: 6px;
+  font-family: monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  color: #6f6b64;
+}
+
+.bookcase-page-title-wrap h1 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(28px, 4vw, 42px);
+  line-height: 1.15;
+  font-weight: 600;
+  color: #2b2a28;
+}
+
+.bookcase-page-title-wrap p {
+  margin: 7px 0 0;
+  font-family: monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6f6b64;
+}
+
+.bookcase-page-content {
+  width: 100%;
+}
+
+.bookcase-page-journal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.bookcase-page-journal-item {
+  min-width: 0;
+}
+
+.bookcase-page-journal-item .journal-card {
+  width: 100%;
+}
+
+.bookcase-page-remove {
+  display: block;
+  margin: 9px auto 0;
+  border: 0;
+  background: transparent;
+  padding: 3px 4px;
+  font-family: monospace;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6f6b64;
+  cursor: pointer;
+}
+
+.bookcase-page-remove:hover {
+  color: #2b2a28;
+  text-decoration: underline;
+}
+
+.bookcase-page-loading,
+.bookcase-page-empty {
+  display: flex;
+  min-height: 280px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid rgba(43, 42, 40, 0.10);
+  background: rgba(43, 42, 40, 0.02);
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.bookcase-page-empty h1,
+.bookcase-page-empty h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 600;
+  color: #2b2a28;
+}
+
+.bookcase-page-empty h1 {
+  font-size: 25px;
+}
+
+.bookcase-page-empty h2 {
+  font-size: 22px;
+}
+
+.bookcase-page-empty p {
+  margin: 0 0 12px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 14px;
+  color: #6f6b64;
+}
+
+@media (max-width: 767px) {
+  .bookcase-page-shell {
+    width: min(100% - 24px, 1100px);
+    padding-top: 20px;
+  }
+
+  .bookcase-page-header {
+    margin-bottom: 30px;
+    padding-bottom: 18px;
+  }
+
+  .bookcase-page-title-wrap {
+    margin-top: 19px;
+  }
+
+  .bookcase-page-journal-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 14px;
+  }
+}
+
+
+/* =========================================================
+   BACK TO BOOKCASE BUTTON
+========================================================= */
+
+.back-to-bookcase-button {
+  position: absolute;
+  top: 16px;
+  left: clamp(16px, 4vw, 40px);
+  z-index: 3000;
+
+  padding: 8px 14px;
+
+  border: 1px solid rgba(43, 42, 40, 0.18);
+  border-radius: 20px;
+
+  background: rgba(255, 255, 255, 0.35);
+
+  font-family: monospace;
+  font-size: 10px;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.back-to-bookcase-button:hover {
+  background: rgba(255, 255, 255, 0.75);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 800px) {
+  .back-to-bookcase-button {
+    top: 12px;
+    left: 16px;
+    font-size: 9px;
+  }
+}
+
+/* =========================================================
+   BACK TO BOOKCASE — MOBILE TOUCH FIX
+   Keeps the existing Back to your library styling.
+========================================================= */
+
+@media (max-width: 800px) and (hover: none) and (pointer: coarse) {
+
+  .journal-page > .bookcase-page-back {
+    position: relative;
+    z-index: 3000;
+    pointer-events: auto;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+}

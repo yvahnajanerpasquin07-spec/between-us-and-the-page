@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   createJournal,
+  deleteJournal,
   getMyJournals,
   getSharedJournals,
   uploadJournalCover,
@@ -11,6 +12,7 @@ import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
 import { materialOptions } from '../components/NotebookCover';
 import JournalCard from '../components/JournalCard';
+import Bookcase from '../components/Bookcase';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import Loading from '../components/Loading';
@@ -28,7 +30,7 @@ const DEFAULT_COVER_SETTINGS = {
 
 export default function Dashboard() {
 
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
 
   const {
     data: journals,
@@ -53,6 +55,256 @@ export default function Dashboard() {
     sharedJournalToRemove,
     setSharedJournalToRemove,
   ] = useState(null);
+
+
+  /* =======================================================
+     BOOK SELECTION + BOOKCASES
+     -------------------------------------------------------
+     Desktop: use the Select button.
+     Mobile: selection starts with a long press on a book.
+  ======================================================= */
+
+  const [
+    selectionMode,
+    setSelectionMode,
+  ] = useState(false);
+
+  const [
+    selectedJournalIds,
+    setSelectedJournalIds,
+  ] = useState([]);
+
+  const [
+    bookcases,
+    setBookcases,
+  ] = useState([]);
+
+  const [
+    bookcaseName,
+    setBookcaseName,
+  ] = useState('');
+
+  const [
+    showBookcaseForm,
+    setShowBookcaseForm,
+  ] = useState(false);
+
+  const [
+    bookcaseToDelete,
+    setBookcaseToDelete,
+  ] = useState(null);
+
+  const [
+    selectedBooksToDelete,
+    setSelectedBooksToDelete,
+  ] = useState(false);
+
+  const [
+    deletingSelectedBooks,
+    setDeletingSelectedBooks,
+  ] = useState(false);
+
+  const bookcaseStorageKey =
+    user?.id
+      ? `between-us-bookcases-${user.id}`
+      : null;
+
+  useEffect(() => {
+
+    if (!bookcaseStorageKey) {
+      setBookcases([]);
+      return;
+    }
+
+    try {
+      const saved =
+        window.localStorage.getItem(
+          bookcaseStorageKey
+        );
+
+      const parsed = saved ? JSON.parse(saved) : [];
+
+      setBookcases(
+        Array.isArray(parsed) ? parsed : []
+      );
+    } catch (error) {
+      console.error(error);
+      setBookcases([]);
+    }
+
+  }, [bookcaseStorageKey]);
+
+  function saveBookcases(nextBookcases) {
+    if (!bookcaseStorageKey) {
+      return;
+    }
+
+    window.localStorage.setItem(
+      bookcaseStorageKey,
+      JSON.stringify(nextBookcases)
+    );
+
+    setBookcases(nextBookcases);
+  }
+
+  function enterSelectionMode(journalId) {
+
+    setSelectionMode(true);
+
+    setSelectedJournalIds((current) =>
+      current.includes(journalId)
+        ? current
+        : [...current, journalId]
+    );
+
+  }
+
+  function toggleJournalSelection(journalId) {
+
+    setSelectedJournalIds((current) => {
+      if (current.includes(journalId)) {
+        return current.filter((id) => id !== journalId);
+      }
+
+      return [...current, journalId];
+    });
+
+  }
+
+  function exitSelectionMode() {
+    setSelectionMode(false);
+    setSelectedJournalIds([]);
+  }
+
+  function openBookcaseForm() {
+    if (!selectedJournalIds.length) {
+      return;
+    }
+
+    setBookcaseName('');
+    setShowBookcaseForm(true);
+  }
+
+  function createBookcase() {
+
+    const name =
+      bookcaseName.trim() ||
+      'New bookcase';
+
+    const nextBookcases = [
+      ...bookcases,
+      {
+        id: `bookcase-${Date.now()}`,
+        name,
+        journalIds: [...selectedJournalIds],
+      },
+    ];
+
+    saveBookcases(nextBookcases);
+
+    setShowBookcaseForm(false);
+    setBookcaseName('');
+    exitSelectionMode();
+  }
+
+  function addToBookcase(bookcaseId) {
+
+    const nextBookcases = bookcases.map((bookcase) => {
+      if (bookcase.id !== bookcaseId) {
+        return bookcase;
+      }
+
+      return {
+        ...bookcase,
+        journalIds: [
+          ...new Set([
+            ...(bookcase.journalIds || []),
+            ...selectedJournalIds,
+          ]),
+        ],
+      };
+    });
+
+    saveBookcases(nextBookcases);
+    exitSelectionMode();
+  }
+
+  function removeFromBookcase(bookcaseId, journalId) {
+
+    const nextBookcases = bookcases.map((bookcase) =>
+      bookcase.id === bookcaseId
+        ? {
+            ...bookcase,
+            journalIds: (bookcase.journalIds || []).filter(
+              (id) => id !== journalId
+            ),
+          }
+        : bookcase
+    );
+
+    saveBookcases(nextBookcases);
+  }
+
+  function deleteBookcase(bookcaseId) {
+
+    const nextBookcases = bookcases.filter(
+      (bookcase) => bookcase.id !== bookcaseId
+    );
+
+    saveBookcases(nextBookcases);
+    setBookcaseToDelete(null);
+  }
+
+  async function deleteSelectedBooks() {
+
+    if (!selectedJournalIds.length) {
+      return;
+    }
+
+    setDeletingSelectedBooks(true);
+
+    try {
+      await Promise.all(
+        selectedJournalIds.map((journalId) =>
+          deleteJournal(journalId)
+        )
+      );
+
+      const deletedIds = new Set(
+        selectedJournalIds
+      );
+
+      const nextBookcases = bookcases
+        .map((bookcase) => ({
+          ...bookcase,
+          journalIds: (bookcase.journalIds || []).filter(
+            (id) => !deletedIds.has(id)
+          ),
+        }))
+        .filter(
+          (bookcase) => bookcase.journalIds.length
+        );
+
+      saveBookcases(nextBookcases);
+
+      setDeletingSelectedBooks(false);
+      setSelectedBooksToDelete(false);
+      exitSelectionMode();
+      await refetch();
+
+    } catch (error) {
+
+      console.error(error);
+
+      window.alert(
+        error?.message ||
+        'Could not delete the selected books. Please try again.'
+      );
+
+      setDeletingSelectedBooks(false);
+      setSelectedBooksToDelete(false);
+    }
+  }
 
 
   const [
@@ -293,6 +545,17 @@ export default function Dashboard() {
       : (journals ?? []);
 
 
+  /* Journals already placed in a bookcase are hidden from Your Library. */
+  const bookcasedJournalIds = new Set(
+    bookcases.flatMap((bookcase) => bookcase.journalIds || [])
+  );
+
+  const libraryJournals =
+    displayedJournals.filter(
+      (journal) => !bookcasedJournalIds.has(journal.id)
+    );
+
+
   /* =======================================================
      FILTER + SORT JOURNALS
   ======================================================= */
@@ -304,7 +567,7 @@ export default function Dashboard() {
 
 
   const filteredAndSortedJournals =
-    [...displayedJournals]
+    [...libraryJournals]
       .filter((journal) => {
 
         if (!normalizedJournalSearch) {
@@ -1394,6 +1657,48 @@ export default function Dashboard() {
           >
 
           {/* =================================================
+              DESKTOP SELECT BUTTON
+          ================================================= */}
+
+          {(!isAdmin || adminLibraryView === 'library') && (
+
+            <button
+              type="button"
+              onClick={() => {
+                if (selectionMode) {
+                  exitSelectionMode();
+                } else {
+                  setSelectionMode(true);
+                }
+              }}
+              className="
+                hidden
+                h-9
+                items-center
+                justify-center
+                rounded-md
+                border
+                border-ink/25
+                bg-transparent
+                px-3
+                font-mono
+                text-[10px]
+                uppercase
+                tracking-wide
+                text-ink-soft
+                transition
+                hover:border-ink/40
+                hover:bg-ink/5
+                md:flex
+              "
+            >
+              {selectionMode ? 'Cancel select' : 'Select'}
+            </button>
+
+          )}
+
+
+          {/* =================================================
               MOBILE BOOK LAYOUT TOGGLE
               -------------------------------------------------
               Still available for the normal library view.
@@ -1660,6 +1965,100 @@ export default function Dashboard() {
         </div>
 
 
+        {selectionMode && (
+
+          <div
+            className="
+              mb-4
+              flex
+              flex-wrap
+              items-center
+              justify-between
+              gap-2
+              rounded-xl
+              border
+              border-ink/15
+              bg-paper/70
+              px-3
+              py-2.5
+              shadow-sm
+            
+          "
+          >
+
+            <span
+              className="
+                font-mono
+                text-xs
+                uppercase
+                tracking-wide
+                text-ink-soft
+              "
+            >
+              {selectedJournalIds.length} selected
+            </span>
+
+            <div className="flex flex-wrap items-center gap-2">
+
+              <button
+                type="button"
+                onClick={openBookcaseForm}
+                disabled={!selectedJournalIds.length}
+                className="rounded-md border border-ink/20 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide text-ink transition hover:border-ink/40 hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                New bookcase
+              </button>
+
+              {bookcases.length > 0 && (
+                <select
+                  defaultValue=""
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      addToBookcase(e.target.value);
+                      e.target.value = '';
+                    }
+                  }}
+                  disabled={!selectedJournalIds.length}
+                  className="h-8 rounded-md border border-ink/20 bg-transparent px-2 font-mono text-[10px] uppercase tracking-wide text-ink outline-none disabled:opacity-40"
+                  aria-label="Add selected books to bookcase"
+                >
+                  <option value="">Add to bookcase</option>
+                  {bookcases.map((bookcase) => (
+                    <option key={bookcase.id} value={bookcase.id}>
+                      {bookcase.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!selectedJournalIds.length) return;
+                  setSelectedBooksToDelete(true);
+                }}
+                disabled={!selectedJournalIds.length || deletingSelectedBooks}
+                className="rounded-md border border-ink/20 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide text-ink transition hover:border-ink/40 hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Delete selected
+              </button>
+
+              <button
+                type="button"
+                onClick={exitSelectionMode}
+                disabled={deletingSelectedBooks}
+                className="rounded-md px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide text-ink-soft transition hover:bg-ink/5 hover:text-ink disabled:opacity-40"
+              >
+                Cancel
+              </button>
+
+            </div>
+
+          </div>
+
+        )}
+
+
         {loading ? (
 
           <div
@@ -1733,6 +2132,10 @@ export default function Dashboard() {
                 <JournalCard
                   key={j.id}
                   journal={j}
+                  selectionMode={selectionMode}
+                  selected={selectedJournalIds.includes(j.id)}
+                  onStartSelection={enterSelectionMode}
+                  onToggleSelection={toggleJournalSelection}
                   compactMobile={
                     compactMobileView &&
                     (
@@ -1869,6 +2272,43 @@ export default function Dashboard() {
         )}
 
       </section>
+
+
+      {/* =====================================================
+          BOOKCASES
+      ===================================================== */}
+
+      {bookcases.length > 0 && (
+
+        <section className="mb-10 sm:mb-12">
+
+          <div className="mb-3 flex items-center justify-between gap-3 sm:mb-4">
+
+            <h2 className="font-mono text-xs uppercase tracking-wide text-ink-soft">
+              Your bookcases
+            </h2>
+
+          </div>
+
+          <div className="bookcases-container">
+            {bookcases.map((bookcase) => (
+              <Bookcase
+                key={bookcase.id}
+                bookcase={bookcase}
+                journals={journals ?? []}
+                onRemoveBook={(journalId) =>
+                  removeFromBookcase(bookcase.id, journalId)
+                }
+                onDelete={() =>
+                  setBookcaseToDelete(bookcase)
+                }
+              />
+            ))}
+          </div>
+
+        </section>
+
+      )}
 
 
       {/* =====================================================
@@ -2250,6 +2690,128 @@ export default function Dashboard() {
         )}
 
       </section>
+
+
+      {showBookcaseForm && (
+
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 px-4 backdrop-blur-sm"
+          onClick={() => setShowBookcaseForm(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-md rounded-2xl border border-ink/10 bg-paper p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="font-display text-xl text-ink">Create a bookcase</h2>
+            <p className="mt-2 font-body text-sm leading-6 text-ink-soft">
+              Give this bookcase a name for your selected books.
+            </p>
+
+            <input
+              type="text"
+              value={bookcaseName}
+              onChange={(e) => setBookcaseName(e.target.value)}
+              placeholder="e.g. Memories"
+              autoFocus
+              className="mt-5 h-10 w-full rounded-md border border-ink/20 bg-transparent px-3 font-body text-sm text-ink outline-none focus:border-ink/50"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') createBookcase();
+              }}
+            />
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowBookcaseForm(false)}
+                className="rounded-lg border border-ink/15 px-4 py-2.5 font-mono text-xs uppercase tracking-wide text-ink-soft transition hover:border-ink/30 hover:bg-ink/5"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={createBookcase}
+                className="rounded-lg bg-ink px-4 py-2.5 font-mono text-xs uppercase tracking-wide text-paper transition hover:opacity-90"
+              >
+                Create bookcase
+              </button>
+            </div>
+          </div>
+        </div>
+
+      )}
+
+
+      {selectedBooksToDelete && (
+
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 px-4 backdrop-blur-sm"
+          onClick={() => {
+            if (!deletingSelectedBooks) {
+              setSelectedBooksToDelete(false);
+            }
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-md rounded-2xl border border-ink/10 bg-paper p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="font-display text-xl text-ink">Delete selected books?</h2>
+            <p className="mt-2 font-body text-sm leading-6 text-ink-soft">
+              Are you sure you want to delete {selectedJournalIds.length} selected {selectedJournalIds.length === 1 ? 'book' : 'books'}? This cannot be undone.
+            </p>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setSelectedBooksToDelete(false)}
+                disabled={deletingSelectedBooks}
+                className="rounded-lg border border-ink/15 px-4 py-2.5 font-mono text-xs uppercase tracking-wide text-ink-soft transition hover:border-ink/30 hover:bg-ink/5 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={deleteSelectedBooks}
+                disabled={deletingSelectedBooks}
+                className="rounded-lg bg-ink px-4 py-2.5 font-mono text-xs uppercase tracking-wide text-paper transition hover:opacity-90 disabled:opacity-50"
+              >
+                {deletingSelectedBooks ? 'Deleting…' : 'Delete books'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+      )}
+
+
+      {bookcaseToDelete && (
+
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 px-4 backdrop-blur-sm"
+          onClick={() => setBookcaseToDelete(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-md rounded-2xl border border-ink/10 bg-paper p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="font-display text-xl text-ink">Delete this bookcase?</h2>
+            <p className="mt-2 font-body text-sm leading-6 text-ink-soft">
+              The books inside will not be deleted. Only this bookcase will be removed.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" onClick={() => setBookcaseToDelete(null)} className="rounded-lg border border-ink/15 px-4 py-2.5 font-mono text-xs uppercase tracking-wide text-ink-soft">Cancel</button>
+              <button type="button" onClick={() => deleteBookcase(bookcaseToDelete.id)} className="rounded-lg bg-ink px-4 py-2.5 font-mono text-xs uppercase tracking-wide text-paper">Delete bookcase</button>
+            </div>
+          </div>
+        </div>
+
+      )}
 
 
       {/* =====================================================

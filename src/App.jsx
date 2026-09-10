@@ -11,6 +11,7 @@ import Poem from './pages/Poem';
 import PublicShareLanding from './pages/PublicShareLanding';
 import Explore from './pages/Explore';
 import CollaborativeShareLanding from './pages/CollaborativeShareLanding';
+import BookcasePage from './pages/BookcasePage';
 
 export default function App() {
   return (
@@ -28,6 +29,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/bookcase/:bookcaseId"
+              element={
+                <ProtectedRoute>
+                  <BookcasePage />
                 </ProtectedRoute>
               }
             />
