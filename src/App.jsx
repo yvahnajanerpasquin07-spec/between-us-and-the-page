@@ -12,18 +12,43 @@ import PublicShareLanding from './pages/PublicShareLanding';
 import Explore from './pages/Explore';
 import CollaborativeShareLanding from './pages/CollaborativeShareLanding';
 import BookcasePage from './pages/BookcasePage';
+import Chat from './pages/Chat';
 
 export default function App() {
   return (
     <div className="min-h-screen">
       <Navbar />
+
       <main>
         <LayoutGroup>
+
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/explore" element={<Explore />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+
+            <Route
+              path="/"
+              element={<Home />}
+            />
+
+            <Route
+              path="/explore"
+              element={<Explore />}
+            />
+
+            <Route
+              path="/login"
+              element={<Login />}
+            />
+
+            <Route
+              path="/register"
+              element={<Register />}
+            />
+
+
+            {/* =================================================
+                DASHBOARD
+            ================================================= */}
+
             <Route
               path="/dashboard"
               element={
@@ -32,6 +57,26 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
+
+            {/* =================================================
+                CHAT
+            ================================================= */}
+
+            <Route
+              path="/chat"
+              element={
+                <ProtectedRoute>
+                  <Chat />
+                </ProtectedRoute>
+              }
+            />
+
+
+            {/* =================================================
+                BOOKCASE
+            ================================================= */}
+
             <Route
               path="/bookcase/:bookcaseId"
               element={
@@ -40,6 +85,12 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
+
+            {/* =================================================
+                JOURNAL
+            ================================================= */}
+
             <Route
               path="/journal/:journalId"
               element={
@@ -48,6 +99,12 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
+
+            {/* =================================================
+                POEM
+            ================================================= */}
+
             <Route
               path="/journal/:journalId/poem/:poemId"
               element={
@@ -57,26 +114,45 @@ export default function App() {
               }
             />
 
-            {/* Collaborative editor link */}
+
+            {/* =================================================
+                COLLABORATIVE EDITOR
+            ================================================= */}
+
             <Route
               path="/collab/:editorToken"
-              element={<CollaborativeShareLanding />}
+              element={
+                <CollaborativeShareLanding />
+              }
             />
 
-            {/* Public share landing page */}
+
+            {/* =================================================
+                PUBLIC SHARE LANDING
+            ================================================= */}
+
             <Route
               path="/shared/:shareToken"
-              element={<PublicShareLanding />}
+              element={
+                <PublicShareLanding />
+              }
             />
 
-            {/* Public view-only journal */}
+
+            {/* =================================================
+                PUBLIC VIEW-ONLY JOURNAL
+            ================================================= */}
+
             <Route
               path="/shared/:shareToken/book"
               element={<Journal />}
             />
+
           </Routes>
+
         </LayoutGroup>
       </main>
+
     </div>
   );
 }

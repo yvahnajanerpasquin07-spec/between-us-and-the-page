@@ -1,22 +1,119 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import {
+  useEffect,
+  useState,
+} from 'react';
+
+import {
+  Link,
+  useNavigate,
+} from 'react-router-dom';
+
+import {
+  useAuth,
+} from '../context/AuthContext';
+
+import {
+  getNotificationCount,
+} from '../services/chatService';
+
 import UserProfileSidebar from './UserProfileSidebar';
 import ExploreSidebar from './ExploreSidebar';
 
+
 export default function Navbar() {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+
+  const {
+    user,
+    signOut,
+  } = useAuth();
+
+  const navigate =
+    useNavigate();
+
+
+  const [
+    notificationCount,
+    setNotificationCount,
+  ] = useState(0);
+
 
   const [
     profileOpen,
     setProfileOpen,
   ] = useState(false);
 
+
   const [
     exploreOpen,
     setExploreOpen,
   ] = useState(false);
+
+
+  /* =======================================================
+     CHAT NOTIFICATION COUNT
+  ======================================================= */
+
+  useEffect(() => {
+
+    let cancelled = false;
+
+
+    async function loadNotificationCount() {
+
+      if (!user) {
+
+        setNotificationCount(0);
+
+        return;
+      }
+
+
+      try {
+
+        const count =
+          await getNotificationCount();
+
+
+        if (!cancelled) {
+
+          setNotificationCount(
+            count
+          );
+
+        }
+
+      } catch (error) {
+
+        console.error(
+          error
+        );
+
+      }
+
+    }
+
+
+    loadNotificationCount();
+
+
+    const interval =
+      window.setInterval(
+        loadNotificationCount,
+        5000
+      );
+
+
+    return () => {
+
+      cancelled = true;
+
+      window.clearInterval(
+        interval
+      );
+
+    };
+
+  }, [user]);
 
 
   /* =======================================================
@@ -35,10 +132,29 @@ export default function Navbar() {
 
 
   return (
-    <>
-      <header className="border-b border-ink/15 bg-paper/90 backdrop-blur">
 
-        <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+    <>
+
+      <header
+        className="
+          border-b
+          border-ink/15
+          bg-paper/90
+          backdrop-blur
+        "
+      >
+
+        <nav
+          className="
+            mx-auto
+            flex
+            max-w-5xl
+            items-center
+            justify-between
+            px-6
+            py-4
+          "
+        >
 
           {/* =================================================
               SITE TITLE
@@ -46,7 +162,12 @@ export default function Navbar() {
 
           <Link
             to="/"
-            className="font-display text-xl italic text-ink"
+            className="
+              font-display
+              text-xl
+              italic
+              text-ink
+            "
           >
             Between Us and the Page
           </Link>
@@ -56,13 +177,21 @@ export default function Navbar() {
               NAVIGATION
           ================================================= */}
 
-          <div className="flex items-center gap-3">
+          <div
+            className="
+              flex
+              items-center
+              gap-3
+            "
+          >
 
             {!user && (
 
               <button
                 type="button"
-                onClick={() => setExploreOpen(true)}
+                onClick={() =>
+                  setExploreOpen(true)
+                }
                 className="
                   flex
                   h-9
@@ -80,21 +209,54 @@ export default function Navbar() {
                 aria-label="Explore"
                 title="Explore"
               >
+
                 <svg
                   viewBox="0 0 24 24"
-                  className="h-[18px] w-[18px]"
+                  className="
+                    h-[18px]
+                    w-[18px]
+                  "
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <path d="M12 3.5l1.15 5.35L18.5 10l-5.35 1.15L12 16.5l-1.15-5.35L5.5 10l5.35-1.15L12 3.5Z" />
-                  <path d="M18.5 15.5l.55 2.45 2.45.55-2.45.55-.55 2.45-.55-2.45-2.45-.55 2.45-.55.55-2.45Z" />
+
+                  <path
+                    d="
+                      M12 3.5
+                      l1.15 5.35
+                      L18.5 10
+                      l-5.35 1.15
+                      L12 16.5
+                      l-1.15-5.35
+                      L5.5 10
+                      l5.35-1.15
+                      L12 3.5Z
+                    "
+                  />
+
+                  <path
+                    d="
+                      M18.5 15.5
+                      l.55 2.45
+                      2.45.55
+                      -2.45.55
+                      -.55 2.45
+                      -.55-2.45
+                      -2.45-.55
+                      2.45-.55
+                      .55-2.45Z
+                    "
+                  />
+
                 </svg>
+
               </button>
 
             )}
+
 
             {user && (
 
@@ -126,15 +288,16 @@ export default function Navbar() {
 
                   <svg
                     viewBox="0 0 24 24"
-                    className="h-[18px] w-[18px]"
+                    className="
+                      h-[18px]
+                      w-[18px]
+                    "
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="1.6"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
-
-                    {/* BOOK */}
 
                     <path
                       d="
@@ -170,6 +333,117 @@ export default function Navbar() {
 
 
                 {/* =================================================
+                    CHAT ICON
+                ================================================= */}
+
+                <Link
+                  to="/chat"
+                  className="
+                    relative
+                    flex
+                    h-9
+                    w-9
+                    items-center
+                    justify-center
+                    rounded-full
+                    border
+                    border-ink/20
+                    text-ink
+                    transition
+                    hover:bg-ink
+                    hover:text-paper
+                  "
+                  aria-label={
+                    notificationCount > 0
+                      ? `Chat, ${notificationCount} notification${
+                          notificationCount === 1
+                            ? ''
+                            : 's'
+                        }`
+                      : 'Chat'
+                  }
+                  title="Chat"
+                >
+
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="
+                      h-[18px]
+                      w-[18px]
+                    "
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+
+                    <path
+                      d="
+                        M5 5.5
+                        h14
+                        a2 2 0 0 1 2 2
+                        v8
+                        a2 2 0 0 1-2 2
+                        h-7
+                        l-4.5 3
+                        v-3
+                        H5
+                        a2 2 0 0 1-2-2
+                        v-8
+                        a2 2 0 0 1 2-2
+                        Z
+                      "
+                    />
+
+                    <path
+                      d="
+                        M7.5 10h9
+                        M7.5 13h6
+                      "
+                    />
+
+                  </svg>
+
+
+                  {/* =================================================
+                      NOTIFICATION NUMBER
+                  ================================================= */}
+
+                  {notificationCount > 0 && (
+
+                    <span
+                      className="
+                        absolute
+                        -right-1
+                        -top-1
+                        flex
+                        min-h-4
+                        min-w-4
+                        items-center
+                        justify-center
+                        rounded-full
+                        bg-ink
+                        px-1
+                        font-mono
+                        text-[9px]
+                        leading-4
+                        text-paper
+                      "
+                    >
+
+                      {notificationCount > 99
+                        ? '99+'
+                        : notificationCount}
+
+                    </span>
+
+                  )}
+
+                </Link>
+
+
+                {/* =================================================
                     PROFILE ICON
                 ================================================= */}
 
@@ -198,7 +472,10 @@ export default function Navbar() {
 
                   <svg
                     viewBox="0 0 24 24"
-                    className="h-[18px] w-[18px]"
+                    className="
+                      h-[18px]
+                      w-[18px]
+                    "
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="1.6"
@@ -245,7 +522,9 @@ export default function Navbar() {
 
         <ExploreSidebar
           open={exploreOpen}
-          onClose={() => setExploreOpen(false)}
+          onClose={() =>
+            setExploreOpen(false)
+          }
         />
 
       )}
@@ -269,5 +548,6 @@ export default function Navbar() {
       )}
 
     </>
+
   );
 }
