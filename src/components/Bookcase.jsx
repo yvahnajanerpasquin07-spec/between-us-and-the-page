@@ -4,6 +4,7 @@ export default function Bookcase({
   bookcase,
   journals,
   onDelete,
+  onRename,
 }) {
   const navigate = useNavigate();
 
@@ -56,14 +57,25 @@ export default function Bookcase({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={onDelete}
-          className="bookcase-action"
-          aria-label="Delete bookcase"
-        >
-          Delete
-        </button>
+        <div className="bookcase-actions">
+          <button
+            type="button"
+            onClick={onRename}
+            className="bookcase-action"
+            aria-label="Edit bookcase"
+          >
+            Edit
+          </button>
+
+          <button
+            type="button"
+            onClick={onDelete}
+            className="bookcase-action"
+            aria-label="Delete bookcase"
+          >
+            Delete
+          </button>
+        </div>
       </div>
     </div>
   );

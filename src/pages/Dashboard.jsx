@@ -95,6 +95,11 @@ export default function Dashboard() {
   ] = useState(null);
 
   const [
+    bookcaseToEdit,
+    setBookcaseToEdit,
+  ] = useState(null);
+
+  const [
     selectedBooksToDelete,
     setSelectedBooksToDelete,
   ] = useState(false);
@@ -253,6 +258,34 @@ export default function Dashboard() {
 
     saveBookcases(nextBookcases);
     setBookcaseToDelete(null);
+  }
+
+  function openBookcaseEdit(bookcase) {
+    setBookcaseName(bookcase.name || '');
+    setBookcaseToEdit(bookcase);
+  }
+
+  function updateBookcaseName() {
+    if (!bookcaseToEdit) {
+      return;
+    }
+
+    const name =
+      bookcaseName.trim() ||
+      'New bookcase';
+
+    const nextBookcases = bookcases.map((bookcase) =>
+      bookcase.id === bookcaseToEdit.id
+        ? {
+            ...bookcase,
+            name,
+          }
+        : bookcase
+    );
+
+    saveBookcases(nextBookcases);
+    setBookcaseToEdit(null);
+    setBookcaseName('');
   }
 
   async function deleteSelectedBooks() {
@@ -2302,6 +2335,9 @@ export default function Dashboard() {
                 onDelete={() =>
                   setBookcaseToDelete(bookcase)
                 }
+                onRename={() =>
+                  openBookcaseEdit(bookcase)
+                }
               />
             ))}
           </div>
@@ -2780,6 +2816,78 @@ export default function Dashboard() {
                 className="rounded-lg bg-ink px-4 py-2.5 font-mono text-xs uppercase tracking-wide text-paper transition hover:opacity-90 disabled:opacity-50"
               >
                 {deletingSelectedBooks ? 'Deleting…' : 'Delete books'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+      )}
+
+
+      {bookcaseToEdit && (
+
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 px-4 backdrop-blur-sm"
+          onClick={() => setBookcaseToEdit(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-bookcase-title"
+            className="w-full max-w-md rounded-2xl border border-ink/10 bg-paper p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2
+              id="edit-bookcase-title"
+              className="font-display text-xl text-ink"
+            >
+              Edit bookcase
+            </h2>
+
+            <p className="mt-2 font-body text-sm leading-6 text-ink-soft">
+              Change the name of this bookcase.
+            </p>
+
+            <div className="mt-5">
+              <label
+                htmlFor="edit-bookcase-name"
+                className="mb-2 block font-mono text-xs uppercase tracking-wide text-ink-soft"
+              >
+                Bookcase name
+              </label>
+              <input
+                id="edit-bookcase-name"
+                type="text"
+                value={bookcaseName}
+                onChange={(e) => setBookcaseName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    updateBookcaseName();
+                  }
+                }}
+                autoFocus
+                className="w-full rounded-lg border border-ink/15 bg-paper px-3 py-2.5 font-body text-sm text-ink outline-none transition focus:border-ink/30"
+                placeholder="Bookcase name"
+              />
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setBookcaseToEdit(null);
+                  setBookcaseName('');
+                }}
+                className="rounded-lg border border-ink/15 px-4 py-2.5 font-mono text-xs uppercase tracking-wide text-ink-soft transition hover:border-ink/30 hover:bg-ink/5"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={updateBookcaseName}
+                className="rounded-lg bg-ink px-4 py-2.5 font-mono text-xs uppercase tracking-wide text-paper transition hover:opacity-90"
+              >
+                Save changes
               </button>
             </div>
           </div>
